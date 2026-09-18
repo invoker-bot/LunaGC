@@ -72,6 +72,20 @@ config.json
 mitmdump.exe
 mongod.exe
 
+# Machine-local Taskfile environment (game path, ports). .env.example ships
+# instead so a fresh clone knows the file should exist.
+.env
+.env.local
+
+# Taskfile internal state, and the MongoDB data volume used by `task serve`
+.task/
+mongodata/
+
+# Throwaway analysis artifacts from tools/ -- ad-hoc scans, extracted key /
+# blob dumps, replay logs. Everything the Taskfile actually invokes is named
+# without the leading underscore.
+tools/_*
+
 gacha-mapping.js
 mappings.js
 BuildConfig.java

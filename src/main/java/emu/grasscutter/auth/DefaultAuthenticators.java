@@ -62,25 +62,30 @@ public final class DefaultAuthenticators {
                                             account.getId()));
                 }
             } else if (account != null) {
-                // Lock the entered password as the account password on first login
-                // (covers both newly auto-created accounts and old accounts with an empty password).
-                String rawPassword = requestData.password;
-                if ((account.getPassword() == null || account.getPassword().isEmpty())
-                        && rawPassword != null
-                        && !rawPassword.isEmpty()) {
-                    account.setPassword(
-                            BCrypt.withDefaults().hashToString(10, rawPassword.toCharArray()));
-                    account.save();
-                }
-                // Verify the password for accounts that have one set.
-                if (account.getPassword() == null
-                        || account.getPassword().isEmpty()
-                        || account.verifyPassword(rawPassword)) {
-                    successfulLogin = true;
-                } else {
-                    responseMessage = translate("messages.dispatch.account.password_error");
-                    loggerMessage = translate("messages.dispatch.account.login_password_error", address);
-                }
+                // Local/private-server convenience: an existing account accepts any password.
+                // The original first-login password lock + verification is disabled below (kept as
+                // comments, not deleted) so a forgotten or mistyped password can never lock the
+                // player out of their own server. Uncomment the block to restore strict checks.
+                // // Lock the entered password as the account password on first login
+                // // (covers both newly auto-created accounts and old accounts with an empty password).
+                // String rawPassword = requestData.password;
+                // if ((account.getPassword() == null || account.getPassword().isEmpty())
+                //         && rawPassword != null
+                //         && !rawPassword.isEmpty()) {
+                //     account.setPassword(
+                //             BCrypt.withDefaults().hashToString(10, rawPassword.toCharArray()));
+                //     account.save();
+                // }
+                // // Verify the password for accounts that have one set.
+                // if (account.getPassword() == null
+                //         || account.getPassword().isEmpty()
+                //         || account.verifyPassword(rawPassword)) {
+                //     successfulLogin = true;
+                // } else {
+                //     responseMessage = translate("messages.dispatch.account.password_error");
+                //     loggerMessage = translate("messages.dispatch.account.login_password_error", address);
+                // }
+                successfulLogin = true;
             } else
                 loggerMessage = translate("messages.dispatch.account.account_login_exist_error", address);
 

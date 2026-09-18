@@ -245,6 +245,15 @@ public final class RegionHandler implements Router {
      */
     private static void queryCurrentRegion(Context ctx) {
         String versionName = ctx.queryParam("version");
+        // Some SDK builds (and every manual probe) omit ?version=. Without a guard
+        // the version parsing below NPEs and Javalin answers 500, which looks like
+        // a working server while the client hangs forever at the dispatch screen.
+        if (versionName == null) {
+            Grasscutter.getLogger()
+                    .warn("query_cur_region: no ?version= query param, assuming {}",
+                            GameConstants.VERSION);
+            versionName = GameConstants.VERSION;
+        }
 
         if (!Grasscutter.getConfig().server.game.useXorEncryption) {
             if (versionName != null) {
@@ -295,6 +304,26 @@ public final class RegionHandler implements Router {
                     event.call();
 
                     String key_id = ctx.queryParam("key_id");
+                    // A null or unknown key_id used to throw here -> HTTP 500 -> the client
+                    // sits on the dispatch screen forever. Fall back to a key we actually
+                    // have loaded and complain loudly, so the real id ends up in the log.
+                    int parsedId = -1;
+                    if (key_id != null) {
+                        try {
+                            parsedId = Integer.parseInt(key_id);
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                    if (parsedId < 0 || !Crypto.EncryptionKeys.containsKey(parsedId)) {
+                        var requested = key_id;
+                        key_id = String.valueOf(
+                                Crypto.EncryptionKeys.keySet().stream()
+                                        .min(Integer::compareTo)
+                                        .orElse(-1));
+                        Grasscutter.getLogger()
+                                .warn("query_cur_region: key_id={} not loaded, falling back to {}",
+                                        requested, key_id);
+                    }
 
                     if (versionMajor != GameConstants.VERSION_PARTS[0]
                         || versionMinor != GameConstants.VERSION_PARTS[1]
@@ -349,6 +378,10 @@ public final class RegionHandler implements Router {
                     ctx.json(Crypto.encryptAndSignRegionData(regionInfo, key_id));
                 } catch (Exception e) {
                     Grasscutter.getLogger().error("An error occurred while handling query_cur_region.", e);
+                    // Report the failure instead of letting the handler complete with no result,
+                    // which Javalin turns into an empty HTTP 200 that looks like success and
+                    // leaves the client hanging forever with no clue what went wrong.
+                    ctx.status(500).result("Failed to handle query_cur_region: " + e.getMessage());
                 }
             } else {
                 // Invoke event.

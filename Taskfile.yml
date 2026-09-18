@@ -1,0 +1,128 @@
+# ---------------------------------------------------------------------------
+#  LunaGC 7.0.0 task runner.
+#
+#  Common workflows:
+#
+#    task                 -> this list
+#    task build           -> build the patch DLL and the server jar
+#    task serve           -> start MongoDB + the server (detached, logs on disk)
+#    task patch           -> install the client patch (builds first if needed)
+#    task patch:status    -> show which client files are patched right now
+#    task patch:reset     -> restore the pristine client files
+#
+#  On this machine `task` runs commands through sh (Git Bash), not cmd, so
+#  every command below is one of: a .bat through `cmd /c`, a PowerShell script
+#  file, a native exe (cargo / java), or another task. Never a bare $ variable
+#  and never a path with an unquoted backslash -- sh expands both.
+#
+#  Commands are deliberately explicit rather than shell one-liners: the Windows
+#  quoting rules differ per interpreter, and a command that works in a Git Bash
+#  prompt silently breaks in Taskfile (and the reverse), so each step that
+#  touches the interpreter boundary lives in its own script under tools/.
+# ---------------------------------------------------------------------------
+version: '3'
+
+dotenv:
+  - .env
+
+vars:
+  # Directory that contains YuanShen.exe. Empty means "ask the launcher
+  # registry", which is what .env ships with; see tools/game_path.ps1.
+  GAME_PATH: '{{ .GAME_PATH | default "" }}'
+
+  # The patch crate builds a cdylib named ext.dll; the server jar is named
+  # after the gradle project version. Both are referenced by more than one
+  # task, so they are resolved once here.
+  PATCH_DLL: patch/target/release/ext.dll
+  SERVER_JAR: '{{ .LUNAGC_JAR | default "LunaGC-7.0.0.jar" }}'
+
+tasks:
+  default:
+    desc: Show the available tasks
+    cmds:
+      - task --list
+
+  # ------------------------------------------------------------------ build
+  build:
+    desc: Build the patch DLL and the server jar
+    deps: [build:patch, build:jar]
+
+  build:patch:
+    desc: Build the Rust client patch (patch/target/release/ext.dll)
+    dir: patch
+    # Sources/generates make this a no-op when nothing changed, which matters
+    # because `task patch` depends on it and would otherwise rebuild the DLL
+    # on every invoke.
+    sources:
+      - src/**/*.rs
+      - build.rs
+      - Cargo.toml
+      - Cargo.lock
+    generates:
+      - target/release/ext.dll
+    cmds:
+      - cargo build --release
+
+  build:jar:
+    desc: Build the LunaGC server jar
+    # timestamp, not checksum: the proto sources are tens of thousands of
+    # generated files and hashing them all takes longer than the incremental
+    # gradle build would.
+    method: timestamp
+    sources:
+      - src/**/*.java
+      - src/main/resources/**
+      - build.gradle
+      - settings.gradle
+    generates:
+      - '{{ .SERVER_JAR }}'
+    cmds:
+      # gradlew is a .bat, so it goes through cmd. The leading .\ matters:
+      # `cmd /c gradlew.bat` does not search the working directory, but
+      # `cmd /c .\gradlew.bat` does, and the bare-name form fails.
+      - cmd: cmd /c ".\\gradlew.bat jar -PskipHandbook=1 --console=plain"
+
+  # ------------------------------------------------------------------- serve
+  serve:
+    desc: Start MongoDB and the LunaGC server (detached, survives this shell)
+    deps: [build:jar]
+    cmds:
+      - powershell -NoProfile -ExecutionPolicy Bypass -File tools/serve.ps1 -Mode start
+
+  serve:stop:
+    desc: Stop the LunaGC server (MongoDB keeps running)
+    cmds:
+      - powershell -NoProfile -ExecutionPolicy Bypass -File tools/serve.ps1 -Mode stop
+
+  serve:status:
+    desc: Show whether MongoDB, the dispatch server and the game server are up
+    cmds:
+      - powershell -NoProfile -ExecutionPolicy Bypass -File tools/serve.ps1 -Mode status
+
+  serve:logs:
+    desc: Tail the server stdout/stderr logs
+    cmds:
+      - cmd: cmd /c "echo === stdout === & type start_stdout.log | more"
+
+  # ------------------------------------------------------------------ patch
+  patch:
+    desc: Install the client patch (builds the patch DLL first if it is stale)
+    deps: [build:patch]
+    cmds:
+      - powershell -NoProfile -ExecutionPolicy Bypass -File tools/patch_game.ps1 -Mode apply
+
+  patch:status:
+    desc: Show which client files are patched and whether pristine backups exist
+    cmds:
+      - powershell -NoProfile -ExecutionPolicy Bypass -File tools/patch_game.ps1 -Mode status
+
+  patch:reset:
+    desc: Restore the pristine client files from their backups
+    cmds:
+      - powershell -NoProfile -ExecutionPolicy Bypass -File tools/patch_game.ps1 -Mode reset
+
+  # -------------------------------------------------------------- game path
+  game-path:
+    desc: Print the resolved game install directory
+    cmds:
+      - powershell -NoProfile -ExecutionPolicy Bypass -File tools/game_path.ps1

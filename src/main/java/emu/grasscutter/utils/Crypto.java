@@ -105,8 +105,20 @@ public final class Crypto {
             throw new Exception("Key ID was not set");
         }
 
+        var publicKey = EncryptionKeys.get(Integer.valueOf(key_id));
+        if (publicKey == null) {
+            // Previously this threw a bare InvalidKeyException ("...supports this key: (null)")
+            // from Cipher.init, which gave no hint about which key id was requested.
+            throw new Exception(
+                    "No dispatch encryption key is loaded for key_id="
+                            + key_id
+                            + " (loaded key ids: "
+                            + EncryptionKeys.keySet()
+                            + "). Add a matching *_Pub.der under resources/keys/game_keys/.");
+        }
+
         Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        cipher.init(Cipher.ENCRYPT_MODE, EncryptionKeys.get(Integer.valueOf(key_id)));
+        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
 
         ByteArrayOutputStream encryptedRegionInfoStream = new ByteArrayOutputStream();
 

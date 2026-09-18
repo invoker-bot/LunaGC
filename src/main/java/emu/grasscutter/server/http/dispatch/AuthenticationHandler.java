@@ -72,10 +72,16 @@ public final class AuthenticationHandler implements Router {
         var bodyData = JsonUtils.decode(rawBodyData, ComboTokenReqJson.class);
 
         // Validate body data.
+        // LunaGC: guard against an empty-string `data` field. The real client sends a
+        // populated JSON string here, but a replay/stub body may pass `data: ""`, which
+        // is non-null yet not valid LoginTokenData -- decode then yields null and
+        // fromComboTokenRequest() NPEs, surfacing as an HTTP 500 mid-login.
         if (bodyData == null || bodyData.data == null) return;
+        if (bodyData.data.isEmpty()) return;
 
         // Decode additional body data.
         var tokenData = JsonUtils.decode(bodyData.data, LoginTokenData.class);
+        if (tokenData == null) return; // LunaGC: malformed inner payload -> bail instead of NPE
 
         // Pass data to authentication handler.
         var responseData =

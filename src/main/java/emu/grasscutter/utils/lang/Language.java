@@ -293,12 +293,26 @@ public final class Language {
 
     private static void saveTextMapsCache(Int2ObjectMap<TextStrings> input) throws IOException {
         Files.createDirectories(TEXTMAP_CACHE_PATH.getParent());
-        try (var file =
-                new ObjectOutputStream(
-                        new BufferedOutputStream(
-                                Files.newOutputStream(TEXTMAP_CACHE_PATH, StandardOpenOption.CREATE), 0x100000))) {
-            file.writeInt(TEXTMAP_CACHE_VERSION);
-            file.writeObject(input);
+        // Write to a temp file and atomically move it into place: a process killed mid-write
+        // must never leave a truncated cache behind for the next startup to read.
+        Path tmp = Files.createTempFile(TEXTMAP_CACHE_PATH.getParent(), "TextMapCache-", ".tmp");
+        try {
+            try (var file =
+                    new ObjectOutputStream(
+                            new BufferedOutputStream(Files.newOutputStream(tmp), 0x100000))) {
+                file.writeInt(TEXTMAP_CACHE_VERSION);
+                file.writeObject(input);
+            }
+            // CREATE without TRUNCATE_EXISTING does not empty an existing file, so overwrite via
+            // ATOMIC_MOVE instead of relying on the destination being cleared first.
+            Files.move(
+                    tmp,
+                    TEXTMAP_CACHE_PATH,
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            Files.deleteIfExists(tmp);
+            throw e;
         }
     }
 

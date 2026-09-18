@@ -24,7 +24,11 @@
     </encoder>
   </appender>
 
-  <logger name="io.javalin" level="OFF"/>
+  <!-- io.javalin must stay at INFO (not OFF): config.server.dispatch.logRequests == ALL calls
+       config.plugins.enableDevLogging(), and Javalin's per-request lines are logged through this
+       logger. With it OFF the dispatch request-logging knob silently did nothing, which made
+       client login stalls invisible. Set dispatch.logRequests back to NONE to quiet it again. -->
+  <logger name="io.javalin" level="INFO"/>
   <logger name="org.quartz" level="OFF"/>
   <logger name="org.reflections" level="OFF"/>
   <logger name="org.eclipse.jetty" level="OFF"/>

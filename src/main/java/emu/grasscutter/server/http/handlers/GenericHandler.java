@@ -91,5 +91,26 @@ public final class GenericHandler implements Router {
                 new HttpJsonResponse("{\"retcode\":0,\"message\":\"OK\",\"data\":{}}"));
 
         javalin.get("/status/server", GenericHandler::serverStatus);
+
+        // 国服原生 SDK (passport-api.mihoyo.com) 登录前置：风控/验证码。一律放行，不要求验证码。
+        this.allRoutes(javalin, "/account/ma-cn-passport/app/checkRiskVerified",
+                new HttpJsonResponse("{\"retcode\":0,\"message\":\"OK\",\"data\":{\"is_risky\":false,\"risk_tag\":\"\",\"verify_type\":\"\",\"geetest\":null}}"));
+        this.allRoutes(javalin, "/common/aigis/api/createBySmartCaptchaTicket",
+                new HttpJsonResponse("{\"retcode\":0,\"message\":\"OK\",\"data\":{\"ticket\":\"lunagc-ticket\",\"greeting\":\"\"}}"));
+        this.allRoutes(javalin, "/common/aigis/api/checkSmartCaptcha",
+                new HttpJsonResponse("{\"retcode\":0,\"message\":\"OK\",\"data\":{\"verify_result\":true,\"ticket\":\"lunagc-ticket\"}}"));
+        this.allRoutes(javalin, "/account/ma-cn-verifier/verifier/createLoginCaptcha",
+                new HttpJsonResponse("{\"retcode\":0,\"message\":\"OK\",\"data\":{\"need_captcha\":false}}"));
+
+        // 国服 SDK 配置接口（客户端请求的是 hk4e_cn 变体，原仓库只注册了 hk4e_global）
+        this.allRoutes(javalin, "/hk4e_cn/combo/granter/api/compareProtocolVersion",
+                new HttpJsonResponse(
+                        "{\"retcode\":0,\"message\":\"OK\",\"data\":{\"modified\":true,\"protocol\":{\"id\":0,\"app_id\":4,\"language\":\"zh-Hans\",\"user_proto\":\"\",\"priv_proto\":\"\",\"major\":7,\"minimum\":0,\"create_time\":\"0\",\"teenager_proto\":\"\",\"third_proto\":\"\"}}}"));
+        javalin.get("/hk4e_cn/combo/granter/api/getConfig",
+                new HttpJsonResponse(
+                        "{\"retcode\":0,\"message\":\"OK\",\"data\":{\"protocol\":true,\"qr_enabled\":false,\"log_level\":\"INFO\",\"announce_url\":\"https://webstatic.mihoyo.com/hk4e/announcement/index.html?sdk_presentation_style=fullscreen\\u0026sdk_screen_transparent=true\\u0026game_biz=hk4e_cn\\u0026auth_appid=announcement\\u0026game=hk4e#/\",\"push_alias_type\":2,\"disable_ysdk_guard\":false,\"enable_announce_pic_popup\":true}}"));
+        javalin.get("/hk4e_cn/mdk/shield/api/loadConfig",
+                new HttpJsonResponse(
+                        "{\"retcode\":0,\"message\":\"OK\",\"data\":{\"id\":6,\"game_key\":\"hk4e_cn\",\"client\":\"PC\",\"identity\":\"I_IDENTITY\",\"guest\":false,\"ignore_versions\":\"\",\"scene\":\"S_NORMAL\",\"name\":\"原神\",\"disable_regist\":false,\"enable_email_captcha\":false,\"thirdparty\":[],\"disable_mmt\":false,\"server_guest\":false,\"thirdparty_ignore\":{},\"enable_ps_bind_account\":false,\"thirdparty_login_configs\":{}}}"));
     }
 }
