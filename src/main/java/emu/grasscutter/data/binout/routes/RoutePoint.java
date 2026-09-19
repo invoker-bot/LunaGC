@@ -1,5 +1,6 @@
 package emu.grasscutter.data.binout.routes;
 
+import com.google.gson.annotations.SerializedName;
 import emu.grasscutter.game.world.Position;
 import emu.grasscutter.net.proto.RoutePointOuterClass;
 import lombok.*;
@@ -8,6 +9,8 @@ import lombok.experimental.FieldDefaults;
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RoutePoint {
+    // 7.0.0 writes the point position as "_pos" (see Route.name)
+    @SerializedName(value = "pos", alternate = {"_pos"})
     private Position pos;
     private int speedLevel; // optional
     private float waitTime; // optional

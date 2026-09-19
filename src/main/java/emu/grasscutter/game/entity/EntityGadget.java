@@ -280,6 +280,14 @@ public class EntityGadget extends EntityBaseGadget {
             var route = this.getScene().getSceneRouteById(configRoute.getRouteId());
             if (route != null) {
                 var points = route.getPoints();
+                if (points == null || points.length == 0) {
+                    Grasscutter.getLogger()
+                            .warn(
+                                    "Route {} ({}) has no route points; startPlatform skipped",
+                                    configRoute.getRouteId(),
+                                    route.getName());
+                    return false;
+                }
                 if (configRoute.getStartIndex() == points.length - 1) {
                     configRoute.setStartIndex(0);
                 }
