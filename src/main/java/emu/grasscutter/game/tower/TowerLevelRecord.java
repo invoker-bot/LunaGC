@@ -12,12 +12,25 @@ public class TowerLevelRecord {
 
     private int floorStarRewardProgress;
 
+    /** LevelIds whose first-pass reward has already been handed out for this floor. */
+    private Set<Integer> rewardedLevelIds;
+
     public TowerLevelRecord() {}
 
     public TowerLevelRecord(int floorId) {
         this.floorId = floorId;
         this.passedLevelMap = new HashMap<>();
         this.floorStarRewardProgress = 0;
+    }
+
+    /** Whether the first-pass reward for this chamber was already granted. */
+    public boolean isLevelRewarded(int levelId) {
+        return rewardedLevelIds != null && rewardedLevelIds.contains(levelId);
+    }
+
+    public void markLevelRewarded(int levelId) {
+        if (rewardedLevelIds == null) rewardedLevelIds = new HashSet<>();
+        rewardedLevelIds.add(levelId);
     }
 
     public TowerLevelRecord setLevelStars(int levelId, int stars) {

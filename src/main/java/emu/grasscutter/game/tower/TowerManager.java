@@ -4,9 +4,11 @@ import static emu.grasscutter.config.Configuration.GAME_OPTIONS;
 
 import emu.grasscutter.Grasscutter;
 import emu.grasscutter.data.GameData;
+import emu.grasscutter.data.common.ItemParamData;
 import emu.grasscutter.data.excels.tower.TowerLevelData;
 import emu.grasscutter.game.dungeons.*;
 import emu.grasscutter.game.player.*;
+import emu.grasscutter.game.props.ActionReason;
 import emu.grasscutter.game.props.FightProperty;
 import emu.grasscutter.net.proto.PropChangeReasonOuterClass.PropChangeReason;
 import emu.grasscutter.server.packet.send.*;
@@ -180,6 +182,9 @@ public class TowerManager extends BasePlayerManager {
 
             for (int i = 0; i < LEVELS_PER_FLOOR; i++) {
                 record.setLevelStars(firstLevelId + i, STARS_PER_LEVEL);
+                // These stars were never played for, so their first-pass reward is forfeit -
+                // otherwise handing over floors 1-8 would also mail every chamber's loot.
+                record.markLevelRewarded(firstLevelId + i);
             }
             record.setFloorStarRewardProgress(STARS_PER_FLOOR);
         }
@@ -341,25 +346,35 @@ public class TowerManager extends BasePlayerManager {
         return star + 1;
     }
 
-    public void notifyCurLevelRecordChangeWhenDone(int stars) {
+    /**
+     * Records the clear and hands out the chamber's first-pass reward.
+     *
+     * @return the items just granted, for the settle screen to display alongside the stars.
+     */
+    public List<ItemParamData> notifyCurLevelRecordChangeWhenDone(int stars) {
         Map<Integer, TowerLevelRecord> recordMap = this.getRecordMap();
         int currentFloorId = getTowerData().currentFloorId;
+        // Read before currentLevel is bumped below; the reward belongs to the chamber just cleared.
+        int currentLevelId = getCurrentLevelId();
         if (!recordMap.containsKey(currentFloorId)) {
             recordMap.put(
                     currentFloorId,
-                    new TowerLevelRecord(currentFloorId).setLevelStars(getCurrentLevelId(), stars));
+                    new TowerLevelRecord(currentFloorId).setLevelStars(currentLevelId, stars));
         } else {
             // Only update record if better than previous
             var prevRecord = recordMap.get(currentFloorId);
             var passedLevelMap = prevRecord.getPassedLevelMap();
             int prevStars = 0;
-            if (passedLevelMap.containsKey(getCurrentLevelId())) {
-                prevStars = prevRecord.getLevelStars(getCurrentLevelId());
+            if (passedLevelMap.containsKey(currentLevelId)) {
+                prevStars = prevRecord.getLevelStars(currentLevelId);
             }
             if (stars > prevStars) {
-                recordMap.put(currentFloorId, prevRecord.setLevelStars(getCurrentLevelId(), stars));
+                recordMap.put(currentFloorId, prevRecord.setLevelStars(currentLevelId, stars));
             }
         }
+
+        var granted =
+                grantFirstPassReward(recordMap.get(currentFloorId), currentLevelId, stars);
 
         this.getTowerData().currentLevel++;
 
@@ -377,6 +392,41 @@ public class TowerManager extends BasePlayerManager {
                     .getSession()
                     .send(new PacketTowerCurLevelRecordChangeNotify(currentFloorId, getCurrentLevel()));
         }
+
+        return granted;
+    }
+
+    /**
+     * Grants the chamber's first-pass reward the first time it is cleared.
+     *
+     * <p>The record's rewarded set is what makes this once-only: a repeat clear of an already-paid
+     * chamber returns nothing, and {@link #grantEntranceFloors} pre-marks the floors it skips so a
+     * record that was never played for never yields loot either.
+     *
+     * <p>Officially the reward only goes out on a chamber the player actually beat, which is the
+     * only path here - this is called from the settle listener on a completed dungeon.
+     */
+    private List<ItemParamData> grantFirstPassReward(
+            TowerLevelRecord record, int levelId, int stars) {
+        if (record == null || record.isLevelRewarded(levelId) || stars <= 0) return List.of();
+
+        var levelData = GameData.getTowerLevelDataMap().get(levelId);
+        if (levelData == null) return List.of();
+
+        int rewardId = levelData.getFirstPassRewardId();
+        if (rewardId <= 0) return List.of();
+
+        var rewardData = GameData.getRewardDataMap().get(rewardId);
+        if (rewardData == null || rewardData.getRewardItemList() == null) {
+            Grasscutter.getLogger()
+                    .warn("Tower first-pass reward {} (level {}) has no reward data", rewardId, levelId);
+            return List.of();
+        }
+
+        var items = rewardData.getRewardItemList();
+        player.getInventory().addItemParamDatas(items, ActionReason.TowerFirstPassReward);
+        record.markLevelRewarded(levelId);
+        return items;
     }
 
     public boolean hasNextLevel() {

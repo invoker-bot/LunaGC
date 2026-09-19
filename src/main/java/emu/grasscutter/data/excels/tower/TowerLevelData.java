@@ -15,6 +15,10 @@ public class TowerLevelData extends GameResource {
     private List<TowerLevelCond> conds;
     private int monsterLevel;
 
+    // RewardExcelConfigData id handed out the first time this chamber is cleared. Every row
+    // carries one, so 0 means "not loaded" rather than "no reward".
+    private int firstPassRewardId;
+
     public static class TowerLevelCond {
         private TowerCondType towerCondType;
         private List<Integer> argumentList;

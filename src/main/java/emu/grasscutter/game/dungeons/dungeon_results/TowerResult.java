@@ -1,11 +1,13 @@
 package emu.grasscutter.game.dungeons.dungeon_results;
 
+import emu.grasscutter.data.common.ItemParamData;
 import emu.grasscutter.data.excels.dungeon.DungeonData;
 import emu.grasscutter.game.dungeons.DungeonEndStats;
 import emu.grasscutter.game.dungeons.challenge.WorldChallenge;
 import emu.grasscutter.game.tower.TowerManager;
 import emu.grasscutter.net.proto.*;
 import emu.grasscutter.net.proto.TowerLevelEndNotifyOuterClass.TowerLevelEndNotify;
+import java.util.List;
 
 public class TowerResult extends BaseDungeonResult {
     WorldChallenge challenge;
@@ -13,19 +15,23 @@ public class TowerResult extends BaseDungeonResult {
     boolean hasNextLevel;
     int nextFloorId;
     int currentStars;
+    /** Items handed over for clearing this chamber, already added to the inventory. */
+    List<ItemParamData> firstPassReward;
 
     public TowerResult(
             DungeonData dungeonData,
             DungeonEndStats dungeonStats,
             TowerManager towerManager,
             WorldChallenge challenge,
-            int currentStars) {
+            int currentStars,
+            List<ItemParamData> firstPassReward) {
         super(dungeonData, dungeonStats);
         this.challenge = challenge;
         this.canJump = towerManager.hasNextFloor();
         this.hasNextLevel = towerManager.hasNextLevel();
         this.nextFloorId = hasNextLevel ? 0 : towerManager.getNextFloorId();
         this.currentStars = currentStars;
+        this.firstPassReward = firstPassReward;
     }
 
     // 7.0 declares continue_state as a plain uint32 rather than the nested ContinueStateType enum
@@ -51,9 +57,19 @@ public class TowerResult extends BaseDungeonResult {
         var towerLevelEndNotify =
                 TowerLevelEndNotify.newBuilder()
                         .setIsSuccess(challenge.isSuccess())
-                        .setContinueState(continueStatus)
-                        .addRewardItemList(
-                                ItemParamOuterClass.ItemParam.newBuilder().setItemId(201).setCount(1000));
+                        .setContinueState(continueStatus);
+
+        // The settle screen lists what the chamber paid out. A repeat clear of an already-rewarded
+        // chamber grants nothing, so the list is empty rather than a placeholder pile of Mora.
+        if (firstPassReward != null) {
+            for (var item : firstPassReward) {
+                if (item.getId() == 0 || item.getCount() <= 0) continue;
+                towerLevelEndNotify.addRewardItemList(
+                        ItemParamOuterClass.ItemParam.newBuilder()
+                                .setItemId(item.getId())
+                                .setCount(item.getCount()));
+            }
+        }
 
         for (int i = 1; i <= currentStars; i++) {
             towerLevelEndNotify.addFinishedStarCondList(i);

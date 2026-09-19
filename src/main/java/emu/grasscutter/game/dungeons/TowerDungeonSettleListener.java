@@ -1,9 +1,11 @@
 package emu.grasscutter.game.dungeons;
 
+import emu.grasscutter.data.common.ItemParamData;
 import emu.grasscutter.game.dungeons.dungeon_results.BaseDungeonResult;
 import emu.grasscutter.game.dungeons.dungeon_results.BaseDungeonResult.DungeonEndReason;
 import emu.grasscutter.game.dungeons.dungeon_results.TowerResult;
 import emu.grasscutter.server.packet.send.*;
+import java.util.List;
 
 public class TowerDungeonSettleListener implements DungeonSettleListener {
 
@@ -32,9 +34,10 @@ public class TowerDungeonSettleListener implements DungeonSettleListener {
         var towerManager = players.get(0).getTowerManager();
         var stars = towerManager.getCurLevelStars();
 
+        List<ItemParamData> firstPassReward = List.of();
         if (endReason == DungeonEndReason.COMPLETED) {
             // Update star record only when challenge completes successfully.
-            towerManager.notifyCurLevelRecordChangeWhenDone(stars);
+            firstPassReward = towerManager.notifyCurLevelRecordChangeWhenDone(stars);
             scene.broadcastPacket(
                     new PacketTowerFloorRecordChangeNotify(
                             towerManager.getCurrentFloorId(), stars, towerManager.canEnterScheduleFloor()));
@@ -46,7 +49,8 @@ public class TowerDungeonSettleListener implements DungeonSettleListener {
                 new DungeonEndStats(scene.getKilledMonsterCount(), finishedTime, 0, endReason);
         var result =
                 endReason == DungeonEndReason.COMPLETED
-                        ? new TowerResult(dungeonData, dungeonStats, towerManager, challenge, stars)
+                        ? new TowerResult(
+                                dungeonData, dungeonStats, towerManager, challenge, stars, firstPassReward)
                         : new BaseDungeonResult(dungeonData, dungeonStats);
 
         scene.broadcastPacket(new PacketDungeonSettleNotify(result));
