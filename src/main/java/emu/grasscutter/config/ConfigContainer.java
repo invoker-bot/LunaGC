@@ -140,6 +140,7 @@ public class ConfigContainer {
         public boolean autoCreate = false;
         public boolean EXPERIMENTAL_RealPassword = false;
         public String[] defaultPermissions = {};
+        public String playerEmail = "grasscutter.io"; // shown in-game; upstream 402226788
         public int maxPlayer = -1;
     }
 

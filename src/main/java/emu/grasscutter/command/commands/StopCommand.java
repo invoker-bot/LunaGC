@@ -17,8 +17,12 @@ public final class StopCommand implements CommandHandler {
     @Override
     public void execute(Player sender, Player targetPlayer, List<String> args) {
         CommandHandler.sendMessage(null, translate("commands.stop.success"));
-        for (Player p : Grasscutter.getGameServer().getPlayers().values()) {
-            CommandHandler.sendMessage(p, translate(p, "commands.stop.success"));
+        // upstream d34075861: game server is null in dispatch-only mode, and /stop
+        // there NPE'd before it could warn anyone
+        if (Grasscutter.getGameServer() != null) {
+            for (Player p : Grasscutter.getGameServer().getPlayers().values()) {
+                CommandHandler.sendMessage(p, translate(p, "commands.stop.success"));
+            }
         }
 
         System.exit(1000);

@@ -111,7 +111,9 @@ public class Account {
             return email;
         } else {
             // As of game version 3.5+, only the email is displayed to a user.
-            return this.getUsername() + "@grasscutter.io";
+            // upstream 402226788: the suffix is configurable so real deployments
+            // don't impersonate grasscutter.io
+            return this.getUsername() + "@" + ACCOUNT.playerEmail;
         }
     }
 
