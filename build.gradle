@@ -31,7 +31,7 @@ plugins {
     id 'maven-publish' // Support for publishing to Maven repositories.
     id 'signing' // Support for signing build artifacts.
 
-    id 'io.freefair.lombok' version '6.6.1' // Lombok for delombok'ification
+    id 'io.freefair.lombok' version '8.3' // Lombok for delombok'ification
 }
 
 spotless {
