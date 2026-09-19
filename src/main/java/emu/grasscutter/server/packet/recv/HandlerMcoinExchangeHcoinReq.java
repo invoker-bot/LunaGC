@@ -13,8 +13,16 @@ public class HandlerMcoinExchangeHcoinReq extends PacketHandler {
         McoinExchangeHcoinReqOuterClass.McoinExchangeHcoinReq exchangeReq =
                 McoinExchangeHcoinReqOuterClass.McoinExchangeHcoinReq.parseFrom(payload);
 
-        if (session.getPlayer().getCrystals() < exchangeReq.getMcoinCost()
-                && exchangeReq.getMcoinCost() == exchangeReq.getHcoin()) {
+        // The guard below was `crystals < cost && cost == hcoin`. The AND made it
+        // worthless: a normal exchange (balance fine) skipped validation entirely, and
+        // an unaffordable one paired with a forged ratio also passed -- a client could
+        // ask for cost=1/hcoin=999999 and print primogems. Reject unless the player can
+        // afford it AND the rate is the expected 1:1.
+        // if (session.getPlayer().getCrystals() < exchangeReq.getMcoinCost()
+        //         && exchangeReq.getMcoinCost() == exchangeReq.getHcoin()) {
+        if (exchangeReq.getMcoinCost() <= 0
+                || session.getPlayer().getCrystals() < exchangeReq.getMcoinCost()
+                || exchangeReq.getMcoinCost() != exchangeReq.getHcoin()) {
             session.send(
                     new PacketMcoinExchangeHcoinRsp(RetcodeOuterClass.Retcode.RET_UNKNOWN_ERROR_VALUE));
             return;

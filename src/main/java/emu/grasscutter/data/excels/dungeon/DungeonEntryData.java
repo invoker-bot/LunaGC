@@ -38,6 +38,7 @@ public class DungeonEntryData extends GameResource {
     }
 
     public int getLevelCondition() {
+        if (satisfiedCond == null) return 0;
         for (var cond : satisfiedCond) {
             if (cond.type != null
                     && cond.type.equals(DungeonEntrySatisfiedConditionType.DUNGEON_ENTRY_CONDITION_LEVEL)) {
@@ -48,6 +49,7 @@ public class DungeonEntryData extends GameResource {
     }
 
     public int getQuestCondition() {
+        if (satisfiedCond == null) return 0;
         for (var cond : satisfiedCond) {
             if (cond.type != null
                     && cond.type.equals(DungeonEntrySatisfiedConditionType.DUNGEON_ENTRY_CONDITION_QUEST)) {

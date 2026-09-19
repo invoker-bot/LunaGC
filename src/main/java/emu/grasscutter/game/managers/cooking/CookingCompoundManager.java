@@ -19,11 +19,19 @@ import java.util.*;
 public class CookingCompoundManager extends BasePlayerManager {
     private static Set<Integer> defaultUnlockedCompounds;
     private static Map<Integer, Set<Integer>> compoundGroups;
-    // TODO:bind it to player
-    private static Set<Integer> unlocked;
+
+    // Per-player. This used to be static, so every account shared one unlock set and
+    // any unlock by one player leaked to all of them (and it was never persisted, so a
+    // restart reset everyone to defaults at once instead of per account).
+    private final Set<Integer> unlocked;
 
     public CookingCompoundManager(Player player) {
         super(player);
+        this.unlocked = new HashSet<>(defaultUnlockedCompounds);
+        // TODO:Because we haven't implemented fishing feature,unlock all compounds related to
+        // fish.
+        if (compoundGroups.containsKey(3)) // Avoid NPE from Resources error
+        this.unlocked.addAll(compoundGroups.get(3));
     }
 
     public static void initialize() {
@@ -37,11 +45,6 @@ public class CookingCompoundManager extends BasePlayerManager {
                             }
                             compoundGroups.computeIfAbsent(compound.getGroupId(), gid -> new HashSet<>()).add(id);
                         });
-        // TODO:Because we haven't implemented fishing feature,unlock all compounds related to
-        // fish.Besides,it should be bound to player rather than manager.
-        unlocked = new HashSet<>(defaultUnlockedCompounds);
-        if (compoundGroups.containsKey(3)) // Avoid NPE from Resources error
-        unlocked.addAll(compoundGroups.get(3));
     }
 
     private synchronized List<CompoundQueueData> getCompoundQueueData() {
