@@ -1507,6 +1507,7 @@ public final class PacketOpcodes {
     public static final int UseMiracleRingReq = 23917;
     public static final int UseMiracleRingRsp = 27131;
     public static final int UseWidgetCreateGadgetReq = 23785;
+    public static final int UseWidgetCreateGadgetRsp = -88; // no 7.0 entry
     public static final int ViewCodexReq = 21926;
     public static final int ViewCodexRsp = 21329;
     public static final int ViewLanternProjectionTipsReq = 6388;
