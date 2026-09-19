@@ -7,6 +7,7 @@ import emu.grasscutter.data.excels.dungeon.*;
 import emu.grasscutter.game.activity.trialavatar.TrialAvatarActivityHandler;
 import emu.grasscutter.game.dungeons.dungeon_results.BaseDungeonResult;
 import emu.grasscutter.game.dungeons.enums.DungeonPassConditionType;
+import emu.grasscutter.game.dungeons.enums.DungeonSubType;
 import emu.grasscutter.game.dungeons.fallback.MissingDomainFallbackManager;
 import emu.grasscutter.game.inventory.GameItem;
 import emu.grasscutter.game.player.Player;
@@ -29,6 +30,13 @@ import lombok.*;
  * monster level and levelConfigMap
  */
 public final class DungeonManager {
+
+    // Weekly-boss (trounce domain) economy: the first MAX_WEEKLY_BOSS_DISCOUNT_COUNT claims a
+    // week cost WEEKLY_BOSS_DISCOUNTED_RESIN_COST, every claim after that costs WEEKLY_BOSS_RESIN_COST.
+    public static final int MAX_WEEKLY_BOSS_DISCOUNT_COUNT = 3;
+    public static final int WEEKLY_BOSS_DISCOUNTED_RESIN_COST = 30;
+    public static final int WEEKLY_BOSS_RESIN_COST = 60;
+
     @Getter private final Scene scene;
     @Getter private final DungeonData dungeonData;
     @Getter private final DungeonPassConfigData passConfigData;
@@ -172,6 +180,12 @@ public final class DungeonManager {
 
         rewardedPlayers.add(player.getUid());
 
+        // Count the claim only now that the rewards are in the inventory, so a roll that produced
+        // nothing does not burn one of the week's discounted claims.
+        if (dungeonData.getSubType() == DungeonSubType.DUNGEON_SUB_BOSS) {
+            player.setWeeklyBossChestNum(player.getWeeklyBossChestNum() + 1);
+        }
+
         scene.getScriptManager().callEvent(new ScriptArgs(groupId, EventType.EVENT_DUNGEON_REWARD_GET));
         return true;
     }
@@ -186,6 +200,15 @@ public final class DungeonManager {
 
     public boolean handleCost(Player player, boolean useCondensed) {
         int resinCost = dungeonData.getStatueCostCount() != 0 ? dungeonData.getStatueCostCount() : 20;
+
+        // The 7.0.0 excel bills every weekly boss as free (statueCostID/statueCostCount are 0 on
+        // all 66 rows), so the generic path below spends nothing and the boss could be looted
+        // without limit. Officially the first 3 claims a week are discounted to 30 resin and the
+        // rest cost 60, tracked per player and reset weekly.
+        if (dungeonData.getSubType() == DungeonSubType.DUNGEON_SUB_BOSS) {
+            return payWeeklyBoss(player, useCondensed);
+        }
+
         if (resinCost == 0) {
             return true;
         }
@@ -204,6 +227,26 @@ public final class DungeonManager {
             return player.getResinManager().useResin(resinCost);
         }
         return true;
+    }
+
+    /**
+     * Charges a weekly-boss claim. The counter itself is bumped in {@link #getStatueDrops} once the
+     * rewards are actually handed over, so a claim that fails to roll anything costs nothing.
+     */
+    private boolean payWeeklyBoss(Player player, boolean useCondensed) {
+        if (useCondensed) {
+            // One condensed resin covers one claim, the same deal the 20-resin domains offer.
+            return player.getResinManager().useCondensedResin(1);
+        }
+        int cost = nextWeeklyBossResinCost(player);
+        return player.getResinManager().useResin(cost);
+    }
+
+    /** Resin the next weekly-boss claim costs for this player: discounted for the first 3 a week. */
+    public static int nextWeeklyBossResinCost(Player player) {
+        return player.getWeeklyBossChestNum() < MAX_WEEKLY_BOSS_DISCOUNT_COUNT
+                ? WEEKLY_BOSS_DISCOUNTED_RESIN_COST
+                : WEEKLY_BOSS_RESIN_COST;
     }
 
     private List<GameItem> rollRewards(boolean useCondensed) {

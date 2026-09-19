@@ -70,9 +70,10 @@ public final class DungeonSystem extends BaseGameSystem {
         // Check if the player has quests with dungeon IDs.
         var questDungeons = player.getQuestManager().questsForDungeon(entry);
         if (questDungeons.size() > 0) {
-            player.sendPacket(new PacketDungeonEntryInfoRsp(entry.getPointData(), questDungeons));
+            player.sendPacket(
+                    new PacketDungeonEntryInfoRsp(entry.getPointData(), questDungeons, player));
         } else {
-            player.sendPacket(new PacketDungeonEntryInfoRsp(entry.getPointData()));
+            player.sendPacket(new PacketDungeonEntryInfoRsp(entry.getPointData(), player));
         }
     }
 

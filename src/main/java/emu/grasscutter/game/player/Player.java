@@ -120,6 +120,12 @@ public class Player implements PlayerHook, FieldFetch {
     @Getter private List<ActiveForgeData> activeForges;
     @Getter private Map<Integer, ActiveCookCompoundData> activeCookCompounds;
     @Getter private Map<Integer, Integer> questGlobalVariables;
+
+    // Trounce-domain (weekly boss) claims used this week. The 7.0.0 dungeon excel bills every
+    // weekly boss as free, so without a server-side counter the domain could be looted without
+    // limit; this is what caps the discounted claims and resets with the weekly reset.
+    @Getter @Setter private int weeklyBossChestNum;
+
     @Getter private Map<Integer, Integer> openStates;
     @Getter @Setter private Map<Integer, Set<Integer>> unlockedSceneAreas;
     @Getter @Setter private Map<Integer, Set<Integer>> unlockedScenePoints;
@@ -1309,6 +1315,15 @@ public class Player implements PlayerHook, FieldFetch {
             this.getBattlePassManager().resetWeeklyMissions();
         }
 
+        // The weekly-boss claim counter refreshes with the weekly reset. doDailyReset only runs
+        // once per calendar day, so comparing the Monday that starts each week - rather than
+        // "today is Monday" - still resets for a player who skips Monday and logs in on Tuesday.
+        long lastWeekStart = weekStartEpochDay(lastResetDate);
+        long currentWeekStart = weekStartEpochDay(currentDate);
+        if (currentWeekStart > lastWeekStart) {
+            this.setWeeklyBossChestNum(0);
+        }
+
         this.setResinBuyCount(0);
 
         BirthdayMailSystem.checkAndSend(this, currentDate);
@@ -1320,6 +1335,12 @@ public class Player implements PlayerHook, FieldFetch {
         }
 
         this.setLastDailyReset(currentTime);
+    }
+
+    /** Epoch day of the Monday that begins the week {@code date} falls in. */
+    private static long weekStartEpochDay(LocalDate date) {
+        // DayOfWeek.getValue() is 1 for Monday, so this walks back to the week's Monday.
+        return date.minusDays(date.getDayOfWeek().getValue() - 1).toEpochDay();
     }
 
     public void resetSendPlayerLocTime() {
