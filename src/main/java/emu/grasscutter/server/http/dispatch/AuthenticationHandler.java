@@ -146,10 +146,52 @@ public final class AuthenticationHandler implements Router {
             var response = MaPassportAuthenticator.verifySToken(request);
 
             ctx.json(response);
-            
+
         } catch (Exception e) {
             Grasscutter.getLogger().error("Error in Ma-Passport verify", e);
             e.printStackTrace();
+            ctx.status(500).result("{\"retcode\":-1,\"message\":\"Internal server error\",\"data\":null}");
+        }
+    }
+
+    /**
+     * Handles the CN SDK's session-token exchange call.
+     *
+     * <p>The official endpoint swaps a login token (token_type 1) for a game token
+     * (dst_token_type 4). Our authentication is token-agnostic - the combo login accepts
+     * whatever token the client presents - so the source token is echoed back under the
+     * requested token type. Returning an empty {@code data} here (the previous behaviour,
+     * before this route was registered) leaves the SDK without a usable game token.
+     *
+     * @route /account/ma-cn-session/app/exchange
+     */
+    private static void maPassportExchange(Context ctx) {
+        try {
+            var body = JsonUtils.decode(ctx.body(), com.google.gson.JsonObject.class);
+            if (body == null || !body.has("src_token")) {
+                ctx.status(400).result("{\"retcode\":-1,\"message\":\"Invalid Request\",\"data\":null}");
+                return;
+            }
+
+            var srcToken = body.getAsJsonObject("src_token");
+            String token = srcToken.has("token") ? srcToken.get("token").getAsString() : "";
+            int dstTokenType = body.has("dst_token_type") ? body.get("dst_token_type").getAsInt() : 4;
+
+            var tokenJson = new com.google.gson.JsonObject();
+            tokenJson.addProperty("token_type", dstTokenType);
+            tokenJson.addProperty("token", token);
+
+            var data = new com.google.gson.JsonObject();
+            data.add("token", tokenJson);
+
+            var response = new com.google.gson.JsonObject();
+            response.addProperty("retcode", 0);
+            response.addProperty("message", "");
+            response.add("data", data);
+
+            ctx.json(response);
+        } catch (Exception e) {
+            Grasscutter.getLogger().error("Error in Ma-Passport exchange", e);
             ctx.status(500).result("{\"retcode\":-1,\"message\":\"Internal server error\",\"data\":null}");
         }
     }
@@ -181,6 +223,10 @@ public final class AuthenticationHandler implements Router {
         // ma-cn-passport (passport-api.mihoyo.com/account/ma-cn-passport/...) - 国服 SDK 实际请求路径
         javalin.post("/account/ma-cn-passport/app/loginByPassword", AuthenticationHandler::maPassportLogin);
         javalin.post("/account/ma-cn-passport/token/verifySToken", AuthenticationHandler::maPassportVerify);
+        // ma-cn-session (session-api.mihoyo.com/account/ma-cn-session/...) - 国服 SDK 实际请求路径。
+        // 之前未注册，落到通配 handler 返回空 data，客户端拿不到 user_info/token。
+        javalin.post("/account/ma-cn-session/app/verify", AuthenticationHandler::maPassportVerify);
+        javalin.post("/account/ma-cn-session/app/exchange", AuthenticationHandler::maPassportExchange);
 
         // External login (from other clients).
         javalin.get(

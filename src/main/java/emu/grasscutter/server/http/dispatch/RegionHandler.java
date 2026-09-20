@@ -60,6 +60,17 @@ public final class RegionHandler implements Router {
         return GAME_INFO.bindAddress;
     }
 
+    /**
+     * Determines the game_biz reported in RegionInfo for a client version. 7.0 clients reject a
+     * region response whose game_biz is empty ("SDKServer - OnConnectRegionDispatch:
+     * GameBiz==Null", error 5000).
+     */
+    private static String getGameBizForVersion(String versionName) {
+        if (versionName != null && versionName.startsWith("CNREL")) return "hk4e_cn";
+        if (versionName != null && versionName.startsWith("OSREL")) return "hk4e_global";
+        return "hk4e_cn";
+    }
+
     /** Determines the effective dispatch domain for a request (config -^ request host -^ bind). */
     private static String getEffectiveDispatchDomain(Context ctx) {
         var scheme = "http" + (HTTP_ENCRYPTION.useInRouting ? "s" : "");
@@ -97,10 +108,13 @@ public final class RegionHandler implements Router {
         configuredRegions.forEach(
                 region -> {
                     // Create a region info object.
+                    // 7.0 adds RegionInfo.game_biz (field 36); the CN SDK aborts region
+                    // dispatch with "GameBiz==Null" (error 5000) if it is missing.
                     var regionInfo =
                             RegionInfo.newBuilder()
                                     .setGateserverIp(region.Ip)
                                     .setGateserverPort(region.Port)
+                                    .setGameBiz(region.GameBiz)
                                     .build();
                     // Create an updated region query.
                     var updatedQuery =
@@ -276,15 +290,15 @@ public final class RegionHandler implements Router {
                 if (region != null) {
                     // Rebuild the region query with the effective game-server address so that
                     // clients on localhost / LAN / public IP / domain all get a reachable server.
+                    var baseRegionInfo = region.getRegionQuery().getRegionInfo();
                     var effectiveQuery =
                             region.getRegionQuery().toBuilder()
                                     .setRegionInfo(
-                                            RegionInfo.newBuilder()
+                                            baseRegionInfo.toBuilder()
                                                     .setGateserverIp(getEffectiveGameAddress(ctx))
-                                                    .setGateserverPort(
-                                                            region.getRegionQuery()
-                                                                    .getRegionInfo()
-                                                                    .getGateserverPort()))
+                                                    .setGateserverPort(baseRegionInfo.getGateserverPort())
+                                                    .setGameBiz(getGameBizForVersion(versionName))
+                                                    .build())
                                     .build();
                     regionData = Utils.base64Encode(effectiveQuery.toByteString().toByteArray());
                 }

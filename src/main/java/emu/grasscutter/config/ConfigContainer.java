@@ -601,6 +601,9 @@ public class ConfigContainer {
         public String Title = "Grasscutter";
         public String Ip = "127.0.0.1";
         public int Port = 22102;
+        // RegionInfo.game_biz (proto field 36, new in 7.0). The CN SDK fails region
+        // dispatch with "GameBiz==Null" (error 5000) when this is empty.
+        public String GameBiz = "hk4e_cn";
 
         public Region(
             String name, String title,
