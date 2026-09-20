@@ -14,7 +14,13 @@
 param(
     [Parameter()]
     [ValidateSet('start', 'stop', 'status')]
-    [string] $Mode = 'status'
+    [string] $Mode = 'status',
+
+    # Extra arguments appended to the java command line. The runner passes
+    # none by default; '-debug' turns on DEBUG logging (quest acceptance,
+    # quest exec handlers, packet routing decisions) without packet logging,
+    # and '-debug all' adds packet logging. See StartupArguments.
+    [string] $ServerArgs = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -99,7 +105,10 @@ if ($Mode -eq 'start') {
     # cmd owns the redirection; the window stays open after this script exits.
     # The inner command line is quoted so cmd treats it as one statement and
     # keeps the redirects attached to java rather than to cmd itself.
-    $inner = 'java -jar "{0}" > "{1}" 2> "{2}"' -f $jar, $stdoutLog, $stderrLog
+    # $ServerArgs is interpolated into that single quoted statement, so it may
+    # contain spaces ('-debug all') without needing extra quoting of its own.
+    $args_ = if ($ServerArgs) { ' ' + $ServerArgs } else { '' }
+    $inner = 'java -jar "{0}"{1} > "{2}" 2> "{3}"' -f $jar, $args_, $stdoutLog, $stderrLog
     Start-Process -FilePath 'cmd.exe' `
         -ArgumentList "/c `"$inner`"" `
         -WorkingDirectory $repo `

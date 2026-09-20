@@ -9,6 +9,11 @@
 #    task patch           -> install the client patch (builds first if needed)
 #    task patch:status    -> show which client files are patched right now
 #    task patch:reset     -> restore the pristine client files
+#    task dev             -> instrumented play session: server in -debug mode,
+#                            the client, and the detached monitors that record
+#                            crashes, unhandled packets and server errors
+#    task dev:stop        -> close the game and write the session report
+#    task dev:report      -> print the latest session report
 #
 #  On this machine `task` runs commands through sh (Git Bash), not cmd, so
 #  every command below is one of: a .bat through `cmd /c`, a PowerShell script
@@ -126,3 +131,29 @@ tasks:
     desc: Print the resolved game install directory
     cmds:
       - powershell -NoProfile -ExecutionPolicy Bypass -File tools/game_path.ps1
+
+  # -------------------------------------------------------------------- dev
+  dev:
+    # The monitors live in a detached hidden process that outlives this shell;
+    # the build dep only matters when this task is the one starting the server,
+    # but it is cheap when the jar is current and keeps a bare `task dev` from
+    # silently launching a stale server.
+    desc: Start an instrumented session (server -debug + client + monitors)
+    deps: [build:jar]
+    cmds:
+      - powershell -NoProfile -ExecutionPolicy Bypass -File tools/dev.ps1 -Mode start
+
+  dev:stop:
+    desc: Close the game and write the session report
+    cmds:
+      - powershell -NoProfile -ExecutionPolicy Bypass -File tools/dev.ps1 -Mode stop
+
+  dev:status:
+    desc: Show whether a session is being recorded, and the server state
+    cmds:
+      - powershell -NoProfile -ExecutionPolicy Bypass -File tools/dev.ps1 -Mode status
+
+  dev:report:
+    desc: Print the latest dev session report
+    cmds:
+      - powershell -NoProfile -ExecutionPolicy Bypass -File tools/dev.ps1 -Mode report
