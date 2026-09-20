@@ -62,6 +62,7 @@ $plugins = Join-Path $game 'YuanShen_Data\Plugins'
 $astrolabe     = Join-Path $plugins 'Astrolabe.dll'
 $astrolabeBak  = Join-Path $plugins 'Astrolabe.dll.lunagc-bak'
 $astrolabeStale = Join-Path $plugins 'Astrolabe.dll.lunagc-bak.stale'
+$astrolabeLive = Join-Path $plugins 'Astrolabe.dll.lunagc-live'
 $astrolabeOrig = Join-Path $plugins 'Astrolabe_orig.dll'
 $extDll        = Join-Path $repo 'patch\target\release\ext.dll'
 
@@ -373,7 +374,37 @@ $extState = if (Test-Path $extDll) { 'built' } else { 'missing' }
 Write-Host "game path      : $game"
 Write-Host ("Astrolabe.dll  : {0}  ({1} bytes)" -f $astState, $(if ($astBytes) { $astBytes.Length } else { 0 }))
 Write-Host ("  backup       : {0}" -f (Backup-Label $astrolabeBak { param($b) Test-PatchBuild $b }))
-Write-Host ("  orig proxy   : {0}" -f $(if (Test-Path $astrolabeOrig) { 'present' } else { 'missing' }))
+
+# swap.rs parks the running patched image here the instant the DLL loads, and
+# puts it back at DLL_PROCESS_DETACH.  A leftover means the last session died
+# hard (crash or TerminateProcess -- detach never runs), so the on-disk slot
+# still holds the signed stock DLL and the NEXT launch would boot the unpatched
+# client ("account or password error").  Reported so that state is visible.
+if (Test-Path $astrolabeLive) {
+    Write-Host ("  live copy    : PRESENT -- last session died while swapped,")
+    Write-Host ("                  on-disk slot holds stock; the next launch is unpatched")
+}
+
+# The patched DLL forwards every Astrolabe_* export into Astrolabe_orig.dll, so
+# that file has to be byte-identical to the pristine build of THIS client.  The
+# game updates Astrolabe.dll between patch runs and a stale proxy target is
+# silent: same export names, older internals, and the anti-cheat's stack
+# unwinder faults ~100s into the session.
+$origState = if (Test-Path $astrolabeOrig) { 'present' } else { 'missing' }
+if (Test-Path $astrolabeOrig) {
+    $origRef = if ($astState -eq 'stock') { $astrolabe }
+               elseif (Test-Path $astrolabeBak) { $astrolabeBak }
+               else { $null }
+    if ($origRef -and (Test-Path $origRef)) {
+        if ((Get-FileHash $astrolabeOrig -Algorithm MD5).Hash -eq `
+            (Get-FileHash $origRef    -Algorithm MD5).Hash) {
+            $origState = 'present, matches pristine'
+        } else {
+            $origState = 'STALE -- does not match the pristine build; crash likely'
+        }
+    }
+}
+Write-Host ("  orig proxy   : {0}" -f $origState)
 Write-Host ("AccountPlatNat : {0}  ({1} bytes)" -f $platState, $(if ($platBytes) { $platBytes.Length } else { 0 }))
 Write-Host ("  urls         : {0}" -f $(if ($platUrlDone) { 'redirected' } else { 'stock' }))
 Write-Host ("  passport key : {0}" -f $(if ($platKeyDone) { 'server key' } else { 'miHoYo key -- login will fail' }))
@@ -386,6 +417,15 @@ if ($Mode -eq 'status') { exit 0 }
 
 if ($Mode -eq 'reset') {
     $changed = $false
+
+    # A leftover live copy is the patched image from a session that died while
+    # swapped.  reset's job is a pristine client, and the slot already holds the
+    # stock DLL in that state, so the parked copy is just debris.
+    if (Test-Path $astrolabeLive) {
+        Remove-Item $astrolabeLive -Force
+        Write-Host "cleared leftover live copy -> $astrolabeLive"
+        $changed = $true
+    }
 
     if ($astState -eq 'patched') {
         if (-not (Test-BackupUsable $astrolabeBak { param($b) Test-PatchBuild $b })) {
@@ -433,15 +473,35 @@ if ($Mode -eq 'apply') {
         Protect-Original $astrolabe $astrolabeBak $astrolabeStale ($astState -eq 'stock') { param($b) Test-PatchBuild $b }
     }
 
-    # The patched DLL proxies the original exports, so the stock DLL has to be
-    # reachable under the name the Rust code looks up.
-    if (-not (Test-Path $astrolabeOrig)) {
-        if ($astState -eq 'stock') {
-            Copy-File $astrolabe $astrolabeOrig
-            Write-Host "  staged original for proxy export -> $astrolabeOrig"
-        } else {
-            throw "Astrolabe_orig.dll is missing and there is no stock DLL to stage it from."
-        }
+    # The deploy overwrites the slot with the fresh build, so a parked live copy
+    # from a session that died while swapped is superseded -- drop it, or the
+    # next launch's swap.rs would see two candidates for the live name.
+    if (Test-Path $astrolabeLive) {
+        Remove-Item $astrolabeLive -Force
+        Write-Host "  dropped stale live copy (slot was left stock by a dead session)"
+    }
+
+    # The patched DLL proxies the original exports, so the original has to be
+    # reachable under the name the Rust code looks up.  It also has to be the
+    # pristine build of THIS client: the game updates Astrolabe.dll on its own
+    # schedule, and a stale Astrolabe_orig.dll forwards the 7.0 client into an
+    # older Astrolabe (same export names, different internals) -- the result is
+    # an access violation in the exception unwinder about 100s after launch.
+    # So: never reuse one that does not byte-match the pristine source.
+    $pristineAst = if ($astState -eq 'stock') { $astrolabe } else { $astrolabeBak }
+    if (-not (Test-Path $pristineAst)) {
+        throw "No pristine Astrolabe source to stage $astrolabeOrig from -- run 'task patch:reset' and re-apply."
+    }
+    $needStage = -not (Test-Path $astrolabeOrig)
+    if (-not $needStage) {
+        $needStage = (Get-FileHash $astrolabeOrig -Algorithm MD5).Hash -ne `
+                     (Get-FileHash $pristineAst   -Algorithm MD5).Hash
+    }
+    if ($needStage) {
+        Copy-File $pristineAst $astrolabeOrig
+        Write-Host "  refreshed proxy target from pristine -> $astrolabeOrig"
+    } else {
+        Write-Host "  proxy target already matches pristine"
     }
 
     Copy-File $extDll $astrolabe
