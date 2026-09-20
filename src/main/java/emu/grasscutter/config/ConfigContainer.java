@@ -445,8 +445,20 @@ public class ConfigContainer {
         }
 
         public static class Questing {
-            /* Should questing behavior be used? */
-            public boolean enabled = false;
+            /* Should questing behavior be used?
+             *
+             * On by default: with it off, PacketQuestListNotify and PacketFinishedParentQuestNotify
+             * drop every quest that isn't already FINISHED, and a brand-new account has no saved
+             * quest state at all -- so the client's quest log opens empty and the beginner chain
+             * (main quest 351, sub 35104, accept cond QUEST_COND_NONE) never appears. enableQuests()
+             * accepts it on login, and the quest then drives the opening Paimon talk, gliding and
+             * stamina unlocks, and the first statue.
+             *
+             * Flipping it on for an account that only ever played with it off is safe: it has no
+             * unfinished sub-quests stored, so there is nothing for the client to replay. The
+             * cutscene-replay bug is the other direction -- off after on, on an account that has
+             * saved progress. */
+            public boolean enabled = true;
         }
 
         public static class WatermarkOptions {
