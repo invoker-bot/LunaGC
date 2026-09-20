@@ -110,12 +110,24 @@ $patterns = @{
     # per opcode, with the field numbers/wire types/values -- this is how a
     # missing feature names the packet it wants.
     unhandled = 'arrived and nothing handles it'
-    # server-side faults. The telemetry exclusion keeps the buckets honest.
-    error     = '(?<!telemetry_)ERROR|Exception|SEVERE'
+    # server-side faults. The telemetry exclusion is the Test-Telemetry guard
+    # in the tail job, not a lookbehind here: the client's real lines read
+    # 'SuperDebug ... "error_code"', never 'telemetry_ERROR', so the lookbehind
+    # matched nothing and the guard was doing the whole job alone. FATAL and a
+    # lowercase 'error' are included because a JVM fatal exit logs both and
+    # would otherwise leave error.log empty for a hard server death.
+    error     = 'ERROR|FATAL|Exception|SEVERE|error'
     # the client's own SuperDebug channel: network faults, HLOD warnings,
     # ability errors. Not server bugs, but "something in game did not work"
-    # often shows up here first.
-    telemetry = 'SuperDebug|PACKET_HEAD_MAGIC_ERROR|error_code|"eventName"|HLOD_COMPONENT'
+    # often shows up here first. The last two alternatives are the client's
+    # other upload shape -- Javalin's request-debug 'Body:' lines holding a
+    # crash report as JSON ('"userName"', '"stackTrace"', '"subErrorCode"').
+    # Those contain the words Exception and error, so without them here the
+    # Test-Telemetry guard misses the body entirely and every client crash
+    # report lands in error.log and flips a clean session to ERRORS. A real
+    # JVM fault prints 'at emu.grasscutter...' stack frames, never a quoted
+    # JSON key, so this marker cannot swallow a server-side stack trace.
+    telemetry = 'SuperDebug|PACKET_HEAD_MAGIC_ERROR|error_code|"eventName"|HLOD_COMPONENT|"userName"|"stackTrace"'
     # quest chain movement, for correlating a bug with how far the player got
     quest     = 'was completed|Added quest|will be finished|will be accepted'
 }
@@ -273,10 +285,12 @@ $gameName = if ($proc) { $proc.ProcessName } else { $GameExe }
 # kernel handle opened here while the game was still alive. The poll interval
 # is invisible at this granularity.
 $exitCode = $null
+$sawAlive = $false
 $kHandle = [IntPtr]::Zero
 while ($true) {
     $proc = Get-Process -Id $GamePid -ErrorAction SilentlyContinue
     if ($proc) {
+        $sawAlive = $true
         if ($kHandle -eq [IntPtr]::Zero) {
             # SYNCHRONIZE (0x100000) to wait on it, PROCESS_QUERY_LIMITED_INFORMATION
             # (0x1000) to read the code -- both granted to any user, no elevation
@@ -418,7 +432,14 @@ if (-not $SkipAutoFix -and $stranded.Count -gt 0) {
 # ----------------------------------------------------------------- report --- #
 
 $duration = ($endedAt - $startedAt).TotalSeconds
-$crashed = $werAfter.Count -gt 0 -or $dumpNew.Count -gt 0
+# A non-zero exit code is a crash even when WER logged nothing and no dump
+# appeared: WER LocalDumps is not configured on this box (see the header), so a
+# process that dies on an unhandled fault can leave the code it exited with as
+# the only evidence. 259 is STILL_ACTIVE and means the wait gave up, not a
+# crash; null means the handle was never opened and the code is unknown rather
+# than clean.
+$exitCrashed = $null -ne $exitCode -and $exitCode -ne 0 -and $exitCode -ne 259
+$crashed = $exitCrashed -or $werAfter.Count -gt 0 -or $dumpNew.Count -gt 0
 $verdict = if ($crashed) { 'CRASHED' }
            elseif ($errorCount -gt 0) { 'ERRORS' }
            else { 'CLEAN' }
@@ -433,7 +454,7 @@ $null = $report.AppendLine("ended     : $(Get-Date $endedAt -Format 'yyyy-MM-dd 
 $null = $report.AppendLine("")
 $null = $report.AppendLine("## outcome")
 $null = $report.AppendLine("")
-$null = $report.AppendLine("- exit code        : $(if ($null -ne $exitCode) { '0x' + ([uint32]$exitCode).ToString('X8') } else { 'not captured (monitor started after the game had already exited)' })")
+$null = $report.AppendLine("- exit code        : $(if ($null -ne $exitCode) { '0x' + ([uint32]$exitCode).ToString('X8') } elseif ($sawAlive) { 'not captured (the process exited but never signalled within 10s -- a kernel handle held past death)' } else { 'not captured (the PID was gone before the first poll, ~500ms after launch -- the game died during startup, or the PID is wrong)' })")
 $null = $report.AppendLine("- WER events       : $($werAfter.Count) during this session (baseline $werBase)")
 foreach ($w in $werAfter) {
     $null = $report.AppendLine("    - $(Get-Date $w.TimeCreated -Format 'HH:mm:ss')  event $($w.Id)")

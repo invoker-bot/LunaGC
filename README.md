@@ -27,11 +27,13 @@ Contribute if you want/can...
   statue, and the element gain, which is handled by `ExecChangeSkillDepot`
   rather than being skipped. A brand-new account gets the chain; an account that
   already played without it does not replay cutscenes.
-- **The "client is damaged" crash is fixed.** The passport SDK
-  (`AccountPlatNative.dll`) is patched in-process: the patch crate swaps its slot
-  when the DLL is mapped and restores it when the game exits, so the client's own
-  integrity check never sees a modified image while it is checking. Before this,
-  every session died at ~100 seconds with a WER crash in that DLL.
+- **The "client is damaged" crash is fixed.** The patched image is swapped into
+  its slot in-process — the patch crate moves it aside when the DLL is mapped and
+  restores it when the game exits — so the on-disk file the client's anti-cheat
+  (`Astrolabe`) checks is the pristine one while the check runs. This applies to
+  both swapped slots: the anti-cheat proxy (`Astrolabe.dll`) and the passport SDK
+  (`AccountPlatNative.dll`). Before this, every session died at ~100 seconds with
+  a WER crash in that DLL.
 - **Unhandled packets are logged, not silently dropped.** Any request the server
   has no handler for is dumped at INFO with its opcode name, its number, its size
   and its decoded fields — this is the discovery mechanism for the features
@@ -136,9 +138,15 @@ task serve -ServerArgs "-debug all"   # DEBUG logging + every packet
 Quest progress is only logged at DEBUG. If you want to follow a quest chain in
 the log, `-debug` is required; `task dev` sets it for you.
 
-**Create an account before you log in.** With the console attached (start the jar
-by hand rather than through the task, or read `start_stdout.log`), type
-`account create <name> <uid>` — there is no web panel by default.
+**Create an account before you log in.** `task serve` opens a visible console
+window for the server — type into it:
+
+```
+account create <name> <uid>
+```
+
+There is no web panel by default. If you closed that window, the same command
+works from any shell that has the server's stdin; the console is the easy option.
 
 # Patching the client
 
@@ -158,6 +166,15 @@ problem.
 
 You only need Rust if you are changing the patch itself. The built DLL is
 committed-adjacent and `task patch` builds it when the sources change.
+
+**While the game is running, `task patch:status` reads the session state, not
+the install state.** Both swapped slots hold their pristine image on disk for
+the whole session — that is the mechanism that fixes "the client is damaged" —
+so the anti-cheat slot reads `stock`, the passport key reads `miHoYo key`, and
+each live copy reads `LIVE`. The exit code is 0 and the output names the running
+PID. Only after the game exits do those same readings mean the install is
+unpatched. `task dev` checks for a running client before it checks the patch, so
+it reports the session rather than blocking on the slots.
 
 ### Manual install (if you cannot use the task)
 
@@ -185,7 +202,7 @@ stranded copy and re-deploys.
 # Developer debug sessions — `task dev`
 
 ```
-task dev            # server in -debug mode + patch check + client + the monitors
+task dev            # server in -debug mode + patch check + client + the monitor
 task dev:stop       # close the game and wait for the session report
 task dev:status     # is a session being recorded, and by which process
 task dev:report     # print the latest session report
@@ -279,8 +296,11 @@ verdict, then:
   field values are the request's actual contents.
 
 `debug/all.log` starts exactly at the session boundary — the offset is recorded
-before the server is started, not by seeking "the end of the file" later — so
-lines the server writes while the monitor is still coming up are not lost.
+once the server is up but before the game is launched, and the monitor seeks
+there rather than asking `Get-Content` for "the end of the file", which is
+wherever that cmdlet happens to run. The server's startup banner lands above the
+boundary on purpose; everything the session itself produced is below it, and
+nothing written while the monitor process was still coming up is lost.
 
 ## Questing must stay enabled
 

@@ -131,8 +131,20 @@ if ($Mode -eq 'start') {
             }
         }
         Write-Host "starting the server with '$ServerArgs'..."
+        # NOTE: -ServerArgs has to use the colon form, not a space. A value
+        # that starts with a dash -- and '-debug' always does -- is read by the
+        # child's parameter binder as the -Debug common parameter, so the space
+        # form aborts the child with "Missing an argument for parameter
+        # 'ServerArgs'" and this script then exits before the patch check, the
+        # game launch and the monitor spawn. -Command would also pass the value
+        # but it does not propagate the child's exit code (exit 7 arrives here
+        # as 1), which the `$LASTEXITCODE -ne 0` guard below depends on. The
+        # colon form binds the whole token as ServerArgs' value and keeps -File
+        # semantics, so both the argument and the exit code survive.
         & powershell.exe -NoProfile -ExecutionPolicy Bypass -File `
-            (Join-Path $repo 'tools\serve.ps1') -Mode start -ServerArgs $ServerArgs
+            (Join-Path $repo 'tools\serve.ps1') -Mode start -ServerArgs:"$ServerArgs"
+        # & powershell.exe -NoProfile -ExecutionPolicy Bypass -File `
+        #     (Join-Path $repo 'tools\serve.ps1') -Mode start -ServerArgs $ServerArgs
         if ($LASTEXITCODE -ne 0) {
             Write-Host "server did not come up (serve.ps1 exit $LASTEXITCODE) -- run 'task serve' by hand"
             exit 1
@@ -161,6 +173,20 @@ if ($Mode -eq 'start') {
         $startOffset = (Get-Item -Path $stdoutLog).Length
     }
 
+    # --- an already-running client -----------------------------------------
+    # Checked before the patch state, because a running client makes the patch
+    # state unreadable by design: swap.rs has parked the patched images and the
+    # on-disk slots hold the pristine builds for the whole session, so the
+    # status below would say 'stock' and 'miHoYo key' and block on nothing.
+    # The session is the one to look at; use `task dev:stop` to end it.
+    $running = @(Get-Process -Name YuanShen -ErrorAction SilentlyContinue)
+    if ($running.Count -gt 0) {
+        $running | ForEach-Object { Write-Host "  client | PID $($_.Id) up since $($_.StartTime)" }
+        Write-Host ""
+        Write-Host "a client is already running -- close it first ('task dev:stop', or close the window)"
+        exit 1
+    }
+
     # --- patch -------------------------------------------------------------
     if (-not $SkipPatchCheck) {
         $patchStatus = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File `
@@ -168,7 +194,9 @@ if ($Mode -eq 'start') {
         $patchStatus | ForEach-Object { Write-Host "  patch | $_" }
         # Each pattern names the tools/patch_game.ps1 status line it catches.
         # A launch-ready install prints none of them, so this is the whole
-        # definition of "patch state is good enough to play".
+        # definition of "patch state is good enough to play". (While a client
+        # is running these same lines are printed and mean nothing -- the guard
+        # above is what keeps them from firing then.)
         $blockers = @(
             'Astrolabe\.dll\s*: stock',    # the anti-cheat slot is unpatched
             'AccountPlatNat\s*: (stock|PARTIAL)',  # the passport SDK is, or half is
@@ -254,9 +282,40 @@ if ($Mode -eq 'stop') {
         Write-Host "no game session to stop (pid file: $gamePidFile)"
     } else {
         Write-Host "closing the game (PID $($game.Id))..."
-        Stop-Process -Id $game.Id -Force
-        # the monitor polls every 500ms; it will see the exit, give the tail job
-        # its 3s of trailing log, and write the report
+        # The game launches elevated (its manifest requires it), and this shell
+        # is usually medium integrity, so Stop-Process and taskkill are both
+        # denied. Under $ErrorActionPreference = 'Stop' that denial is a
+        # terminating error that used to kill this script here -- before the
+        # monitor wait and before anything was printed, which left a perfectly
+        # healthy session looking like `task dev:stop` had failed. Both kill
+        # attempts are guarded; if neither works the game still has to be closed
+        # by hand, and the wait below still produces the report when it exits.
+        $closed = $false
+        try {
+            Stop-Process -Id $game.Id -Force -ErrorAction Stop
+            $closed = $true
+        } catch {
+            Write-Host "  Stop-Process was denied (the game runs elevated) - trying taskkill"
+        }
+        if (-not $closed) {
+            # taskkill writes "ERROR: ... Access is denied" to stderr, which
+            # becomes a terminating error record under $ErrorActionPreference =
+            # 'Stop' even with the 2>&1 capture -- the redirect controls where
+            # the text goes, not whether PowerShell throws on it. Continue lets
+            # the error land in $null instead, then the exit code is the truth.
+            $ErrorActionPreference = 'Continue'
+            $null = & taskkill /F /PID $game.Id 2>&1
+            $tkCode = $LASTEXITCODE
+            $ErrorActionPreference = 'Stop'
+            if ($tkCode -eq 0) { $closed = $true }
+        }
+        if ($closed) {
+            Write-Host "  the game was closed; the monitor polls every 500ms and will write the report"
+        } else {
+            Write-Host "  neither Stop-Process nor taskkill can close it from this shell."
+            Write-Host "  close the game by hand (its window, Alt+F4, or Task Manager); the monitor"
+            Write-Host "  is still watching and will write the report when it exits."
+        }
     }
 
     if ($mon) {

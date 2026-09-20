@@ -393,25 +393,43 @@ if (Test-Path $plat) {
                  else { 'stock' }
 }
 
+$astBakLabel = Backup-Label $astrolabeBak { param($b) Test-PatchBuild $b }
+$platBakLabel = Backup-Label $platBak { param($b) Test-PlatPatched $b }
+
 $extState = if (Test-Path $extDll) { 'built' } else { 'missing' }
 
 Write-Host "game path      : $game"
 Write-Host ("Astrolabe.dll  : {0}  ({1} bytes)" -f $astState, $(if ($astBytes) { $astBytes.Length } else { 0 }))
-Write-Host ("  backup       : {0}" -f (Backup-Label $astrolabeBak { param($b) Test-PatchBuild $b }))
+Write-Host ("  backup       : {0}" -f $astBakLabel)
 
 # swap.rs parks the running patched image here the instant the DLL loads, and
 # puts it back at DLL_PROCESS_DETACH.  A leftover means the last session died
 # hard (crash or TerminateProcess -- detach never runs), so the on-disk slot
 # still holds the signed stock DLL and the NEXT launch would boot the unpatched
 # client ("account or password error").  Reported so that state is visible.
+# A running client changes what these readings mean: swap.rs has already parked
+# the patched image here and the on-disk slot holds the stock build for as long
+# as the session lasts.  Reported per-state so the two cases are not confused.
+$gamePids = @(Get-Process -Name YuanShen -ErrorAction SilentlyContinue)
+$inSession = $gamePids.Count -gt 0
+
 if (Test-Path $astrolabeLive) {
-    Write-Host ("  live copy    : PRESENT -- last session died while swapped,")
-    Write-Host ("                  on-disk slot holds stock; the next launch is unpatched")
+    if ($inSession) {
+        Write-Host ("  live copy    : LIVE -- the running client has the patched image")
+        Write-Host ("                  mapped; the slot restores itself on exit")
+    } else {
+        Write-Host ("  live copy    : PRESENT -- last session died while swapped,")
+        Write-Host ("                  on-disk slot holds stock; the next launch is unpatched")
+    }
 }
 # swap.rs swaps the SDK slot too (engage_apn), so the same debris exists there
 if (Test-Path $platLive) {
-    Write-Host ("  live copy    : PRESENT -- same: the SDK slot is stock on disk,")
-    Write-Host ("                  a fresh login would reach the real passport servers")
+    if ($inSession) {
+        Write-Host ("  live copy    : LIVE -- same, the SDK slot restores itself on exit")
+    } else {
+        Write-Host ("  live copy    : PRESENT -- same: the SDK slot is stock on disk,")
+        Write-Host ("                  a fresh login would reach the real passport servers")
+    }
 }
 if ((Get-ChildItem -Path (Join-Path $plugins '*.lunagc-live.*') -File -ErrorAction SilentlyContinue).Count -gt 0) {
     Write-Host ("  per-process  : PRESENT -- a live copy from a session that ran while")
@@ -441,10 +459,44 @@ Write-Host ("  orig proxy   : {0}" -f $origState)
 Write-Host ("AccountPlatNat : {0}  ({1} bytes)" -f $platState, $(if ($platBytes) { $platBytes.Length } else { 0 }))
 Write-Host ("  urls         : {0}" -f $(if ($platUrlDone) { 'redirected' } else { 'stock' }))
 Write-Host ("  passport key : {0}" -f $(if ($platKeyDone) { 'server key' } else { 'miHoYo key -- login will fail' }))
-Write-Host ("  backup       : {0}" -f (Backup-Label $platBak { param($b) Test-PlatPatched $b }))
+Write-Host ("  backup       : {0}" -f $platBakLabel)
 Write-Host "ext.dll (repo) : $extState"
 
-if ($Mode -eq 'status') { exit 0 }
+if ($Mode -eq 'status') {
+    # Non-zero when the install is not launch-ready, so a gate or another
+    # script can trust the exit code instead of parsing the lines above.
+    # This is the same definition of "good enough to play" as the blocker list
+    # in tools/dev.ps1 -- if you change one, change the other.
+    # Stock slots, stock URLs and a present live copy are all correct while a
+    # client is running -- the patched images are parked, not lost.  Only flag
+    # a slot when it is stock AND no live copy explains it, and only call a
+    # live copy stranded when no game owns it.
+    $astLiveThere = Test-Path $astrolabeLive
+    $platLiveThere = Test-Path $platLive
+    if ($inSession) {
+        Write-Host ''
+        Write-Host ("client running (PID {0}) -- slots are swapped in-process," -f ($gamePids.Id -join ','))
+        Write-Host 'stock readings above are the live state, not faults'
+    }
+    $problems = @()
+    if (-not (($astState  -eq 'patched') -or ($inSession -and $astLiveThere)))  { $problems += "Astrolabe.dll : $astState" }
+    if (-not (($platState -eq 'patched') -or ($inSession -and $platLiveThere))) { $problems += "AccountPlatNative : $platState" }
+    if ($astBakLabel -ne 'pristine') { $problems += "Astrolabe backup : $astBakLabel" }
+    if ($platBakLabel -ne 'pristine') { $problems += "AccountPlatNative backup : $platBakLabel" }
+    if ($origState -like 'STALE*') { $problems += "orig proxy : $origState" }
+    if ($platBytes -and -not $platKeyDone -and -not ($inSession -and $platLiveThere)) { $problems += 'passport key not swapped' }
+    if ($platBytes -and -not $platUrlDone -and -not ($inSession -and $platLiveThere)) { $problems += 'dispatch URLs not redirected' }
+    if ($astLiveThere  -and -not $inSession) { $problems += 'stranded live copy (Astrolabe) -- the last session died swapped' }
+    if ($platLiveThere -and -not $inSession) { $problems += 'stranded live copy (AccountPlatNative) -- same' }
+    if ($extState -eq 'missing') { $problems += 'ext.dll not built -- run `task build:patch`' }
+    if ($problems.Count -gt 0) {
+        Write-Host ''
+        Write-Host ("not launch-ready ({0}):" -f $problems.Count)
+        $problems | ForEach-Object { Write-Host "  $_" }
+        exit 1
+    }
+    exit 0
+}
 
 # --- reset -----------------------------------------------------------------
 
