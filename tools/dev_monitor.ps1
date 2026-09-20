@@ -132,6 +132,25 @@ $patterns = @{
     quest     = 'was completed|Added quest|will be finished|will be accepted'
 }
 
+# Every bucket starts empty. The tail job opens its writers in APPEND mode and
+# only on first use -- a session with no server errors never opens error.log at
+# all -- so without this a new session inherits the previous session's buckets:
+# a clean session would find last session's client crash reports sitting in
+# error.log, and index.txt (which counts the raw file, unlike the report's own
+# error count, which re-filters telemetry) would call it 20 errors. The
+# timestamped report-*.md copies are the durable history; these logs are this
+# session's working set. A held-open handle from a monitor that never let go
+# would fail the exclusive open here and the append writers carry on with
+# whatever was already there, so the failure is reported, not fatal.
+foreach ($name in @('all.log') + @($patterns.Keys | ForEach-Object { "$_.log" })) {
+    try {
+        [System.IO.File]::Open((Join-Path $OutDir $name), [System.IO.FileMode]::Truncate,
+            [System.IO.FileAccess]::Write, [System.IO.FileShare]::None).Close()
+    } catch {
+        Write-Host ("[dev] could not reset {0} -- {1}" -f $name, $_.Exception.Message)
+    }
+}
+
 # ---------------------------------------------------------------- watchers #
 
 # WER events arrive out of order relative to the process actually dying, so the

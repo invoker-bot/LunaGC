@@ -189,30 +189,40 @@ if ($Mode -eq 'start') {
 
     # --- patch -------------------------------------------------------------
     if (-not $SkipPatchCheck) {
+        # patch:status evaluates the launch-ready conditions itself and exits 1
+        # with a numbered problem list when any of them fail. This script used
+        # to re-derive the same answer by regexing the status text (the block
+        # commented out below), which was a second copy of one definition and
+        # had to be hand-kept in sync with it; the exit code is the single
+        # source of truth now. A native command's exit code does not trip
+        # $ErrorActionPreference = 'Stop', so this guard and the serve.ps1 and
+        # game_path.ps1 ones above all read $LASTEXITCODE directly.
         $patchStatus = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File `
             (Join-Path $repo 'tools\patch_game.ps1') -Mode status
         $patchStatus | ForEach-Object { Write-Host "  patch | $_" }
-        # Each pattern names the tools/patch_game.ps1 status line it catches.
-        # A launch-ready install prints none of them, so this is the whole
-        # definition of "patch state is good enough to play". (While a client
-        # is running these same lines are printed and mean nothing -- the guard
-        # above is what keeps them from firing then.)
-        $blockers = @(
-            'Astrolabe\.dll\s*: stock',    # the anti-cheat slot is unpatched
-            'AccountPlatNat\s*: (stock|PARTIAL)',  # the passport SDK is, or half is
-            ':\s*missing',                 # a DLL or the repo's ext.dll is absent
-            'STALE',                       # orig proxy, or a backup holding a patched build
-            'miHoYo key',                  # passport key not swapped -- "account or password error"
-            'PRESENT --'                   # a live copy stranded by a session that died swapped
-        )
-        $bad = @($patchStatus | Where-Object {
-            foreach ($b in $blockers) { if ($_ -match $b) { return $true } }
-            return $false
-        })
-        if ($bad.Count -gt 0) {
+        # Each pattern below names the tools/patch_game.ps1 status line it used
+        # to catch, and a launch-ready install prints none of them. (While a
+        # client is running these same lines are printed and mean nothing --
+        # the running-client guard above is what keeps them from firing then,
+        # and patch:status suppresses them for the same reason.)
+        # Superseded by the exit code above -- kept so the conditions this gate
+        # used to enforce stay readable next to the ones patch_game.ps1 checks.
+        # If you edit those, this list is what it has to agree with.
+        # $blockers = @(
+        #     'Astrolabe\.dll\s*: stock',    # the anti-cheat slot is unpatched
+        #     'AccountPlatNat\s*: (stock|PARTIAL)',  # the passport SDK is, or half is
+        #     ':\s*missing',                 # a DLL or the repo's ext.dll is absent
+        #     'STALE',                       # orig proxy, or a backup holding a patched build
+        #     'miHoYo key',                  # passport key not swapped -- "account or password error"
+        #     'PRESENT --'                   # a live copy stranded by a session that died swapped
+        # )
+        # $bad = @($patchStatus | Where-Object {
+        #     foreach ($b in $blockers) { if ($_ -match $b) { return $true } }
+        #     return $false
+        # })
+        if ($LASTEXITCODE -ne 0) {
             Write-Host ""
-            Write-Host "patch state is not launch-ready:"
-            $bad | ForEach-Object { Write-Host "  $_" }
+            Write-Host "patch state is not launch-ready (patch:status exit $LASTEXITCODE)"
             Write-Host "run 'task patch' and then 'task dev' again (or -SkipPatchCheck to launch anyway)"
             exit 1
         }
