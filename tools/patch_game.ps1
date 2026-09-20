@@ -69,6 +69,9 @@ $extDll        = Join-Path $repo 'patch\target\release\ext.dll'
 $plat    = Join-Path $plugins 'AccountPlatNative.dll'
 $platBak = Join-Path $plugins 'AccountPlatNative.dll.lunagc-bak'
 $platStale = Join-Path $plugins 'AccountPlatNative.dll.lunagc-bak.stale'
+# swap.rs parks the SDK's patched image here once the login flow has mapped it
+# -- same contract as $astrolabeLive, one per swapped slot
+$platLive = Join-Path $plugins 'AccountPlatNative.dll.lunagc-live'
 
 # The server-side private key whose public half the client must encrypt with.
 $passportDer = Join-Path $repo 'src\main\resources\keys\passport_1024.der'
@@ -347,6 +350,27 @@ function Protect-Original([string] $current, [string] $bak, [string] $stale,
     Write-Host "  captured pristine backup -> $bak"
 }
 
+# Removes every parked live copy for one slot name. swap.rs prefers the plain
+# '.lunagc-live' name, but when an older session is still mapped over it the
+# delete fails and the running session parks its image under
+# '.lunagc-live.<pid>' instead -- so sweep both spellings. A file that is still
+# locked by a live process is left in place; the error is reported per file
+# rather than aborting the patch.
+function Remove-LiveCopies([string] $slotName) {
+    $pattern = Join-Path $plugins ($slotName + '.lunagc-live*')
+    $removed = 0
+    foreach ($f in @(Get-ChildItem -Path $pattern -File -ErrorAction SilentlyContinue)) {
+        try {
+            Remove-Item $f.FullName -Force -ErrorAction Stop
+            Write-Host ("  dropped stale live copy -> {0}" -f $f.Name)
+            $removed++
+        } catch {
+            Write-Host ("  live copy {0} is locked by a running session, left in place" -f $f.Name)
+        }
+    }
+    return ,$removed
+}
+
 # --- status ----------------------------------------------------------------
 
 $astState = 'missing'
@@ -383,6 +407,15 @@ Write-Host ("  backup       : {0}" -f (Backup-Label $astrolabeBak { param($b) Te
 if (Test-Path $astrolabeLive) {
     Write-Host ("  live copy    : PRESENT -- last session died while swapped,")
     Write-Host ("                  on-disk slot holds stock; the next launch is unpatched")
+}
+# swap.rs swaps the SDK slot too (engage_apn), so the same debris exists there
+if (Test-Path $platLive) {
+    Write-Host ("  live copy    : PRESENT -- same: the SDK slot is stock on disk,")
+    Write-Host ("                  a fresh login would reach the real passport servers")
+}
+if ((Get-ChildItem -Path (Join-Path $plugins '*.lunagc-live.*') -File -ErrorAction SilentlyContinue).Count -gt 0) {
+    Write-Host ("  per-process  : PRESENT -- a live copy from a session that ran while")
+    Write-Host ("                  another was still mapped; cleared on the next patch")
 }
 
 # The patched DLL forwards every Astrolabe_* export into Astrolabe_orig.dll, so
@@ -421,11 +454,12 @@ if ($Mode -eq 'reset') {
     # A leftover live copy is the patched image from a session that died while
     # swapped.  reset's job is a pristine client, and the slot already holds the
     # stock DLL in that state, so the parked copy is just debris.
-    if (Test-Path $astrolabeLive) {
-        Remove-Item $astrolabeLive -Force
-        Write-Host "cleared leftover live copy -> $astrolabeLive"
-        $changed = $true
-    }
+    # ForEach-Object has its own scope, so the count has to be captured here
+    # and folded into $changed in *this* scope, or the "already pristine"
+    # shortcut below would fire after a real cleanup.
+    $droppedAst = Remove-LiveCopies 'Astrolabe.dll'
+    $droppedPlat = Remove-LiveCopies 'AccountPlatNative.dll'
+    if ($droppedAst.Count -gt 0 -or $droppedPlat.Count -gt 0) { $changed = $true }
 
     if ($astState -eq 'patched') {
         if (-not (Test-BackupUsable $astrolabeBak { param($b) Test-PatchBuild $b })) {
@@ -476,10 +510,13 @@ if ($Mode -eq 'apply') {
     # The deploy overwrites the slot with the fresh build, so a parked live copy
     # from a session that died while swapped is superseded -- drop it, or the
     # next launch's swap.rs would see two candidates for the live name.
-    if (Test-Path $astrolabeLive) {
-        Remove-Item $astrolabeLive -Force
-        Write-Host "  dropped stale live copy (slot was left stock by a dead session)"
-    }
+    Remove-LiveCopies 'Astrolabe.dll' | Out-Null
+
+    # The SDK's URL/key rewrite below has the same problem from the other
+    # direction: it leaves the slot patched while a live copy from a dead
+    # session still points at the patched image, so swap.rs would see two
+    # candidates for the live name.
+    Remove-LiveCopies 'AccountPlatNative.dll' | Out-Null
 
     # The patched DLL proxies the original exports, so the original has to be
     # reachable under the name the Rust code looks up.  It also has to be the
