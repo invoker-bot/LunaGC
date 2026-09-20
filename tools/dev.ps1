@@ -110,6 +110,26 @@ if ($Mode -eq 'start') {
         Write-Host "server already listening on 127.0.0.1:$httpPort (PID $(Get-ServerPid)) -- reusing it"
         Write-Host "  if it was not started with -debug, quest and routing detail will be missing"
     } else {
+        # Archive the PREVIOUS run's log before starting anything. serve.ps1
+        # launches java with a cmd `>` redirect, which truncates
+        # start_stdout.log on open and then holds that handle for the server's
+        # whole lifetime -- after the start the file is empty AND cannot be
+        # renamed underneath it, so rotating had to happen before the launch.
+        # The guard is load-bearing: under $ErrorActionPreference = 'Stop' a
+        # refused rename is a terminating IOException, this block sits before
+        # the patch check, the game launch and the monitor spawn, and an
+        # unguarded Move-Item here was killing `task dev` on its primary path
+        # before any of those ran. A server left over from a session that died
+        # can still be holding the old handle, so a failure here is reported
+        # and swallowed rather than fatal.
+        if (Test-Path $stdoutLog) {
+            try {
+                Move-Item -Path $stdoutLog -Destination "$stdoutLog.predev" -Force
+                Write-Host "rotated the previous server log to start_stdout.log.predev"
+            } catch {
+                Write-Host "could not rotate the previous server log (still held open by a stale server) - continuing"
+            }
+        }
         Write-Host "starting the server with '$ServerArgs'..."
         & powershell.exe -NoProfile -ExecutionPolicy Bypass -File `
             (Join-Path $repo 'tools\serve.ps1') -Mode start -ServerArgs $ServerArgs
@@ -124,10 +144,10 @@ if ($Mode -eq 'start') {
     # keeps its write handle open across a rename, so rotating a live server's
     # log would send the whole session to the rotated copy and leave the tail
     # job watching a file nothing writes to.
-    if ($serverStarted -and (Test-Path $stdoutLog)) {
-        Move-Item -Path $stdoutLog -Destination "$stdoutLog.predev" -Force
-        Write-Host "rotated the previous server log to start_stdout.log.predev"
-    }
+    # if ($serverStarted -and (Test-Path $stdoutLog)) {
+    #     Move-Item -Path $stdoutLog -Destination "$stdoutLog.predev" -Force
+    #     Write-Host "rotated the previous server log to start_stdout.log.predev"
+    # }
 
     # The byte offset the session starts at: after the rotation above, the log
     # is either empty (this script started the server) or holds the pre-session

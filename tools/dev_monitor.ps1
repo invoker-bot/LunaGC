@@ -137,7 +137,13 @@ try {
 } catch { }
 
 $tailScript = {
-    param($StdoutLog, $OutDir, $patterns, $Token, $StartOffset)
+    # $CancelFlag is a sentinel FILE, not a CancellationToken: Start-Job
+    # serializes its arguments as CLIXML across the process boundary, and a
+    # deserialized token arrives as a PSObject whose IsCancellationRequested is
+    # pinned False -- cancelling it in the parent never reached the job, the
+    # loop never exited on its own, and teardown fell back to force-killing it
+    # after a full timeout. Both sides see the same filesystem.
+    param($StdoutLog, $OutDir, $patterns, $CancelFlag, $StartOffset)
     function Test-Telemetry([string] $line) {
         return $line -match $patterns.telemetry
     }
@@ -158,12 +164,12 @@ $tailScript = {
         # creates it
         $waitUntil = (Get-Date).AddSeconds(60)
         while (-not (Test-Path $StdoutLog) -and (Get-Date) -lt $waitUntil `
-                -and -not $Token.IsCancellationRequested) {
+                -and -not (Test-Path $CancelFlag)) {
             Start-Sleep -Milliseconds 250
         }
         $pos = [long]$StartOffset
         $pendingBytes = [byte[]]::new(0)
-        while (-not $Token.IsCancellationRequested) {
+        while (-not (Test-Path $CancelFlag)) {
             if (-not (Test-Path $StdoutLog)) { Start-Sleep -Milliseconds 250; continue }
             try {
                 $stream = [System.IO.File]::Open($StdoutLog, [System.IO.FileMode]::Open,
@@ -177,7 +183,17 @@ $tailScript = {
                     $pendingBytes = [byte[]]::new(0)
                 }
                 $avail = [int]($stream.Length - $pos)
-                if ($avail -le 0) { continue }
+                if ($avail -le 0) {
+                    # nothing new since the last poll. The loop's own sleep is
+                    # at the BOTTOM of the body and is only reached when there
+                    # is data to copy, so the idle case -- most of any session,
+                    # while the player is just standing around -- has to sleep
+                    # here as well. Without it the poll spins
+                    # open/seek/close as fast as the CPU allows and pins a core
+                    # for the whole session.
+                    Start-Sleep -Milliseconds 250
+                    continue
+                }
                 $stream.Seek($pos, [System.IO.SeekOrigin]::Begin) | Out-Null
                 $chunk = [byte[]]::new($avail)
                 [void]$stream.Read($chunk, 0, $avail)
@@ -207,7 +223,7 @@ $tailScript = {
                     $lines = $lines[0..($lines.Count - 2)]
                 }
                 foreach ($line in $lines) {
-                    if ($Token.IsCancellationRequested) { break }
+                    if (Test-Path $CancelFlag) { break }
                     (Get-Writer $all).WriteLine($line)
                     foreach ($k in $patterns.Keys) {
                         if ($k -eq 'error') {
@@ -226,15 +242,21 @@ $tailScript = {
         }
     } catch { }
     finally {
-        # the token is cancelled; whatever made it into the writers has to be
-        # on disk before this job goes away
+        # the cancel flag is set or the job was force-stopped; whatever made it
+        # into the writers has to be on disk before this job goes away
         foreach ($p in @($writerCache.Keys)) {
             try { $writerCache[$p].Flush(); $writerCache[$p].Dispose() } catch { }
         }
     }
 }
-$tokenSource = [System.Threading.CancellationTokenSource]::new()
-$tailJob = Start-Job -ScriptBlock $tailScript -ArgumentList $StdoutLog, $OutDir, $patterns, $tokenSource.Token, $StartOffset
+# A CancellationTokenSource's token does not survive Start-Job's CLIXML
+# serialization -- see the tail script -- so the loop is flagged through a file
+# both processes can see instead. Cleared at the top so a flag left behind by a
+# monitor that died mid-session cannot make the next tail job exit immediately.
+$cancelFlag = Join-Path $OutDir '.tail-cancel'
+Remove-Item -Path $cancelFlag -Force -ErrorAction SilentlyContinue
+# $tokenSource = [System.Threading.CancellationTokenSource]::new()
+$tailJob = Start-Job -ScriptBlock $tailScript -ArgumentList $StdoutLog, $OutDir, $patterns, $cancelFlag, $StartOffset
 
 $dumpDir = Join-Path $env:LOCALAPPDATA 'CrashDumps'
 $null = New-Item -ItemType Directory -Force -Path $dumpDir
@@ -296,9 +318,15 @@ try {
 # the log keeps arriving for a beat after the process dies (buffered packets,
 # the session-close handlers); give it a moment before cutting the tail job
 Start-Sleep -Seconds 3
-$tokenSource.Cancel()
+# $tokenSource.Cancel()
+# The sentinel makes the tail loop notice and exit on its own; Wait-Job then
+# returns at once instead of burning its whole 10s timeout the way it did when
+# the token was inert. Remove-Job -Force stays as the backstop, and it still
+# runs the job's finally, so no buffered line is lost either way.
+'' | Out-File -FilePath $cancelFlag -Encoding UTF8
 $null = Wait-Job $tailJob -Timeout 10
 $null = Remove-Job $tailJob -Force
+Remove-Item -Path $cancelFlag -Force -ErrorAction SilentlyContinue
 
 # ---------------------------------------------------------------- harvest --- #
 
@@ -329,7 +357,17 @@ if (Test-Path $PatchLog) {
 }
 
 $stranded = @()
-$plugins = if ($exePath) { Split-Path -Parent $exePath } else { $null }
+# The swapped DLLs live in YuanShen_Data\Plugins, not next to the exe, so
+# globbing the exe's own parent directory -- the game root -- found nothing and
+# the auto-fix below never fired. $proc.Path is also empty when the game had
+# already exited before this script polled it, which is itself the
+# unclean-exit case most likely to have stranded a copy, so fall back to the
+# same install resolution dev.ps1 used.
+$gameDir = if ($exePath) { Split-Path -Parent $exePath } else { $null }
+if (-not $gameDir) {
+    try { $gameDir = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $RepoDir 'tools\game_path.ps1') } catch { }
+}
+$plugins = if ($gameDir) { Join-Path $gameDir 'YuanShen_Data\Plugins' } else { $null }
 if ($plugins -and (Test-Path $plugins)) {
     $stranded = @(Get-ChildItem -Path (Join-Path $plugins '*.lunagc-live*') -ErrorAction SilentlyContinue)
 }
