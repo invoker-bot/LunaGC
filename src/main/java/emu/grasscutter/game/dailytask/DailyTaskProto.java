@@ -2,15 +2,17 @@ package emu.grasscutter.game.dailytask;
 
 import com.google.protobuf.CodedOutputStream;
 import emu.grasscutter.Grasscutter;
+import emu.grasscutter.net.packet.PacketOpcodes;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
 /**
- * The wire shape of the daily task messages in 6.7.
+ * The wire shape of the daily task messages.
  *
- * <p>None of these messages exist in this tree's generated protos, and the ones in the 6.6 fork they
- * were ported from carry 6.6 field numbers, so they are written by hand here instead.
+ * <p>The CmdIds are the 7.0.0 ones from this tree's generated {@link PacketOpcodes}. The field
+ * numbers are still hand-written: none of these messages exist in this tree's generated protos, and
+ * the ones in the 6.6 fork they were ported from carry 6.6 field numbers.
  *
  * <p><b>Where the numbers come from.</b> The 6.7 dump is fully obfuscated, so the messages were
  * identified by shape: {@code DailyTaskInfo} is the only message in all 9402 that is both carried
@@ -19,23 +21,49 @@ import java.util.List;
  * their CmdIds. Within a message a field of a unique type is equally certain - the bool below is
  * one - but a run of same-typed fields is not, and those are marked. If the commission list shows
  * the wrong numbers in game, the marked ones are what to permute.
+ *
+ * <p><b>The CmdIds above were wrong, and were corrected.</b> The shape analysis was done against a
+ * 6.7 dump, but this server speaks 7.0.0, and the ids it produced do not exist in the 7.0.0 opcode
+ * space at all. The 7.0.0 client reported this itself, in its SuperDebug upload:
+ *
+ * <pre>
+ *   PACKET_INVALID_CMD_ID MessageInfo.AllocMessageByCmdId failed. CmdId=24670
+ *   PACKET_INVALID_CMD_ID MessageInfo.AllocMessageByCmdId failed. CmdId=28030
+ *   udpPacket.deserialize error. status:PACKET_INVALID_CMD_ID, CmdID:28030
+ * </pre>
+ *
+ * That is the client saying it has no message registered for 24670 or 28030, so both daily-task
+ * notifies sent at login were dropped whole. The ids are now taken from this tree's own generated
+ * {@link PacketOpcodes} ({@code DailyTaskDataNotify}, {@code WorldOwnerDailyTaskNotify}, {@code
+ * DailyTaskProgressNotify}), which is the 7.0.0 table and is authoritative. The field numbers below
+ * are still the documented guesses -- the messages are still not in the generated protos, so
+ * nothing in-tree can check them -- but a wrong field number reads as garbage instead of reading
+ * as nothing, which is why the per-field certainty is still marked.
  */
 public final class DailyTaskProto {
     private DailyTaskProto() {}
 
-    /** {@code MCMPKFGDOEM}, the only one-field carrier of the info message. */
-    public static final int PROGRESS_NOTIFY_CMD = 24983;
-
-    /** {@code BMPPNHACCGI}, the only three-field carrier. */
-    public static final int WORLD_OWNER_NOTIFY_CMD = 28030;
+    /**
+     * {@code MCMPKFGDOEM} in the 6.7 dump, the only one-field carrier of the info message. The 6.7
+     * id 24983 does not exist in 7.0.0 -- the client reports PACKET_INVALID_CMD_ID for it -- so the
+     * generated 7.0.0 opcode is used instead.
+     */
+    public static final int PROGRESS_NOTIFY_CMD = PacketOpcodes.DailyTaskProgressNotify;
 
     /**
-     * Two messages in the dump have the right shape for this one ({@code AGELMICOGOL} 24670 and
-     * {@code JHBIKPALCPF} 29075) and nothing offline separates them. This is the other candidate's
-     * twin, so if the commission count never appears, try 29075 with the numbers in the comment on
-     * {@link #dataNotify}.
+     * {@code BMPPNHACCGI} in the 6.7 dump, the only three-field carrier. The 6.7 id 28030 does not
+     * exist in 7.0.0 either; this was the second half of the login-time pair the client rejected.
      */
-    public static final int DATA_NOTIFY_CMD = 24670;
+    public static final int WORLD_OWNER_NOTIFY_CMD = PacketOpcodes.WorldOwnerDailyTaskNotify;
+
+    /**
+     * Two messages in the 6.7 dump have the right shape for this one ({@code AGELMICOGOL} 24670 and
+     * {@code JHBIKPALCPF} 29075) and nothing offline separates them. Neither id exists in 7.0.0, so
+     * the choice no longer matters: the generated opcode is used. If the commission count still
+     * never appears with the numbers in the comment on {@link #dataNotify}, the field numbers are
+     * what to permute now, not the CmdId.
+     */
+    public static final int DATA_NOTIFY_CMD = PacketOpcodes.DailyTaskDataNotify;
 
     // DailyTaskInfo, obf FILHKPEJJPM. The bool is alone in its type and so is certain; the four
     // uint32 are assigned in declaration order against 6.6's, which is a guess.
