@@ -24,14 +24,54 @@ public class CookingManager extends BasePlayerManager {
     }
 
     public static void initialize() {
-        // Initialize the set of recipies that are unlocked by default.
-        defaultUnlockedRecipies = new HashSet<>();
+        // The GameServer constructor calls this before ResourceLoader.loadAll() runs, so the
+        // excel map is still empty at that point and nothing would be collected here.  The set
+        // is therefore rebuilt on demand until it actually holds recipe ids -- see
+        // getDefaultUnlockedRecipies().
+        computeDefaultUnlockedRecipies();
+    }
 
-        for (var recipe : GameData.getCookRecipeDataMap().values()) {
+    /**
+     * Recipe ids every account starts with.
+     *
+     * <p>Recomputed on first use (and again while it is still empty) because the game data is
+     * loaded after the {@code GameServer} constructor runs {@link #initialize()}, so an eager
+     * scan there sees an empty {@link GameData#getCookRecipeDataMap()} and every player would
+     * otherwise begin with an empty recipe list -- the client then shows no recipes at all.
+     */
+    public static synchronized Set<Integer> getDefaultUnlockedRecipies() {
+        if (defaultUnlockedRecipies == null || defaultUnlockedRecipies.isEmpty()) {
+            computeDefaultUnlockedRecipies();
+        }
+        return defaultUnlockedRecipies;
+    }
+
+    private static synchronized void computeDefaultUnlockedRecipies() {
+        var map = GameData.getCookRecipeDataMap();
+        if (map == null || map.isEmpty()) {
+            // Nothing loaded yet; hand back an empty set rather than null (callers iterate it
+            // during login) and let the isEmpty() check above retry on the next call.
+            defaultUnlockedRecipies = new HashSet<>();
+            return;
+        }
+        defaultUnlockedRecipies = defaultUnlockedRecipeIds(map.values());
+        Grasscutter.getLogger()
+                .info(
+                        "Loaded {} default unlocked cooking recipes ({} recipes known).",
+                        defaultUnlockedRecipies.size(),
+                        map.size());
+    }
+
+    /** Select the ids of the recipes flagged default-unlocked in the excel data. */
+    public static Set<Integer> defaultUnlockedRecipeIds(
+            Collection<emu.grasscutter.data.excels.CookRecipeData> recipes) {
+        var ids = new HashSet<Integer>();
+        for (var recipe : recipes) {
             if (recipe.isDefaultUnlocked()) {
-                defaultUnlockedRecipies.add(recipe.getId());
+                ids.add(recipe.getId());
             }
         }
+        return ids;
     }
 
     /********************
@@ -190,7 +230,7 @@ public class CookingManager extends BasePlayerManager {
         var unlockedRecipies = this.player.getUnlockedRecipies();
 
         // Get recipies that should be unlocked by default but aren't.
-        var additionalRecipies = new HashSet<>(defaultUnlockedRecipies);
+        var additionalRecipies = new HashSet<>(getDefaultUnlockedRecipies());
         additionalRecipies.removeAll(unlockedRecipies.keySet());
 
         // Add them to the player.

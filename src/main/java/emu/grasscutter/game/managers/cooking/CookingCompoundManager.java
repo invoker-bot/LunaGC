@@ -27,24 +27,47 @@ public class CookingCompoundManager extends BasePlayerManager {
 
     public CookingCompoundManager(Player player) {
         super(player);
-        this.unlocked = new HashSet<>(defaultUnlockedCompounds);
+        ensureCompoundTables();
+        var defaults = defaultUnlockedCompounds != null ? defaultUnlockedCompounds : Set.<Integer>of();
+        // (An unloaded resource set yields empty tables; ensureCompoundTables() retries above.)
+        this.unlocked = new HashSet<>(defaults);
         // TODO:Because we haven't implemented fishing feature,unlock all compounds related to
         // fish.
-        if (compoundGroups.containsKey(3)) // Avoid NPE from Resources error
+        if (compoundGroups != null && compoundGroups.containsKey(3)) // Avoid NPE from Resources error
         this.unlocked.addAll(compoundGroups.get(3));
     }
 
     public static void initialize() {
+        // The GameServer constructor calls this before ResourceLoader.loadAll() runs, so the
+        // excel map is usually still empty here -- the tables are rebuilt on demand instead.
+        loadCompoundTables();
+    }
+
+    /** Compound tables, rebuilt on demand while the excel data has not been loaded yet. */
+    private static synchronized void loadCompoundTables() {
+        var map = GameData.getCompoundDataMap();
+        if (map == null || map.isEmpty()) {
+            // Nothing loaded yet; hand back empty tables rather than null (the constructor
+            // copies them for every login) and let ensureCompoundTables() retry on the next call.
+            defaultUnlockedCompounds = new HashSet<>();
+            compoundGroups = new HashMap<>();
+            return;
+        }
         defaultUnlockedCompounds = new HashSet<>();
         compoundGroups = new HashMap<>();
-        GameData.getCompoundDataMap()
-                .forEach(
-                        (id, compound) -> {
-                            if (compound.isDefaultUnlocked()) {
-                                defaultUnlockedCompounds.add(id);
-                            }
-                            compoundGroups.computeIfAbsent(compound.getGroupId(), gid -> new HashSet<>()).add(id);
-                        });
+        map.forEach(
+                (id, compound) -> {
+                    if (compound.isDefaultUnlocked()) {
+                        defaultUnlockedCompounds.add(id);
+                    }
+                    compoundGroups.computeIfAbsent(compound.getGroupId(), gid -> new HashSet<>()).add(id);
+                });
+    }
+
+    private static synchronized void ensureCompoundTables() {
+        if (compoundGroups == null || compoundGroups.isEmpty()) {
+            loadCompoundTables();
+        }
     }
 
     private synchronized List<CompoundQueueData> getCompoundQueueData() {
@@ -110,6 +133,13 @@ public class CookingCompoundManager extends BasePlayerManager {
     public synchronized void handleTakeCompoundOutputReq(TakeCompoundOutputReq req) {
         // Client won't set compound_id and will set group_id instead.
         int groupId = req.getCompoundGroupId();
+        ensureCompoundTables();
+        if (compoundGroups == null || !compoundGroups.containsKey(groupId)) {
+            player.sendPacket(
+                    new PackageTakeCompoundOutputRsp(
+                            List.of(), Retcode.RET_COMPOUND_NOT_FINISH_VALUE));
+            return;
+        }
         var activeCompounds = player.getActiveCookCompounds();
         int now = Utils.getCurrentSeconds();
         // check available queues

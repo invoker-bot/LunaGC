@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import emu.grasscutter.data.common.ItemParamData;
 import emu.grasscutter.data.excels.CookRecipeData;
 import emu.grasscutter.data.excels.ItemData;
+import emu.grasscutter.game.managers.cooking.CookingManager;
 import emu.grasscutter.utils.JsonUtils;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -148,5 +149,21 @@ public final class CookRecipeSwapTest {
         }
 
         assertTrue(missing.isEmpty(), missing.size() + " dangling item refs: " + missing);
+    }
+
+    @Test
+    @DisplayName("the nine default-unlocked recipes are exactly the excel's flagged rows")
+    public void defaultUnlockedRecipesAreTheFlaggedOnes() throws Exception {
+        // The recipe list every account starts with is computed from the excel, and it used to
+        // come out empty because initialize() ran before the resources were loaded -- so the
+        // client showed no recipes at all. Pin the expected set here.
+        List<CookRecipeData> recipes = loadRecipes();
+
+        Set<Integer> unlocked = CookingManager.defaultUnlockedRecipeIds(recipes);
+
+        assertEquals(
+                Set.of(1001, 1003, 1004, 1005, 1006, 2002, 2006, 2007, 2008),
+                unlocked,
+                "the default-unlocked recipe set changed");
     }
 }
