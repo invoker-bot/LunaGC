@@ -38,6 +38,16 @@ Contribute if you want/can...
   has no handler for is dumped at INFO with its opcode name, its number, its size
   and its decoded fields — this is the discovery mechanism for the features
   above, and `task dev` collects the list for you (see below).
+- **The harvest list closes into actual handlers.** This is the loop the previous
+  bullet only half-described: a session plays through a broken feature,
+  `harvest-opcodes.txt` names the opcodes, and handlers get written against them.
+  Three from the first real login session are now in-tree — `SeeMonsterReq` (full
+  `Req`/`Rsp` handshake), `ClientAIStateNotify` (a client-to-server report with no
+  reply), and `AnecdoteGetDataReq` (opcode known, no generated proto on 7.0.0, so
+  it gets an empty `Rsp` that still answers the client). Two of the three needed
+  generated protos the 7.0.0 dump lacks, copied from the reference fork against
+  the same protobuf 3.19.6. New handlers take effect on the next `task dev`,
+  which rebuilds the jar.
 - **Daily commissions.** The daily-task loop is wired to the real 7.0.0 opcodes
   and the client accepts the three notifies it needs: `DailyTaskDataNotify`,
   `WorldOwnerDailyTaskNotify` and `DailyTaskProgressNotify`. This one is worth a
@@ -71,10 +81,14 @@ known-broken, not unknown:
   packet vanishing silently, which is debuggable rather than invisible, but it
   is still a guess. Fixing this needs a real proto harvest (below).
 - **Proto harvesting is the single biggest unblock.** `debug/harvest-opcodes.txt`
-  already collects every opcode the client sends that nothing handles. The
-  opcodes are easy; the *schemas* are the missing half, and they gate roughly
-  every feature listed in the harvest list — the daily-task layouts above are
-  just the one that bit hardest.
+  already collects every opcode the client sends that nothing handles, and the
+  first three entries are now handled (above). But the opcodes are the easy half;
+  the *schemas* are what is missing, and they gate roughly every feature left in
+  the harvest list — the daily-task layouts above are just the one that bit
+  hardest. `AnecdoteGetDataReq` is the cautionary case: the opcode is in
+  `PacketOpcodes`, no `.proto` exists for it anywhere in the 7.0.0 dump or the
+  reference fork, so the handler answers with an empty body rather than reading
+  the request.
 - **Anything not in "What works".** If it is not listed above, assume it does
   nothing. The client reaching for real SDK gateways
   (`ConnectGateFailure`, `SafeConnect failed`) in `debug/telemetry.log` is
