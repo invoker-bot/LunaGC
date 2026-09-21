@@ -466,13 +466,24 @@ Remove-Item -Path $cancelFlag -Force -ErrorAction SilentlyContinue
 # The unhandled-opcode lines are the proto backlog: each one names a packet the
 # client already sends and the server does not read. Collect them deduped so
 # the list is "what is still missing" rather than "what was sent often".
+#
+# The id has to ride along in the key. The log line prints the NAME the 7.0 dump
+# has for the opcode and the CmdId, and for every opcode the dump left unnamed
+# that name is the literal "UNKNOWN" -- keying on the name alone folded eight
+# distinct ids onto one "UNKNOWN" entry and the backlog reported one anonymous
+# gap instead of the seven numbers that identify what to build. Keeping the
+# entry in the log line's own shape means it pastes straight into the opcode
+# table, and keeping "UNKNOWN" visible means an unnamed id is never read as a
+# resolved one. The set still sorts the whole string, so named and unnamed
+# entries interleave in one deterministic order instead of the unnamed tail
+# being ordered by id while the named head is ordered alphabetically.
 $harvestPath = Join-Path $OutDir 'harvest-opcodes.txt'
 $harvest = [System.Collections.Generic.SortedSet[string]]::new()
 $unhandledPath = Join-Path $OutDir 'unhandled.log'
 if (Test-Path $unhandledPath) {
     foreach ($line in Get-Content $unhandledPath -Encoding UTF8) {
-        if ($line -match '(\w+) \(\d+\) arrived and nothing handles it') {
-            $null = $harvest.Add($Matches[1])
+        if ($line -match '(\w+) \((\d+)\) arrived and nothing handles it') {
+            $null = $harvest.Add("$($Matches[1]) ($($Matches[2]))")
         }
     }
 }
@@ -622,7 +633,7 @@ $null = $report.AppendLine("")
 $null = $report.AppendLine("- all.log              every log line the session produced")
 $null = $report.AppendLine("- error.log            server ERROR/Exception/SEVERE lines")
 $null = $report.AppendLine("- unhandled.log        opcodes with no handler, with field dumps")
-$null = $report.AppendLine("- harvest-opcodes.txt  the same, deduped -- the proto/handler backlog")
+$null = $report.AppendLine("- harvest-opcodes.txt  the same, deduped, each entry carrying its CmdId -- the proto/handler backlog; opcodes the 7.0 dump left unnamed key on the id, so they stay distinct instead of collapsing onto one UNKNOWN")
 $null = $report.AppendLine("- telemetry.log        the client's own SuperDebug fault reports")
 $null = $report.AppendLine("- quest.log            quest acceptance and completion")
 $null = $report.AppendLine("- autofix.log          output of the remediations above")
