@@ -122,7 +122,10 @@ YuanShenResources/
 /LunaGC-Resources/
 
 # `task dev` session output. *.log already covers the live logs; the rotated
-# copy and the ad-hoc launch batches do not end in those extensions.
+# copies and the ad-hoc launch batches do not end in those extensions.
+# start_stdout.log.* catches every rotation (.predev, .prequest, ...) instead
+# of naming them one at a time, because a new one appears whenever the log is
+# rotated out from under a server that would not release the handle.
 /debug/
-start_stdout.log.predev
+start_stdout.log.*
 start_debug.bat
