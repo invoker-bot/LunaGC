@@ -55,13 +55,21 @@ public final class GameServerPacketHandler {
         // unhandled opcodes are announced, once each, so walking through a feature lists exactly what
         // it needs without flooding the log.
         if (handler == null && unannounced.add(opcode)) {
+            var fields = describeFields(payload);
             Grasscutter.getLogger()
                     .info(
                             "{} ({}) arrived and nothing handles it - {} bytes - fields {}",
                             PacketOpcodesUtils.getOpcodeName(opcode),
                             opcode,
                             payload.length,
-                            describeFields(payload));
+                            fields);
+            // This event is what developer mode turns into a written report; see
+            // UnimplementedRequestReporter. It rides the same once-per-opcode guard as the log line.
+            new emu.grasscutter.server.event.game.UnimplementedRequestEvent(
+                            session, opcode, payload, fields,
+                            emu.grasscutter.server.event.game.UnimplementedRequestEvent.Reason.NO_HANDLER,
+                            "no PacketHandler is registered for this opcode")
+                    .call();
         }
 
         if (handler != null) {
@@ -94,8 +102,24 @@ public final class GameServerPacketHandler {
 
                 ReceivePacketEvent event = new ReceivePacketEvent(session, opcode, payload);
                 event.call();
-                if (!event.isCanceled())
-                handler.handle(session, header, event.getPacketData());
+                if (!event.isCanceled()) {
+                    // Counted around the handler rather than inside it: a Req handler answers by
+                    // delegating to a manager, so the only reliable way to see 'nothing went back' is
+                    // to count what left the session. Only in developer mode - otherwise this is a
+                    // field read per packet spent on nothing.
+                    long sentBefore = emu.grasscutter.GameConstants.DEVELOPER_MODE ? session.getPacketsSent() : 0L;
+                    handler.handle(session, header, event.getPacketData());
+                    if (emu.grasscutter.GameConstants.DEVELOPER_MODE
+                            && session.getPacketsSent() == sentBefore
+                            && PacketOpcodesUtils.getOpcodeName(opcode).endsWith("Req")) {
+                        new emu.grasscutter.server.event.game.UnimplementedRequestEvent(
+                                        session, opcode, payload, describeFields(payload),
+                                        emu.grasscutter.server.event.game.UnimplementedRequestEvent.Reason
+                                                .NO_RESPONSE,
+                                        handler.getClass().getName() + " handled the request and sent nothing")
+                                .call();
+                    }
+                }
             } catch (Throwable ex) {
                 // Printed to the console it never reached the log file, so an action that quietly did
                 // nothing left nothing behind to explain it. Throwable rather than Exception because
@@ -107,6 +131,11 @@ public final class GameServerPacketHandler {
                                 PacketOpcodesUtils.getOpcodeName(opcode),
                                 session.getPlayer() != null ? session.getPlayer().getUid() : "an unlogged session",
                                 ex);
+                new emu.grasscutter.server.event.game.UnimplementedRequestEvent(
+                                session, opcode, payload, describeFields(payload),
+                                emu.grasscutter.server.event.game.UnimplementedRequestEvent.Reason.HANDLER_THREW,
+                                handler.getClass().getName() + " raised: " + ex)
+                        .call();
             }
             return;
         }

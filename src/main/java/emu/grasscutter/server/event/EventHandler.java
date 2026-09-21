@@ -148,4 +148,16 @@ public final class EventHandler<T extends Event> {
         this.plugin = plugin;
         Grasscutter.getPluginManager().registerListener(this);
     }
+
+    /**
+     * Registers a server-internal handler that no plugin owns.
+     *
+     * <p>For the server's own instrumentation (developer mode, etc.): it is not a plugin, has
+     * nothing to be unregistered by, and its listeners are simply never matched by
+     * {@link emu.grasscutter.plugin.PluginManager#removeListeners(Plugin)}. Handlers registered
+     * this way report a {@code null} registrar, which is that distinction.
+     */
+    public void register() {
+        Grasscutter.getPluginManager().registerListener(this);
+    }
 }

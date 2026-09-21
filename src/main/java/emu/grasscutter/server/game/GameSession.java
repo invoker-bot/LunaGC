@@ -26,10 +26,21 @@ public class GameSession implements GameSessionManager.KcpChannel {
     @Getter private long encryptSeed = Crypto.ENCRYPT_SEED;
     private byte[] encryptKey = Crypto.ENCRYPT_KEY;
 
-    @Setter private boolean useSecretKey;
+    // Volatile: this is written once, on the KCP I/O thread, by the token exchange
+    // (HandlerGetPlayerTokenReq -> switchWireKey) or by the receive-side latch in
+    // decryptWithEitherKey. It is read by send(), which can run on any thread --
+    // Player.sendPacket is called from the game tick, the schedulers, and the world's
+    // eventExecutor for queued teleports. Without a happens-before edge a send on one of
+    // those threads kept reading the pre-token 'false', XORed the packet with the dispatch
+    // key, and shipped it to a client that had already moved to the session key. The client
+    // decrypted it to noise and reported PACKET_HEAD_MAGIC_ERROR, CmdID:0 (error_code 4010)
+    // -- a whole-frame garbage read, which is why the CmdId came out as 0 rather than a real
+    // opcode. That fired within a second or two of every session-key establishment in the
+    // 2026-09-21 session.
+    @Setter private volatile boolean useSecretKey;
 
     /** Whether this session has already reported a frame that would not decrypt. */
-    private boolean reportedBadMagic;
+    private volatile boolean reportedBadMagic;
 
     /** Packet classes already reported as having no 7.0 CmdId, so each is said once. */
     private static final java.util.Set<String> missingCmdIdReported =
@@ -39,6 +50,9 @@ public class GameSession implements GameSessionManager.KcpChannel {
     @Getter private int clientTime;
     @Getter private long lastPingTime;
     private int lastClientSeq = 10;
+
+    /** Packets that reached the client, for the developer-mode no-response check. */
+    @Getter private long packetsSent;
 
     public GameSession(GameServer server) {
         this.server = server;
@@ -176,6 +190,11 @@ public class GameSession implements GameSessionManager.KcpChannel {
                     }
                 }
                 tunnel.writeData(bytes);
+                // Counted after the write rather than on entry: a packet a plugin cancelled, or one
+                // of the non-positive sentinels above, never reached the client, and a handler that
+                // only 'sent' one of those is still a handler that answered nothing. Developer mode
+                // diffs this around a handler's invocation to find exactly that.
+                this.packetsSent++;
             } catch (Exception ignored) {
                 Grasscutter.getLogger().debug("Unable to send packet to client.");
             }

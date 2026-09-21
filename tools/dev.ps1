@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------------------
 #  `task dev` -- one command that brings up a debuggable session.
 #
-#  dev.ps1 -Mode start    -> server in -debug mode (if not already up), the
+#  dev.ps1 -Mode start    -> server in -dev mode (if not already up), the
 #                           patch state checked, the client launched, and a
 #                           hidden detached monitor process left in charge of
 #                           collecting everything. This script then exits; the
@@ -21,11 +21,14 @@ param(
     [ValidateSet('start', 'stop', 'status', 'report')]
     [string] $Mode = 'status',
 
-    # Extra server arguments. The dev default is '-debug': DEBUG logging
-    # without packet spam. '-debug all' adds packet logging. See
-    # StartupArguments. Passed straight through to serve.ps1, which quotes the
-    # whole java command line as one cmd statement, so spaces are fine.
-    [string] $ServerArgs = '-debug',
+    # Extra server arguments. The dev default is '-dev': DEBUG logging plus the
+    # unimplemented-request check, which files anything the server probably does
+    # not implement into debug/dev-report/unimplemented.md. '-dev all' adds
+    # packet logging on top. See StartupArguments and
+    # UnimplementedRequestReporter. Passed straight through to serve.ps1, which
+    # quotes the whole java command line as one cmd statement, so spaces are
+    # fine.
+    [string] $ServerArgs = '-dev',
 
     # skip the patch state check (use after a manual `task patch`)
     [switch] $SkipPatchCheck

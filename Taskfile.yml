@@ -9,7 +9,7 @@
 #    task patch           -> install the client patch (builds first if needed)
 #    task patch:status    -> show which client files are patched right now
 #    task patch:reset     -> restore the pristine client files
-#    task dev             -> instrumented play session: server in -debug mode,
+#    task dev             -> instrumented play session: server in -dev mode,
 #                            the client, and the detached monitor that records
 #                            crashes, unhandled packets and server errors
 #    task dev:stop        -> close the game and write the session report
@@ -138,7 +138,7 @@ tasks:
     # the build dep only matters when this task is the one starting the server,
     # but it is cheap when the jar is current and keeps a bare `task dev` from
     # silently launching a stale server.
-    desc: Start an instrumented session (server -debug + client + monitor)
+    desc: Start an instrumented session (server -dev + client + monitor)
     deps: [build:jar]
     cmds:
       - powershell -NoProfile -ExecutionPolicy Bypass -File tools/dev.ps1 -Mode start

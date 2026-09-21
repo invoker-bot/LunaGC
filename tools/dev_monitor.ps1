@@ -514,6 +514,28 @@ if (Test-Path $unhandledPath) {
         }
     }
 }
+
+# Reconcile against the server's own stdout log, not just this monitor's slice of
+# it. The monitor's lifetime is the game's: it stops when the client exits, but
+# the server is not part of the session and keeps serving, so a login that
+# happened after the game closed -- or a whole second client launched against a
+# server this monitor never saw start -- sent its packets to an empty room and
+# unhandled.log stayed at zero bytes while the backlog really grew. The
+# announcement is the authoritative record: GameServerPacketHandler keeps an
+# unannounced set per server process, so each opcode appears exactly once in the
+# log that process wrote, which makes scanning the whole file the exact set of
+# what that server still cannot handle. Reading from $StartOffset would miss
+# everything before the session; reading the whole file can only pick up opcodes
+# an earlier server process announced, and those are still unimplemented, so
+# carrying them is correct rather than merely harmless -- the backlog is "what
+# the client sends that nothing reads", not "what this window saw".
+if (Test-Path $StdoutLog) {
+    foreach ($line in Get-Content $StdoutLog -Encoding UTF8) {
+        if ($line -match '(\w+) \((\d+)\) arrived and nothing handles it') {
+            $null = $harvest.Add("$($Matches[1]) ($($Matches[2]))")
+        }
+    }
+}
 if ($harvest.Count -gt 0) {
     $harvest | Out-File -FilePath $harvestPath -Encoding UTF8
 }

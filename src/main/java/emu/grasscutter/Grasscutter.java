@@ -127,6 +127,11 @@ public final class Grasscutter {
         // Create plugin manager instance.
         pluginManager = new PluginManager();
 
+        // The event bus only exists once the plugin manager does, so this is the earliest the
+        // server's own listener can hook onto it. '-dev' is what armed the flag; the listener
+        // itself checks it, so a non-dev start does nothing here.
+        emu.grasscutter.server.dev.UnimplementedRequestReporter.register();
+
         if (runMode != ServerRunMode.GAME_ONLY) {
             // Add HTTP routes after loading plugins.
             httpServer.addRouter(HttpServer.UnhandledRequestRouter.class);
