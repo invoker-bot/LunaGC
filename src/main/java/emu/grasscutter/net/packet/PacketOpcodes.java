@@ -2163,6 +2163,35 @@ public final class PacketOpcodes {
     public static final int TakeReunionSignInRewardRsp = 22629;
     public static final int _FlowerLandReputationDataNotify = 1593;
 
+    // Pinned from a live session, not from the dump.
+    //
+    // <p>These eight arrived from a real 7.0 client with no handler, each logged once as "arrived
+    // and nothing handles it - 0 bytes". The proto dump carries no name for any of them, so
+    // {@link PacketOpcodesUtils#getOpcodeName} answers UNKNOWN and the harvest backlog had nothing
+    // to key a fix on. They are declared here purely to give the record-and-fix loop a constant to
+    // hang an @Opcodes annotation on; the handlers are no-ops, so nothing reads these as protocol
+    // knowledge.
+    //
+    // <p>The two named below are INFERENCES, not lookups, which is why this block sits outside the
+    // generator's "these are not guesses" claim at the top of the file. Both were reached by
+    // block completion against the 6.x table in ref/Grasscutter: 7.0 reshuffles every CmdId, but
+    // the message set of a feature block survives, and each of these ids is the one gap left in a
+    // block whose every other 6.x name has a 7.0 home. When the dump's symbol table recovers the
+    // real names, replace these and delete the block.
+    //
+    // <p>The six UnnamedOpcode* entries carry no name at all rather than a guess: their blocks each
+    // have several names still unplaced, so any assignment would be arbitrary. The id in the name
+    // makes a later real name trivially greppable and makes it impossible to read one of these as
+    // a resolved message.
+    public static final int PathfindingPingNotify = 2347;
+    public static final int ToTheMoonPingNotify = 6117;
+    public static final int UnnamedOpcode2819 = 2819;
+    public static final int UnnamedOpcode24410 = 24410;
+    public static final int UnnamedOpcode25136 = 25136;
+    public static final int UnnamedOpcode25248 = 25248;
+    public static final int UnnamedOpcode26079 = 26079;
+    public static final int UnnamedOpcode9980 = 9980;
+
     public static final HashSet<Integer> BANNED_PACKETS = new HashSet<>() {
         {
             add(PacketOpcodes.WorldOwnerBlossomScheduleInfoNotify);
