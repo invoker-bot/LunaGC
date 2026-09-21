@@ -48,6 +48,42 @@ Contribute if you want/can...
   generated protos the 7.0.0 dump lacks, copied from the reference fork against
   the same protobuf 3.19.6. New handlers take effect on the next `task dev`,
   which rebuilds the jar.
+  The second login session added eight more, and those eight are why the harvest
+  keys on the CmdId rather than the name: every opcode the dump has no name for
+  logs as `UNKNOWN`, and the harvest used to collapse all of them onto one
+  `UNKNOWN` entry, so the backlog reported one anonymous opcode no matter how
+  many had actually arrived. Entries read `UNKNOWN (2819)` now and the ids
+  survive to be pinned. Two of the eight are named by block completion, not by
+  lookup — 7.0 reshuffles every CmdId but a feature block's *message set*
+  survives, and `ToTheMoonPingNotify` (6117) and `PathfindingPingNotify` (2347)
+  are each the single gap in a block whose every other 6.x name already has a
+  7.0 home. The other six keep `UnnamedOpcode<id>` placeholders because their
+  blocks each still hold several unplaced names, so any assignment would be a
+  guess; the id in the name keeps a later real name trivially greppable. All
+  eight are no-ops — there is no proto to parse and no `Rsp` to synthesize
+  (7.0 scrambles `Req`/`Rsp` adjacency: none of 558 name pairs are adjacent),
+  so dropping the packet is the correct behaviour and the point is that the
+  opcode stops filling the backlog.
+- **Cooking works, and the recipes a new account sees are the real ones.** The
+  7.0 dump writes `CookRecipeData`'s ingredient and output lists under swapped
+  keys for most rows, so a cook paid the *outputs* and received the *inputs*;
+  `onLoad` undoes the swap, and the handler now falls back to the lowest filled
+  quality tier for recipes that only define one or two of the three slots rather
+  than handing over a `{id:0,count:0}` non-item. The default-unlocked set is
+  computed from the excel rather than hardcoded, and it is rebuilt on demand —
+  `*Manager.initialize()` runs in the `GameServer` constructor *before*
+  `ResourceLoader.loadAll()`, so an eager scan there sees an empty excel map and
+  every account used to begin with no recipes at all, with the client showing an
+  empty cooking panel. The nine rows it resolves to are pinned by a test.
+- **The token exchange stays on a key the client can actually derive.** When the
+  RSA handshake in `GetPlayerTokenReq` fails, the server sends a degraded
+  response and now *keeps the wire on the dispatch key* instead of switching to
+  the session key. The degraded response cannot be used to derive the session
+  key, so switching would leave the client transmitting on the dispatch key
+  while every reply goes out under a key it cannot reproduce — and the
+  receive-side latch that normally corrects an inbound key mismatch cannot reach
+  our *send* path. The client retries the exchange every 30–60s, so staying put
+  still converges on the next successful request.
 - **Daily commissions.** The daily-task loop is wired to the real 7.0.0 opcodes
   and the client accepts the three notifies it needs: `DailyTaskDataNotify`,
   `WorldOwnerDailyTaskNotify` and `DailyTaskProgressNotify`. This one is worth a
@@ -81,14 +117,17 @@ known-broken, not unknown:
   packet vanishing silently, which is debuggable rather than invisible, but it
   is still a guess. Fixing this needs a real proto harvest (below).
 - **Proto harvesting is the single biggest unblock.** `debug/harvest-opcodes.txt`
-  already collects every opcode the client sends that nothing handles, and the
-  first three entries are now handled (above). But the opcodes are the easy half;
-  the *schemas* are what is missing, and they gate roughly every feature left in
-  the harvest list — the daily-task layouts above are just the one that bit
-  hardest. `AnecdoteGetDataReq` is the cautionary case: the opcode is in
-  `PacketOpcodes`, no `.proto` exists for it anywhere in the 7.0.0 dump or the
-  reference fork, so the handler answers with an empty body rather than reading
-  the request.
+  already collects every opcode the client sends that nothing handles, and eleven
+  of its entries are now handled (above). But the opcodes are the easy half; the
+  *schemas* are what is missing, and they gate roughly every feature left in the
+  harvest list — the daily-task layouts above are just the one that bit hardest.
+  `AnecdoteGetDataReq` is the cautionary case: the opcode is in `PacketOpcodes`,
+  no `.proto` exists for it anywhere in the 7.0.0 dump or the reference fork, so
+  the handler answers with an empty body rather than reading the request.
+  That is also why six of the eleven still answer to `UnnamedOpcode<id>`:
+  `PacketOpcodes` can place the *number* (the harvest always could) but nothing
+  in-tree can name it, and guessing a name from block position would only hide
+  which entries are still unverified.
 - **Anything not in "What works".** If it is not listed above, assume it does
   nothing. The client reaching for real SDK gateways
   (`ConnectGateFailure`, `SafeConnect failed`) in `debug/telemetry.log` is
@@ -324,7 +363,12 @@ three things that a naive `grep ERROR` conflates:
 `harvest-opcodes.txt` is the actionable part. It is a sorted, deduplicated list of
 every opcode the client sent that the server ignored, so a session that walks
 through a broken feature hands you the exact list of handlers to write. This is
-how the beginner-quest chain and the login chain were found.
+how the beginner-quest chain and the login chain were found. Entries are keyed on
+the **CmdId**, not the name — the 7.0 dump has no name for most unhandled
+opcodes, so they all log as `UNKNOWN`, and keying on the name would fold the
+whole backlog into one `UNKNOWN` line no matter how many had arrived. Entries
+read `UNKNOWN (2819)`, and that number is what you pin in `PacketOpcodes` to
+close the loop.
 
 The **auto-fix** is deliberately narrow: if the session ended with a patched image
 stranded in a slot (the "client is damaged next launch" condition), the monitor
@@ -355,6 +399,16 @@ there rather than asking `Get-Content` for "the end of the file", which is
 wherever that cmdlet happens to run. The server's startup banner lands above the
 boundary on purpose; everything the session itself produced is below it, and
 nothing written while the monitor process was still coming up is lost.
+
+**The small buckets look empty until the session ends.** The writers buffer 4 KB
+before flushing to disk, and a session's worth of unhandled packets or errors is
+often well under that — they are held in memory and land when the monitor tears
+its writers down in its `finally`, which is after the game exits. `all.log` and
+`telemetry.log` are big enough to flush repeatedly and look live mid-session;
+`unhandled.log`, `error.log` and `quest.log` do not, and reading them while the
+game is still up reads as zero bytes. That is buffering, not a capture failure —
+`all.log` has the same lines, since every bucket is classified out of the same
+ingested stream. Wait for the report.
 
 ## Bucket reset warnings
 
@@ -465,9 +519,17 @@ Setting the last three to `1`, `1` and `0` gives you plain, unweighted domain ro
   `sudo chown mongodb:mongodb /tmp/mongodb-27017.sock`) and try again.
 - **Windy** — put your `.luac` files in `C:\Windy` (create the folder if it does
   not exist).
+- **The cooking panel shows no recipes** — the default-unlocked set is computed
+  from `CookRecipeExcelConfigData` at login, so a server started before the
+  resources finished extracting, or a resource tree missing that excel, yields an
+  empty panel. Confirm `resources/ExcelBinOutput/CookRecipeExcelConfigData.json`
+  is present and non-empty; the set rebuilds on demand while it is still empty, so
+  a re-login after the resources are in place is enough.
 - **A feature silently does nothing** — run `task dev`, reproduce it,
   `task dev:stop`, and look at `debug/harvest-opcodes.txt`. If the feature's
-  request name is there, the server received it and had no handler for it.
+  request is there, the server received it and had no handler for it. Most entries
+  read `UNKNOWN (<number>)` rather than a name — the 7.0 dump has no name for
+  them, and the number is what you search `PacketOpcodes` for.
 
 # Repository layout
 
