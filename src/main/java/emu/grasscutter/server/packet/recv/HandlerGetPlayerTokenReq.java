@@ -147,7 +147,15 @@ public class HandlerGetPlayerTokenReq extends PacketHandler {
 
                     var base64str = Utils.base64Encode(clientBytes);
                     session.send(new PacketGetPlayerTokenRsp(session, base64str, "bm90aGluZyBoZXJl", keyId));
-                    switchWireKey(session);
+                    // switchWireKey(session);
+                    // The exchange failed, so the client cannot derive the session key from this
+                    // degraded response -- it only ever got the seed XORed over its own ciphertext,
+                    // which is not the negotiated seed.  Switching the wire unilaterally would leave
+                    // the client still sending on the dispatch key while every packet we send back
+                    // goes out under a key it cannot reproduce, and the receive-side latch cannot
+                    // fix our SEND path.  Stay on the dispatch key instead: the exchange is retried
+                    // by the client every 30-60s, so a later successful request still moves both
+                    // sides onto the session key.
                 }
             } else {
                 session.send(new PacketGetPlayerTokenRsp(session, keyId));
