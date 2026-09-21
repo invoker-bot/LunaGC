@@ -119,7 +119,9 @@ $patterns = @{
     # 'SuperDebug ... "error_code"', never 'telemetry_ERROR', so the lookbehind
     # matched nothing and the guard was doing the whole job alone. FATAL and a
     # lowercase 'error' are included because a JVM fatal exit logs both and
-    # would otherwise leave error.log empty for a hard server death.
+    # would otherwise leave error.log empty for a hard server death. Both this
+    # token and the telemetry markers are still matchable by a JSON fragment,
+    # so $errorGuard below additionally requires the line to be a log line.
     error     = 'ERROR|FATAL|Exception|SEVERE|error'
     # the client's own SuperDebug channel: network faults, HLOD warnings,
     # ability errors. Not server bugs, but "something in game did not work"
@@ -135,6 +137,25 @@ $patterns = @{
     # quest chain movement, for correlating a bug with how far the player got
     quest     = 'was completed|Added quest|will be finished|will be accepted'
 }
+# The ERROR token above matches case-insensitively, so the quoted JSON keys the
+# client's crash reports use -- "errorLevel", "errorCode", "subErrorCode" -- match
+# it too. Test-Telemetry keeps a whole request-dump body out of error.log, but
+# the console redraws long lines, and a redraw can emit the *tail* of a telemetry
+# body as its own line: 'nfo":"1272","errorLevel":"Low"...' still says "error",
+# carries none of the telemetry markers (they were in the half that did not make
+# it), and landed in error.log with no server fault behind it -- flipping a
+# session with zero log4j ERROR lines to a verdict of ERRORS. What separates a
+# real fault from such a fragment is that a real one is a log line: log4j's
+# console layout always prints 'HH:MM:SS[.ms] <LEVEL:logger>', and a fatal exit
+# the logger never reached prints frames and a cause chain instead. A dump body
+# and any fragment of one has neither.
+$errorGuard = '(' +
+    '\d{1,2}:\d{2}:\d{2}(\.\d+)?\s*<' +          # log4j header, anywhere on the line
+    '|^\s*at [\w$./<>]+\(' +                     # 'at pkg.Class.method(File.java:1)'
+    '|^\s*Caused by:' +                          # a cause chain in the same dump
+    '|^\s*Exception in thread' +                 # the JVM's own uncaught header
+    '|^\s*[\w.$]*\.(Exception|Error)\b' +        # 'java.lang.OutOfMemoryError: ...'
+    ')'
 
 # Every bucket starts empty. The tail job opens its writers in APPEND mode and
 # only on first use -- a session with no server errors never opens error.log at
@@ -222,7 +243,7 @@ $tailScript = {
     # pinned False -- cancelling it in the parent never reached the job, the
     # loop never exited on its own, and teardown fell back to force-killing it
     # after a full timeout. Both sides see the same filesystem.
-    param($StdoutLog, $OutDir, $patterns, $CancelFlag, $StartOffset)
+    param($StdoutLog, $OutDir, $patterns, $CancelFlag, $StartOffset, $ErrorGuard)
     function Test-Telemetry([string] $line) {
         return $line -match $patterns.telemetry
     }
@@ -346,6 +367,12 @@ $tailScript = {
                             # a telemetry body that says "error" is not a
                             # server error
                             if ((Test-Telemetry $line) -or ($line -notmatch $patterns.error)) { continue }
+                            # neither is a fragment of one: the tail of a
+                            # telemetry body, split off by the console's line
+                            # redraw, still matches the ERROR token through its
+                            # JSON keys but is not a log line. $errorGuard is
+                            # the header/stack-frame shape a real fault has
+                            if ($ErrorGuard -and ($line -notmatch $ErrorGuard)) { continue }
                         }
                         elseif ($line -notmatch $patterns[$k]) { continue }
                         $kw = Get-Writer $writers[$k]
@@ -375,7 +402,7 @@ $tailScript = {
 $cancelFlag = Join-Path $OutDir '.tail-cancel'
 Remove-Item -Path $cancelFlag -Force -ErrorAction SilentlyContinue
 # $tokenSource = [System.Threading.CancellationTokenSource]::new()
-$tailJob = Start-Job -ScriptBlock $tailScript -ArgumentList $StdoutLog, $OutDir, $patterns, $cancelFlag, $StartOffset
+$tailJob = Start-Job -ScriptBlock $tailScript -ArgumentList $StdoutLog, $OutDir, $patterns, $cancelFlag, $StartOffset, $errorGuard
 
 $dumpDir = Join-Path $env:LOCALAPPDATA 'CrashDumps'
 $null = New-Item -ItemType Directory -Force -Path $dumpDir
@@ -522,7 +549,7 @@ if ($dumpNow) {
     $dumpNew = @($dumpNow | Where-Object { $dumpBase -notcontains $_.Name })
 }
 
-# the error bucket minus lines that turned out to be telemetry after all
+# the error bucket minus lines that turned out not to be server errors after all
 $errorCount = 0
 $errorPath = Join-Path $OutDir 'error.log'
 # An error.log the reset could neither erase nor move aside still holds the
@@ -532,9 +559,17 @@ $errorPath = Join-Path $OutDir 'error.log'
 # ERRORS for a session that had no errors of its own, with the previous session's
 # stack traces as the "evidence". The bucket reset warnings below name which one
 # it was; the count says 0 and the verdict stays honest.
+# The same guard the tail job applies is re-applied here so the reported count
+# cannot disagree with what the bucket holds: a telemetry fragment that slipped
+# past the guard would otherwise read as an error here while error.log stayed
+# empty, and a fix to the guard would not change the number it was written to
+# produce.
 if (($unmovable -notcontains 'error.log') -and (Test-Path $errorPath)) {
     $errorCount = @(Get-Content $errorPath -Encoding UTF8 |
-        Where-Object { $_ -notmatch $patterns.telemetry }).Count
+        Where-Object {
+            ($_ -notmatch $patterns.telemetry) -and
+            (-not ($errorGuard -and ($_ -notmatch $errorGuard)))
+        }).Count
 }
 
 # the index is the one-glance summary of the session: each bucket and how many
