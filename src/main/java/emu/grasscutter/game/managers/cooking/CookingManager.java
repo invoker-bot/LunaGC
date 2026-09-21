@@ -1,5 +1,6 @@
 package emu.grasscutter.game.managers.cooking;
 
+import emu.grasscutter.Grasscutter;
 import emu.grasscutter.data.GameData;
 import emu.grasscutter.data.common.ItemParamData;
 import emu.grasscutter.data.excels.ItemData;
@@ -60,6 +61,9 @@ public class CookingManager extends BasePlayerManager {
         };
     }
 
+    /** Recipe ids whose PlayerCookReq field layout has already been dumped this session. */
+    private static final Set<Integer> loggedReqLayout = new HashSet<>();
+
     public void handlePlayerCookReq(PlayerCookReq req) {
         // Get info from the request.
         int recipeId = req.getRecipeId();
@@ -68,6 +72,21 @@ public class CookingManager extends BasePlayerManager {
         int quality = 0;
         int count = 1;
         int avatar = req.getAssistAvatar();
+
+        // Record which of the four unnamed uint32s actually carries the QTE quality and the
+        // cook count, once per recipe, so the hardcoded values above can be retired.
+        if (loggedReqLayout.add(recipeId)) {
+            Grasscutter.getLogger()
+                    .debug(
+                            "PlayerCookReq recipe={} assist={} f2={} f5={} f8={} f12={} f15={}",
+                            recipeId,
+                            avatar,
+                            req.getKLACBPCPCMJ(),
+                            req.getDDACKLBMIKL(),
+                            req.getRecipeId(),
+                            req.getOLLOPKLIIAC(),
+                            req.getJJPABEHGMCH());
+        }
 
         // Get recipe data.
         var recipeData = GameData.getCookRecipeDataMap().get(recipeId);
@@ -84,13 +103,32 @@ public class CookingManager extends BasePlayerManager {
                 player.getInventory().payItems(recipeData.getInputVec(), count, ActionReason.Cook);
         if (!success) {
             this.player.sendPacket(new PacketPlayerCookRsp(Retcode.RET_FAIL));
+            return; // ref keeps going here, which would create the dish without paying for it
         }
 
         // Get result item information.
         int qualityIndex = quality == 0 ? 2 : quality - 1;
 
         ItemParamData resultParam = recipeData.getQualityOutputVec().get(qualityIndex);
-        ItemData resultItemData = GameData.getItemDataMap().get(resultParam.getItemId());
+        // Some recipes only fill one or two of the three quality slots; a meal cannot be
+        // crafted from an empty {id:0,count:0} slot, so fall back to the lowest filled tier.
+        if (resultParam == null || resultParam.getItemId() <= 0) {
+            for (ItemParamData candidate : recipeData.getQualityOutputVec()) {
+                if (candidate != null && candidate.getItemId() > 0) {
+                    resultParam = candidate;
+                    break;
+                }
+            }
+        }
+        ItemData resultItemData =
+                resultParam == null || resultParam.getItemId() <= 0
+                        ? null
+                        : GameData.getItemDataMap().get(resultParam.getItemId());
+        if (resultItemData == null) {
+            // The recipe's output item is not in the item table, so there is nothing to hand over.
+            this.player.sendPacket(new PacketPlayerCookRsp(Retcode.RET_FAIL));
+            return;
+        }
 
         // Handle character's specialties.
         int specialtyCount = 0;
@@ -123,7 +161,11 @@ public class CookingManager extends BasePlayerManager {
         }
 
         // Increase player proficiency, if this was a manual perfect cook.
-        if (quality == MANUAL_PERFECT_COOK_QUALITY) {
+        // qte_quality is unreadable in the 7.0 dump, but qteQualityWeightVec is [0,0,100] for
+        // all 281 recipes -- the QTE can only yield the top tier -- so a cook that resolved to
+        // that tier counts as perfect, which covers both the manual and the auto path.
+        // if (quality == MANUAL_PERFECT_COOK_QUALITY) {
+        if (quality == 0 || quality == MANUAL_PERFECT_COOK_QUALITY) {
             proficiency = Math.min(proficiency + 1, recipeData.getMaxProficiency());
             this.player.getUnlockedRecipies().put(recipeId, proficiency);
         }
@@ -137,7 +179,7 @@ public class CookingManager extends BasePlayerManager {
      * Cooking arguments.
      ********************/
     public void handleCookArgsReq(PlayerCookArgsReq req) {
-        this.player.sendPacket(new PacketPlayerCookArgsRsp());
+        this.player.sendPacket(new PacketPlayerCookArgsRsp(req.getRecipeId()));
     }
 
     /********************
