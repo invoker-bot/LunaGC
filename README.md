@@ -370,8 +370,8 @@ and why the verdict does not come back `ERRORS` on the strength of an old
 
 Both outcomes are surfaced in three places:
 
-- a **`## bucket reset warnings`** section near the top of `report.md`, which is
-  where to look when a session's buckets look wrong;
+- a **`## bucket reset warnings`** section in `report.md`, placed above the file
+  list it qualifies, which is where to look when a session's buckets look wrong;
 - the **`resetNotes`** array in `session.json`, one entry per affected bucket,
   naming the file it was moved to or why it could not be moved;
 - a **`[STALE]`** tag next to that bucket's line count in `index.txt`, marking a
