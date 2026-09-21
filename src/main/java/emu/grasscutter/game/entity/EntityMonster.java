@@ -262,8 +262,31 @@ public class EntityMonster extends GameEntity {
                                         getConfigId(),
                                         monsterData.getId())
                                 .setSourceEntityId(getId())
-                                .setParam3((int) this.getFightProperty(FightProperty.FIGHT_PROP_CUR_HP))
+                                .setParam3(getHpPercent())
                                 .setEventSource(getConfigId()));
+    }
+
+    /**
+     * Lua reads {@code evt.param3} of {@link EventType#EVENT_SPECIFIC_MONSTER_HP_CHANGE} as a
+     * whole-number HP *percentage*, never as raw HP. The stock scripts compare it against
+     * thresholds like {@code evt.param3 > 20} with the comment "判断指定configid的怪物的血量小于%20时触发",
+     * and the Stormterror fight (group 220020001) gates quest 35722 击退风魔龙 on exactly that check.
+     *
+     * <p>Sending absolute HP made the value astronomically larger than any threshold, so the trigger
+     * never fired, {@code AddQuestProgress} never ran, and the dragon quest dead-ended the moment
+     * the player entered the domain. Percent is 0-100, rounded; a dead or uninitialised monster is
+     * 0, which every stock threshold treats as "below".
+     */
+    public int getHpPercent() {
+        return toHpPercent(
+                this.getFightProperty(FightProperty.FIGHT_PROP_CUR_HP),
+                this.getFightProperty(FightProperty.FIGHT_PROP_MAX_HP));
+    }
+
+    /** Visible for tests; the math is what is being asserted, not the entity plumbing. */
+    public static int toHpPercent(float curHp, float maxHp) {
+        if (!(maxHp > 0f)) return 0;
+        return Math.round(Math.max(0f, Math.min(1f, curHp / maxHp)) * 100f);
     }
 
     @Override
