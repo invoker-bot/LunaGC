@@ -84,6 +84,33 @@ Contribute if you want/can...
   receive-side latch that normally corrects an inbound key mismatch cannot reach
   our *send* path. The client retries the exchange every 30–60s, so staying put
   still converges on the next successful request.
+- **The session key is visible to every thread that sends a packet.**
+  `GameSession.useSecretKey` was a plain `boolean` written once by the token
+  exchange on the KCP I/O thread and read by `send()`, which is reachable from
+  *any* thread — the game tick, the schedulers, and the world's `eventExecutor`
+  for queued teleports. Without a `volatile` there is no happens-before edge, so a
+  send on one of those threads kept reading the pre-token `false`, XORed the
+  packet with the dispatch key, and shipped it to a client that had already moved
+  to the session key. The client decrypted it to noise and reported
+  `PACKET_HEAD_MAGIC_ERROR, CmdID:0` (`error_code` 4010) — a *whole-frame* garbage
+  read, which is why the CmdId came out as `0` rather than a real opcode. The
+  field is `volatile` now. The receive-side latch in `decryptWithEitherKey` was
+  already correct: it tries both keys and latches on whichever produces the magic,
+  so the *inbound* direction tolerated the disagreement all along. The bug was
+  asymmetric — only the send path committed to one key off a possibly-stale read.
+  Three client reports in the 2026-09-21 session, each within a second or two of a
+  session-key establishment, and *zero* server-side bad-magic warnings in the same
+  log — that combination is the fingerprint: the failure was outbound, and the
+  server never noticed.
+- **A queued teleport after logout is dropped instead of throwing.**
+  `queueTransferPlayerToScene` sleeps for its delay on the `eventExecutor`, and a
+  player can log out during it — `onLogout` → `World.removePlayer` nulls the world
+  reference, and the enter-scene notify then dereferences it unconditionally. The
+  NPE was swallowed by the `Future` nobody reads, so the teleport failed
+  *silently*; now it logs at trace and returns, because there is nothing to
+  teleport: the client is gone and would never have read the packet. The same
+  race family as the key-visibility bug above — both are a cross-thread read of
+  state another thread tears down.
 - **Daily commissions.** The daily-task loop is wired to the real 7.0.0 opcodes
   and the client accepts the three notifies it needs: `DailyTaskDataNotify`,
   `WorldOwnerDailyTaskNotify` and `DailyTaskProgressNotify`. This one is worth a
@@ -99,6 +126,36 @@ Contribute if you want/can...
   `TakeDailyTaskScoreRewardReq/Rsp` exist among the generated protos, so a wrong
   field now reads as garbage instead of the packet vanishing — a strictly better
   failure to debug. See the harvest item under "What does not work".
+- **The Stormterror quest is finishable.** Every stock Lua for
+  `EVENT_SPECIFIC_MONSTER_HP_CHANGE` compares `evt.param3` against a
+  whole-number *percentage* — `if evt.param3 > 20 then return false end` under the
+  comment `判断指定configid的怪物的血量小于%20时触发` — and the dragon domain
+  (scene 20020, group 220020001) gates quest 35722 击退风魔龙 on exactly that check
+  reaching `AddQuestProgress`. The server was sending **absolute current HP** as
+  `param3`, so the value was always orders of magnitude above any threshold, the
+  condition returned false on every hit, the quest-progress key `220020001` stayed
+  at `0` forever, and the chain dead-ended the moment the player entered the domain
+  — 35721 would sit `FINISHED` with 35722 unreachable behind it.
+  `EntityMonster` now sends `Math.round(clamped cur/max * 100)`, clamped to 0–100,
+  with 0 for a dead or uninitialised monster (which every threshold counts as
+  "below"). The conversion is pinned by `MonsterHpPercentTest`. Upstream Grasscutter
+  has the same bug — this is a fix, not a local regression.
+  This is not one quest's fix. The same comparison appears **102 times across 74
+  stock scripts** — every boss with a phase-change or enrage mechanic reads
+  `evt.param3` as a percent, with thresholds 20, 30, 33, 50, 66, 70, 75 and 80.
+  Absolute HP cannot satisfy any of them, so *every* boss mechanic of this kind was
+  dead on this server, silently, with no error anywhere.
+- **The artifact upgrade screen stops popping a null-exception panel.**
+  `InventorySystem.upgradeRelic` has three early returns — relic missing,
+  no exp gain, payment failed — and only the happy path ever answered the client.
+  A request the server *rejected* was indistinguishable from a request the server
+  *ignored*: the client holds the response handle and surfaces a dialog when it
+  never arrives, and because nothing went wrong server-side no instrumentation
+  saw it. All three now send `ReliquaryUpgradeRsp` with a real retcode
+  (`RET_ITEM_NOT_EXIST` / `RET_ITEM_INVALID_USE_COUNT` / `RET_ITEM_COUNT_NOT_ENOUGH`),
+  and the new `PacketReliquaryUpgradeRsp(int)` ctor is the reason that is one line
+  each. This was the visible half of the developer-mode feature below — the other
+  half is finding the next one like it.
 - **Artifact shop** — every official 5-star piece, rolled fresh per purchase.
   Configurable; see the table at the bottom.
 - Updated mob and gadget spawns up to version 5.4, drops, the inbox, widgets, and
@@ -295,21 +352,57 @@ stranded copy and re-deploys.
 # Developer debug sessions — `task dev`
 
 ```
-task dev            # server in -debug mode + patch check + client + the monitor
+task dev            # server in -dev mode + patch check + client + the monitor
 task dev:stop       # close the game and wait for the session report
 task dev:status     # is a session being recorded, and by which process
 task dev:report     # print the latest session report
 ```
 
 `task dev` is the one command for debugging a play session. It starts the server
-with `-debug` (reusing one that is already listening, and saying so if it was not
-started with `-debug`), checks the patch state and refuses to launch if the client
+with `-dev` (reusing one that is already listening, and saying so if it was not
+started with `-dev`), checks the patch state and refuses to launch if the client
 is not launch-ready, launches `YuanShen.exe`, then exits and leaves a **hidden,
 detached monitor process** in charge. The monitor outlives the terminal that ran
 the task; it stops when the game does.
 
 Pass `-SkipPatchCheck` to launch with the client as-is (`task dev -SkipPatchCheck`),
 useful after a manual `task patch`.
+
+## Developer mode — `-dev`
+
+`-dev` is `-debug` plus instrumentation. Beyond DEBUG logging it arms the
+**unimplemented-request check**: every packet the server decides it probably does
+not implement fires `UnimplementedRequestEvent`, and a listener files each one into
+`debug/dev-report/unimplemented.md`. Run the server on its own with
+
+```
+task serve -ServerArgs '-dev'          # '-dev all' also logs every packet
+```
+
+Three reasons are reported, and together they describe every way a player's action
+can silently do nothing:
+
+- **`NO_HANDLER`** — no `PacketHandler` is registered for that opcode. The client
+  asked for a feature the server has no code for.
+- **`HANDLER_THREW`** — a handler exists but raised, so the action was abandoned
+  halfway. Already an error in the log; this collects it with the others.
+- **`NO_RESPONSE`** — the handler ran to completion and never sent a packet back.
+  **This is what an in-game error dialog usually means.** The client is waiting on
+  the answer to its request and never gets one, and because nothing went wrong
+  server-side, no existing instrumentation saw it — a two-hour session can be
+  `CLEAN` while the player is staring at an error panel.
+
+Each entry names the opcode, the player and scene it came from, the payload's
+fields (`{no:wire=value, ...}`, enough to hand-write the proto), and a next step
+telling you where to add the handler or which early return to make answer. One
+entry per `(reason, opcode)` per session, so a player hammering a broken button
+fills the file once, not forever.
+
+The listener is registered by `Grasscutter#main` only in developer mode, and it is
+a server-internal event handler rather than a plugin, which is why it has no
+registrar. A plugin that implements the packet itself can cancel the event to stop
+the report — `HandlerPriority.LOW` means a plugin that claims the request runs
+first.
 
 ## What the monitor records
 
@@ -322,6 +415,7 @@ then writes a report. Everything lands in `debug/` (gitignored):
 | `report-<yyyyMMdd-HHmmss>.md` | A timestamped copy, so old sessions are not overwritten |
 | `session.json` | The same data as machine-readable fields |
 | `all.log` | Every server line from this session, nothing before it |
+| `dev-report/unimplemented.md` | What developer mode filed — see above |
 | `error.log` | Server errors and exceptions only |
 | `unhandled.log` | Every packet that arrived with no handler |
 | `harvest-opcodes.txt` | The deduplicated opcode list — the work list |
@@ -369,6 +463,24 @@ opcodes, so they all log as `UNKNOWN`, and keying on the name would fold the
 whole backlog into one `UNKNOWN` line no matter how many had arrived. Entries
 read `UNKNOWN (2819)`, and that number is what you pin in `PacketOpcodes` to
 close the loop.
+
+**The harvest reads the server's whole log, not just the slice the monitor
+watched.** The monitor's lifetime is the game's — it stops when the client exits —
+but the server is not part of the session and keeps listening, so a login that
+happened after the game closed sent its packets to an empty room and
+`unhandled.log` stayed at zero bytes while the backlog really grew. That is not
+hypothetical: the session recorded on 2026-09-21 from 15:41 was clean and the
+monitor wrote its report at 18:10, but the same server was still listening at
+22:22 when a client logged back in, cooked three recipes, and walked the world
+until 22:43 — eleven unhandled opcodes, all of them invisible to the report that
+had already been filed. So at harvest time the monitor re-scans the server's own
+stdout log as well as its own bucket, because the announcement is the
+authoritative record: each opcode is announced exactly once per server process,
+so the whole file is precisely the set that server still cannot handle, and any
+opcode an earlier process announced is still unimplemented and still belongs on
+the list. `all.log` and the other buckets remain session-scoped; only the
+harvest reconciles, because only the harvest is a work list rather than a
+transcript.
 
 The **auto-fix** is deliberately narrow: if the session ended with a patched image
 stranded in a slot (the "client is damaged next launch" condition), the monitor
