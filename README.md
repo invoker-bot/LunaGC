@@ -38,10 +38,50 @@ Contribute if you want/can...
   has no handler for is dumped at INFO with its opcode name, its number, its size
   and its decoded fields — this is the discovery mechanism for the features
   above, and `task dev` collects the list for you (see below).
+- **Daily commissions.** The daily-task loop is wired to the real 7.0.0 opcodes
+  and the client accepts the three notifies it needs: `DailyTaskDataNotify`,
+  `WorldOwnerDailyTaskNotify` and `DailyTaskProgressNotify`. This one is worth a
+  note, because it was silently dead and the monitor is what found it: the
+  messages were ported from a 6.6 fork with CmdIds guessed against a 6.7 dump,
+  and the 7.0.0 client has no message registered for any of them, so it rejected
+  every packet with `PACKET_INVALID_CMD_ID` and dropped it whole. Commissions
+  appeared to do nothing, with no server-side error at all. The client's own
+  telemetry named the bad ids (`CmdId=24670`, `28030`, `24983`), the real values
+  are `7522` / `1939` / `23872`, and they now come from `PacketOpcodes` rather
+  than literals, so they cannot drift out of sync with the opcode table again.
+  The message *field numbers* are still reasoned, not harvested: only
+  `TakeDailyTaskScoreRewardReq/Rsp` exist among the generated protos, so a wrong
+  field now reads as garbage instead of the packet vanishing — a strictly better
+  failure to debug. See the harvest item under "What does not work".
 - **Artifact shop** — every official 5-star piece, rolled fresh per purchase.
   Configurable; see the table at the bottom.
 - Updated mob and gadget spawns up to version 5.4, drops, the inbox, widgets, and
   the weekly boss.
+
+# What does not work (yet)
+
+The honest list, because "WIP" in the header is doing real work here. These are
+known-broken, not unknown:
+
+- **Daily commissions are field-guesses.** The CmdIds are correct 7.0.0 values
+  now (see above), but the message *layouts* — which field number holds the task
+  id, the progress, the reward id — are reasoned by hand, not read from the
+  client. Only `TakeDailyTaskScoreRewardReq/Rsp` have generated protos in-tree.
+  A wrong field shows up as garbage in the commission panel instead of the
+  packet vanishing silently, which is debuggable rather than invisible, but it
+  is still a guess. Fixing this needs a real proto harvest (below).
+- **Proto harvesting is the single biggest unblock.** `debug/harvest-opcodes.txt`
+  already collects every opcode the client sends that nothing handles. The
+  opcodes are easy; the *schemas* are the missing half, and they gate roughly
+  every feature listed in the harvest list — the daily-task layouts above are
+  just the one that bit hardest.
+- **Anything not in "What works".** If it is not listed above, assume it does
+  nothing. The client reaching for real SDK gateways
+  (`ConnectGateFailure`, `SafeConnect failed`) in `debug/telemetry.log` is
+  expected on a private server and is not a bug here.
+- **Combat ability noise.** `AbilityInstErrorTrue/False` lines and a recurring
+  `UnhandledCombatType: COMBAT_SPECIAL_MOTION_INFO typeVal=19` appear in the
+  client log at a low rate. Not crash-grade, and not yet investigated.
 
 # Requirements
 

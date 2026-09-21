@@ -139,15 +139,45 @@ $patterns = @{
 # error.log, and index.txt (which counts the raw file, unlike the report's own
 # error count, which re-filters telemetry) would call it 20 errors. The
 # timestamped report-*.md copies are the durable history; these logs are this
-# session's working set. A held-open handle from a monitor that never let go
-# would fail the exclusive open here and the append writers carry on with
-# whatever was already there, so the failure is reported, not fatal.
-foreach ($name in @('all.log') + @($patterns.Keys | ForEach-Object { "$_.log" })) {
+# session's working set. harvest-opcodes.txt has to be in the erase list too: it
+# is only rewritten when the harvest actually found something, so a session that
+# sends no unknown opcode would otherwise keep displaying the previous
+# session's backlog as if it were this one's.
+#
+# The erase has to be VERIFIED, not merely attempted. An exclusive Truncate is
+# refused the moment any other handle is open on the file, and a monitor that
+# never closed its tail job's writers -- killed outright, or a job child that
+# outlived the stop signal -- leaves exactly that. The refusal was silent: the
+# old Truncate sat in a try/catch whose catch wrote to a HIDDEN window, so
+# debug/all.log quietly opened with two sessions in it and every count in this
+# report then described the wrong one. Found live: a session started at 07:04
+# carried the 06:42 session's buckets, with no symptom but wrong numbers.
+#
+# So Truncate is the cheap path when nothing holds the file, and when it is
+# refused the file is MOVED aside instead. The writers grant FileShare.Delete
+# below for exactly this reason -- the move lands against a handle that refuses
+# the erase, and a handle still open afterwards keeps writing to the moved file,
+# so it cannot reach this session's bucket. Whatever happened is collected into
+# $resetNotes and printed in the report, never to a window. Note that
+# $ErrorActionPreference is 'Continue' in this script, so a Move-Item failure is
+# a non-terminating record a catch block would never see without -ErrorAction
+# Stop -- the fallback used to be able to fail and report success in one line.
+$bucketNames = @('all.log', 'harvest-opcodes.txt') + @($patterns.Keys | ForEach-Object { "$_.log" })
+$resetNotes = [System.Collections.Generic.List[string]]::new()
+foreach ($name in $bucketNames) {
+    $bucket = Join-Path $OutDir $name
+    if (-not (Test-Path $bucket)) { continue }
     try {
-        [System.IO.File]::Open((Join-Path $OutDir $name), [System.IO.FileMode]::Truncate,
+        [System.IO.File]::Open($bucket, [System.IO.FileMode]::Truncate,
             [System.IO.FileAccess]::Write, [System.IO.FileShare]::None).Close()
+    } catch { }
+    # the open above is the attempt; the length is the outcome that counts
+    if ((Get-Item -Path $bucket).Length -eq 0) { continue }
+    try {
+        Move-Item -Path $bucket -Destination "$bucket.prev-session" -Force -ErrorAction Stop
+        $resetNotes.Add("could not erase $name (a handle from the previous session's monitor held it open) -- moved it aside to $name.prev-session")
     } catch {
-        Write-Host ("[dev] could not reset {0} -- {1}" -f $name, $_.Exception.Message)
+        $resetNotes.Add("could not erase $name and could not move it aside either ($($_.Exception.Message)) -- this bucket still holds the previous session's lines")
     }
 }
 
@@ -186,7 +216,26 @@ $tailScript = {
     $writerCache = @{}
     function Get-Writer([string] $path) {
         if (-not $writerCache.ContainsKey($path)) {
-            $writerCache[$path] = [System.IO.StreamWriter]::new($path, $true, [System.Text.Encoding]::UTF8)
+            # StreamWriter(path, append, encoding) opens the file with
+            # FileShare.Read, and Read alone is enough to refuse the exclusive
+            # Truncate the bucket erase above opens these with -- and to refuse a
+            # rename, which would have left that erase with no fallback at all.
+            # Built by hand the handle grants ReadWrite and Delete instead, which
+            # buys two things: the erase can move a held-open session aside rather
+            # than fail it, and these logs stay readable WHILE the session runs
+            # instead of only after it ends.
+            # FileMode.Append creates the file on the first line, so this covers
+            # that case too; the UTF-8 preamble is written by hand for a
+            # brand-new file because the StreamWriter-from-Stream constructor does
+            # not, and the parsers below expect the format the old path produced.
+            $share = [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
+            $stream = [System.IO.File]::Open($path, [System.IO.FileMode]::Append,
+                [System.IO.FileAccess]::Write, $share)
+            if ($stream.Length -eq 0) {
+                $preamble = [System.Text.Encoding]::UTF8.GetPreamble()
+                $null = $stream.Write($preamble, 0, $preamble.Length)
+            }
+            $writerCache[$path] = [System.IO.StreamWriter]::new($stream, [System.Text.Encoding]::UTF8)
         }
         return $writerCache[$path]
     }
@@ -359,6 +408,18 @@ Start-Sleep -Seconds 3
 '' | Out-File -FilePath $cancelFlag -Encoding UTF8
 $null = Wait-Job $tailJob -Timeout 10
 $null = Remove-Job $tailJob -Force
+# Remove-Job -Force stops the job's own powershell.exe child, and in a clean
+# teardown that is the end of it. It is not guaranteed: the stop is delivered
+# over the job's named pipe and a child partway through a slow file read can
+# outlive the delivery, and a monitor killed outright -- a reboot, a taskkill on
+# the monitor -- never delivers it at all. A writer still open then is what
+# refuses the next session's bucket erase, so look for the child directly and
+# stop whatever is still running. The only child this process ever spawns is the
+# job, so filtering by parent is unambiguous here.
+foreach ($child in @(Get-CimInstance Win32_Process -Filter "ParentProcessId=$PID" `
+        -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq 'powershell.exe' })) {
+    try { Stop-Process -Id $child.ProcessId -Force -ErrorAction Stop } catch { }
+}
 Remove-Item -Path $cancelFlag -Force -ErrorAction SilentlyContinue
 
 # ---------------------------------------------------------------- harvest --- #
@@ -497,6 +558,14 @@ if ($patchEvents.Count -eq 0) {
     foreach ($e in $patchEvents) { $null = $report.AppendLine("    $e") }
 }
 $null = $report.AppendLine("")
+if ($resetNotes.Count -gt 0) {
+    # a bucket that could not be emptied means the counts above are not all this
+    # session's, so this has to sit above the files it qualifies
+    $null = $report.AppendLine("## bucket reset warnings")
+    $null = $report.AppendLine("")
+    foreach ($n in $resetNotes) { $null = $report.AppendLine("- $n") }
+    $null = $report.AppendLine("")
+}
 $null = $report.AppendLine("## files")
 $null = $report.AppendLine("")
 $null = $report.AppendLine("- all.log              every log line the session produced")
@@ -506,6 +575,7 @@ $null = $report.AppendLine("- harvest-opcodes.txt  the same, deduped -- the prot
 $null = $report.AppendLine("- telemetry.log        the client's own SuperDebug fault reports")
 $null = $report.AppendLine("- quest.log            quest acceptance and completion")
 $null = $report.AppendLine("- autofix.log          output of the remediations above")
+$null = $report.AppendLine("- *.prev-session      a bucket the previous session's monitor still held open, moved aside")
 
 $reportPath = Join-Path $OutDir 'report.md'
 $report.ToString() | Out-File -FilePath $reportPath -Encoding UTF8
@@ -527,6 +597,7 @@ $summary = [ordered] @{
     crashDumps    = @($dumpNew | ForEach-Object { $_.Name })
     serverErrors  = $errorCount
     unhandled     = @($harvest)
+    resetNotes    = @($resetNotes)
     fixes         = @($fixes)
 }
 $summary | ConvertTo-Json -Depth 4 | Out-File -FilePath (Join-Path $OutDir 'session.json') -Encoding UTF8
