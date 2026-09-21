@@ -13,6 +13,7 @@ import emu.grasscutter.game.props.*;
 import emu.grasscutter.game.props.ItemUseAction.*;
 import emu.grasscutter.net.proto.ItemParamOuterClass.ItemParam;
 import emu.grasscutter.net.proto.MaterialInfoOuterClass.MaterialInfo;
+import emu.grasscutter.net.proto.RetcodeOuterClass;
 import emu.grasscutter.server.event.player.*;
 import emu.grasscutter.server.game.*;
 import emu.grasscutter.server.packet.send.*;
@@ -120,6 +121,10 @@ public class InventorySystem extends BaseGameSystem {
         GameItem relic = player.getInventory().getItemByGuid(targetGuid);
 
         if (relic == null || relic.getItemType() != ItemType.ITEM_RELIQUARY) {
+            // Answered rather than abandoned: the client is waiting on this response, and the
+            // in-game 'null exception' panel is what its absence looks like from the player's side.
+            player.sendPacket(
+                    new PacketReliquaryUpgradeRsp(RetcodeOuterClass.Retcode.RET_ITEM_NOT_EXIST_VALUE));
             return;
         }
 
@@ -169,12 +174,21 @@ public class InventorySystem extends BaseGameSystem {
 
         // Make sure exp gain is valid
         if (expGain <= 0) {
+            // Nothing the client offered is worth experience, which means the two sides disagree
+            // about what is in the inventory - worth telling the player rather than dropping the
+            // request, so they reload the screen instead of hammering the button.
+            player.sendPacket(
+                    new PacketReliquaryUpgradeRsp(
+                            RetcodeOuterClass.Retcode.RET_ITEM_INVALID_USE_COUNT_VALUE));
             return;
         }
 
         // Confirm payment of materials and mora (assume food relics are payable afterwards)
         payList.add(new ItemParamData(202, moraCost));
         if (!player.getInventory().payItems(payList)) {
+            player.sendPacket(
+                    new PacketReliquaryUpgradeRsp(
+                            RetcodeOuterClass.Retcode.RET_ITEM_COUNT_NOT_ENOUGH_VALUE));
             return;
         }
 
