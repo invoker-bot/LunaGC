@@ -228,14 +228,28 @@ $tailScript = {
             # that case too; the UTF-8 preamble is written by hand for a
             # brand-new file because the StreamWriter-from-Stream constructor does
             # not, and the parsers below expect the format the old path produced.
-            $share = [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
-            $stream = [System.IO.File]::Open($path, [System.IO.FileMode]::Append,
-                [System.IO.FileAccess]::Write, $share)
-            if ($stream.Length -eq 0) {
-                $preamble = [System.Text.Encoding]::UTF8.GetPreamble()
-                $null = $stream.Write($preamble, 0, $preamble.Length)
+            try {
+                $share = [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
+                $stream = [System.IO.File]::Open($path, [System.IO.FileMode]::Append,
+                    [System.IO.FileAccess]::Write, $share)
+                if ($stream.Length -eq 0) {
+                    $preamble = [System.Text.Encoding]::UTF8.GetPreamble()
+                    $null = $stream.Write($preamble, 0, $preamble.Length)
+                }
+                $writerCache[$path] = [System.IO.StreamWriter]::new($stream, [System.Text.Encoding]::UTF8)
+            } catch {
+                # A handle granting no Write share refuses this open -- the one
+                # case left after the erase above, a bucket held by a monitor
+                # built before this change. Letting the throw escape is worse
+                # than the dead bucket: the call sites write all.log FIRST, so
+                # the exception took the whole tail loop down on the session's
+                # first line and every OTHER bucket went empty with it. A
+                # session with one wedged file then reported CLEAN with no
+                # evidence in it at all, which is the one thing this collector
+                # exists not to do. Mark it dead, skip it for the session, and
+                # let the rest record; the reset warning names which one it was.
+                $writerCache[$path] = $null
             }
-            $writerCache[$path] = [System.IO.StreamWriter]::new($stream, [System.Text.Encoding]::UTF8)
         }
         return $writerCache[$path]
     }
@@ -304,7 +318,11 @@ $tailScript = {
                 }
                 foreach ($line in $lines) {
                     if (Test-Path $CancelFlag) { break }
-                    (Get-Writer $all).WriteLine($line)
+                    # Get-Writer can return $null for a bucket nothing can open:
+                    # skipping it here is what keeps one dead file from dropping
+                    # the whole session's evidence
+                    $allWriter = Get-Writer $all
+                    if ($allWriter) { $allWriter.WriteLine($line) }
                     foreach ($k in $patterns.Keys) {
                         if ($k -eq 'error') {
                             # a telemetry body that says "error" is not a
@@ -312,7 +330,8 @@ $tailScript = {
                             if ((Test-Telemetry $line) -or ($line -notmatch $patterns.error)) { continue }
                         }
                         elseif ($line -notmatch $patterns[$k]) { continue }
-                        (Get-Writer $writers[$k]).WriteLine($line)
+                        $kw = Get-Writer $writers[$k]
+                        if ($kw) { $kw.WriteLine($line) }
                     }
                 }
             } finally {
@@ -325,6 +344,8 @@ $tailScript = {
         # the cancel flag is set or the job was force-stopped; whatever made it
         # into the writers has to be on disk before this job goes away
         foreach ($p in @($writerCache.Keys)) {
+            # $null is the dead-bucket marker; there is nothing to flush
+            if ($null -eq $writerCache[$p]) { continue }
             try { $writerCache[$p].Flush(); $writerCache[$p].Dispose() } catch { }
         }
     }
