@@ -87,7 +87,7 @@ public static class ProcHandle {
 
 # ------------------------------------------------------------------------- #
 
-function Write-Index([string[]] $names, [hashtable] $labels) {
+function Write-Index([string[]] $names, [hashtable] $labels, [string[]] $dead = @()) {
     # each classifier gets its own file plus an index entry, so a failing
     # feature can be read without paging through the whole session
     $idx = Join-Path $OutDir 'index.txt'
@@ -95,7 +95,11 @@ function Write-Index([string[]] $names, [hashtable] $labels) {
         $p = Join-Path $OutDir "$n.log"
         if (Test-Path $p) {
             $c = @(Get-Content -Path $p -Encoding UTF8 -ErrorAction SilentlyContinue).Count
-            "{0,-14} {1,5} lines  {2}" -f $n, $c, $labels[$n]
+            # a bucket the reset could not clear counts the previous session, and
+            # nothing in this session appended to it; the number is not wrong about
+            # the file, it is wrong about the session
+            $tag = if ($dead -contains $n) { '  [STALE -- held open by the previous session, not this one]' } else { '' }
+            "{0,-14} {1,5} lines  {2}{3}" -f $n, $c, $labels[$n], $tag
         }
     }
     $lines | Out-File -FilePath $idx -Encoding UTF8
@@ -164,6 +168,11 @@ $patterns = @{
 # Stop -- the fallback used to be able to fail and report success in one line.
 $bucketNames = @('all.log', 'harvest-opcodes.txt') + @($patterns.Keys | ForEach-Object { "$_.log" })
 $resetNotes = [System.Collections.Generic.List[string]]::new()
+# the buckets the erase could not clear AND could not move aside. Their files still
+# hold the previous session's lines for the whole of this session, so anything that
+# counts them below would be counting a session that is not this one; errorCount
+# reads this list rather than re-matching the note text.
+$unmovable = [System.Collections.Generic.List[string]]::new()
 foreach ($name in $bucketNames) {
     $bucket = Join-Path $OutDir $name
     if (-not (Test-Path $bucket)) { continue }
@@ -173,10 +182,19 @@ foreach ($name in $bucketNames) {
     } catch { }
     # the open above is the attempt; the length is the outcome that counts
     if ((Get-Item -Path $bucket).Length -eq 0) { continue }
+    # A fixed .prev-session name is overwritten by the next session that wedges the
+    # same bucket, and that second session's own note points at a file whose
+    # contents are no longer what it says they are -- the evidence that explained
+    # the first note is destroyed by the second. A timestamp keeps both.
+    $movedTo = "$bucket.prev-session-$(Get-Date -Format 'HHmmss')"
+    $n = 1
+    while (Test-Path $movedTo) { $movedTo = "$bucket.prev-session-$(Get-Date -Format 'HHmmss')-$n"; $n++ }
     try {
-        Move-Item -Path $bucket -Destination "$bucket.prev-session" -Force -ErrorAction Stop
-        $resetNotes.Add("could not erase $name (a handle from the previous session's monitor held it open) -- moved it aside to $name.prev-session")
+        Move-Item -Path $bucket -Destination $movedTo -Force -ErrorAction Stop
+        $short = [System.IO.Path]::GetFileName($movedTo)
+        $resetNotes.Add("could not erase $name (a handle held it open -- a previous session's monitor that never closed its writers is the usual cause) -- moved it aside to $short")
     } catch {
+        $unmovable.Add($name)
         $resetNotes.Add("could not erase $name and could not move it aside either ($($_.Exception.Message)) -- this bucket still holds the previous session's lines")
     }
 }
@@ -496,7 +514,14 @@ if ($dumpNow) {
 # the error bucket minus lines that turned out to be telemetry after all
 $errorCount = 0
 $errorPath = Join-Path $OutDir 'error.log'
-if (Test-Path $errorPath) {
+# An error.log the reset could neither erase nor move aside still holds the
+# previous session's errors, and this session's tail loop never opened a writer
+# for it -- Get-Writer marks a bucket it cannot open dead and skips it, so
+# nothing this session produced is in that file. Counting it anyway reported
+# ERRORS for a session that had no errors of its own, with the previous session's
+# stack traces as the "evidence". The bucket reset warnings below name which one
+# it was; the count says 0 and the verdict stays honest.
+if (($unmovable -notcontains 'error.log') -and (Test-Path $errorPath)) {
     $errorCount = @(Get-Content $errorPath -Encoding UTF8 |
         Where-Object { $_ -notmatch $patterns.telemetry }).Count
 }
@@ -509,7 +534,12 @@ $labels = @{
     telemetry = "the client's own SuperDebug fault reports"
     quest     = 'quest acceptance and completion'
 }
-Write-Index @('unhandled', 'error', 'telemetry', 'quest') $labels
+# the index is the one-glance summary of the session: each bucket and how many
+# lines it caught. Same labels the report's files section uses. The dead list is
+# the buckets whose files still hold the previous session, so their counts are
+# tagged instead of presented as this session's.
+$deadNames = @($unmovable | ForEach-Object { $_ -replace '\.log$', '' })
+Write-Index @('unhandled', 'error', 'telemetry', 'quest') $labels $deadNames
 
 # -------------------------------------------------------------- remediation -- #
 
@@ -596,7 +626,7 @@ $null = $report.AppendLine("- harvest-opcodes.txt  the same, deduped -- the prot
 $null = $report.AppendLine("- telemetry.log        the client's own SuperDebug fault reports")
 $null = $report.AppendLine("- quest.log            quest acceptance and completion")
 $null = $report.AppendLine("- autofix.log          output of the remediations above")
-$null = $report.AppendLine("- *.prev-session      a bucket the previous session's monitor still held open, moved aside")
+$null = $report.AppendLine("- *.prev-session-*   a bucket the previous session's monitor still held open, moved aside with a timestamp so the next session that wedges the same one does not overwrite it")
 
 $reportPath = Join-Path $OutDir 'report.md'
 $report.ToString() | Out-File -FilePath $reportPath -Encoding UTF8

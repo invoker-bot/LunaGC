@@ -342,6 +342,45 @@ wherever that cmdlet happens to run. The server's startup banner lands above the
 boundary on purpose; everything the session itself produced is below it, and
 nothing written while the monitor process was still coming up is lost.
 
+## Bucket reset warnings
+
+Each session starts by erasing the buckets from the previous one, so `error.log`
+is *this* session's errors and not a rerun of the last session's stack traces.
+The erase is verified, not assumed: it opens each bucket exclusively and
+truncates it, then checks the file's length. A length that is still non-zero
+means a handle is still holding the bucket open — the usual cause is a monitor
+from an earlier session that never closed its writers, which is what happens
+when a session is killed at the terminal instead of ending through the game
+exiting.
+
+When the erase is refused, the monitor **moves the bucket aside** to
+`<bucket>.prev-session-<HHmmss>` and starts a fresh one, rather than leaving the
+session to append onto a previous session's tail. The timestamp matters: two
+sessions in a row that both wedge the same bucket would otherwise overwrite each
+other's moved-aside file, and the second session's note would point at contents
+that were no longer what it described.
+
+If the bucket can be neither erased nor moved — a handle held with an exclusive
+share, which is how the pre-fix writers opened their files — it is reported and
+**skipped for the session**: the monitor marks that bucket dead, writes nothing
+to it, and its lines never reach this session's counts. That is why a session
+whose `all.log` was wedged still has a complete `error.log` and `unhandled.log`,
+and why the verdict does not come back `ERRORS` on the strength of an old
+`error.log` full of someone else's stack traces.
+
+Both outcomes are surfaced in three places:
+
+- a **`## bucket reset warnings`** section near the top of `report.md`, which is
+  where to look when a session's buckets look wrong;
+- the **`resetNotes`** array in `session.json`, one entry per affected bucket,
+  naming the file it was moved to or why it could not be moved;
+- a **`[STALE]`** tag next to that bucket's line count in `index.txt`, marking a
+  count that is accurate about the file but not about the session.
+
+The moved-aside files are gitignored alongside the rest of `debug/`. Delete them
+once you have read them; keeping them is only useful when two sessions need
+comparing.
+
 ## Questing must stay enabled
 
 `server.game.gameOptions.questing.enabled` defaults to **`true`** and should stay
