@@ -764,8 +764,27 @@ public final class ResourceLoader {
         loadConfigData(GameData.getAvatarConfigData(), "BinOutput/Avatar/", ConfigEntityAvatar.class);
         loadConfigData(
                 GameData.getMonsterConfigData(), "BinOutput/Monster/", ConfigEntityMonster.class);
+        reportMonsterAbilityCoverage();
         loadConfigDataMap(
                 GameData.getGadgetConfigData(), "BinOutput/Gadget/", ConfigEntityGadget.class);
+    }
+
+    /**
+     * A monster config whose "abilities" list never lands in memory is the same as a missing config
+     * as far as combat is concerned - the entity spawns, but the client-side state machine the fight
+     * depends on never starts. Dvalin's ConfigMonster_Dvalin_S00 was silently empty this way, which
+     * is why the AirGun phase of the Stormterror fight never began.
+     */
+    private static void reportMonsterAbilityCoverage() {
+        int withAbilities = 0;
+        for (var config : GameData.getMonsterConfigData().values()) {
+            if (config.getAbilities() != null && !config.getAbilities().isEmpty()) withAbilities++;
+        }
+        Grasscutter.getLogger()
+                .debug(
+                        "Monster configs with a usable abilities list: {} of {}.",
+                        withAbilities,
+                        GameData.getMonsterConfigData().size());
     }
 
     private static <T extends ConfigEntityBase> void loadConfigData(
