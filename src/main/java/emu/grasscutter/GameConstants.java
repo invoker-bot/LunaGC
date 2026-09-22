@@ -11,6 +11,15 @@ public final class GameConstants {
     public static int[] VERSION_PARTS = {7, 0, 0};
     public static boolean DEBUG = false;
 
+    /*
+     * Set by the '-dev' start-up argument. Developer mode is the server-side half of `task dev`:
+     * it registers the {@link emu.grasscutter.server.dev.UnimplementedRequestReporter} listener,
+     * which turns 'a request arrived that we probably do not implement' into a written report
+     * instead of a silent no-op. Off by default because the no-response half of that check
+     * measures every packet the session sends.
+     */
+    public static boolean DEVELOPER_MODE = false;
+
     public static final int ENTITY_ID_BIT_SHIFT = 21;
     public static final int DEFAULT_TEAMS = 4;
     public static final int MAX_TEAMS = 50;

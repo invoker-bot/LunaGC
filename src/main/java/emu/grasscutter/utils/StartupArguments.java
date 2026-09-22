@@ -17,50 +17,58 @@ public interface StartupArguments {
             new HashMap<>() {
                 {
                     putAll(
-                            Map.of(
-                                    "-dumppacketids",
-                                    parameter -> {
-                                        PacketOpcodesUtils.dumpPacketIds();
-                                        return true;
-                                    },
-                                    "-version",
-                                    StartupArguments::printVersion,
-                                    "-debug",
-                                    StartupArguments::enableDebug,
-                                    "-lang",
-                                    parameter -> {
-                                        Grasscutter.setPreferredLanguage(parameter);
-                                        return false;
-                                    },
-                                    "-game",
-                                    parameter -> {
-                                        Grasscutter.setRunModeOverride(Grasscutter.ServerRunMode.GAME_ONLY);
-                                        return false;
-                                    },
-                                    "-dispatch",
-                                    parameter -> {
-                                        Grasscutter.setRunModeOverride(Grasscutter.ServerRunMode.DISPATCH_ONLY);
-                                        return false;
-                                    },
-                                    "-noconsole",
-                                    parameter -> {
-                                        Grasscutter.setNoConsole(true);
-                                        return false;
-                                    },
-                                    "-test",
-                                    parameter -> {
-                                        // Disable the console.
-                                        SERVER.game.enableConsole = false;
-                                        // Disable HTTP encryption.
-                                        SERVER.http.encryption.useEncryption = false;
-                                        return false;
-                                    },
-                                    "-dump",
-                                    StartupArguments::dump,
+                            // Map.of stops at ten key/value pairs and this table has more, so the
+                            // entries are spelled out through ofEntries instead. The handlers are
+                            // unchanged.
+                            Map.ofEntries(
+                                    Map.entry(
+                                            "-dumppacketids",
+                                            parameter -> {
+                                                PacketOpcodesUtils.dumpPacketIds();
+                                                return true;
+                                            }),
+                                    Map.entry("-version", StartupArguments::printVersion),
+                                    Map.entry("-debug", StartupArguments::enableDebug),
+                                    Map.entry("-dev", StartupArguments::enableDeveloperMode),
+                                    Map.entry(
+                                            "-lang",
+                                            parameter -> {
+                                                Grasscutter.setPreferredLanguage(parameter);
+                                                return false;
+                                            }),
+                                    Map.entry(
+                                            "-game",
+                                            parameter -> {
+                                                Grasscutter.setRunModeOverride(
+                                                        Grasscutter.ServerRunMode.GAME_ONLY);
+                                                return false;
+                                            }),
+                                    Map.entry(
+                                            "-dispatch",
+                                            parameter -> {
+                                                Grasscutter.setRunModeOverride(
+                                                        Grasscutter.ServerRunMode.DISPATCH_ONLY);
+                                                return false;
+                                            }),
+                                    Map.entry(
+                                            "-noconsole",
+                                            parameter -> {
+                                                Grasscutter.setNoConsole(true);
+                                                return false;
+                                            }),
+                                    Map.entry(
+                                            "-test",
+                                            parameter -> {
+                                                // Disable the console.
+                                                SERVER.game.enableConsole = false;
+                                                // Disable HTTP encryption.
+                                                SERVER.http.encryption.useEncryption = false;
+                                                return false;
+                                            }),
+                                    Map.entry("-dump", StartupArguments::dump),
 
                                     // Aliases.
-                                    "-v",
-                                    StartupArguments::printVersion));
+                                    Map.entry("-v", StartupArguments::printVersion)));
                     putAll(
                             Map.of(
                                     "-debugall",
@@ -135,6 +143,26 @@ public interface StartupArguments {
         Grasscutter.getLogger().debug("The logger is now running in debug mode.");
         // Set the server to debug.
         GameConstants.DEBUG = true;
+        return false;
+    }
+
+    /**
+     * Enables developer mode.
+     *
+     * <p>Distinct from {@link #enableDebug(String)}, which only sets log levels: developer mode
+     * additionally arms the server-side instrumentation that watches for requests the server
+     * probably does not implement. See
+     * {@link emu.grasscutter.server.dev.UnimplementedRequestReporter}. Debug logging comes along
+     * for free, because that reporter's output is useless without it.
+     *
+     * @param parameter Additional parameters (unused; '-dev all' behaves like '-dev').
+     * @return False to continue execution.
+     */
+    private static boolean enableDeveloperMode(String parameter) {
+        StartupArguments.enableDebug(parameter);
+
+        GameConstants.DEVELOPER_MODE = true;
+        Grasscutter.getLogger().info("Developer mode is enabled -- unimplemented requests will be reported.");
         return false;
     }
 

@@ -269,7 +269,11 @@ public final class PluginManager {
                     // Remove the plugin's listeners.
                     handlers.forEach(
                             handler -> {
-                                if (!handler.registrar().equals(plugin)) newMap.get(event).add(handler);
+                                // A null registrar is a server-internal handler (see
+                                // EventHandler.register()); it belongs to no plugin, so it is kept
+                                // here rather than NPE-ing the comparison.
+                                if (handler.registrar() == null || !handler.registrar().equals(plugin))
+                                    newMap.get(event).add(handler);
                             });
                 });
 
