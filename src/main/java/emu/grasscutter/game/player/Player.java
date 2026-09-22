@@ -70,6 +70,10 @@ import static emu.grasscutter.config.Configuration.GAME_OPTIONS;
 
 @Entity(value = "players", useDiscriminator = false)
 public class Player implements PlayerHook, FieldFetch {
+    // How far below a dungeon's entry point a saved position may be before onLogin treats it as a
+    // void snapshot taken mid-fight and moves the player back to born_pos.
+    private static final float LOGIN_FLOOR_MARGIN = 100f;
+
     @Id private int id;
     @Indexed(options = @IndexOptions(unique = true))
     @Getter private String accountId;
@@ -1413,6 +1417,43 @@ public class Player implements PlayerHook, FieldFetch {
 
         World world = new World(this);
         world.addPlayer(this);
+
+        // A player can log out and back in *inside* a scene that replaces the party and grants
+        // scene-level avatar abilities - Stormterror's Lair (scene 20020) forces the Traveler and
+        // grants Dvalin_S01_AirGun, the bow needed to shoot the dragon. Only the scene-transfer
+        // path (World.transferPlayerToScene) ran TeamManager.applyAbilities, so logging in inside
+        // such a scene kept the ordinary party and never received the domain ability.
+        // A quit in the middle of a domain fight can snapshot a position that is off the arena
+        // floor - the player was mid-air over the void when the save was taken. Nothing else
+        // corrects it on the next login: Scene.checkPlayerRespawn only pulls players back above
+        // die_y, and a position saved a few dozen metres above the void floor passes that test
+        // easily (Stormterror's Lair saves Y ~= -450 against born_pos.y 50 and die_y -500). The
+        // player then spends the whole session beneath the map while the dragon, 450m overhead,
+        // stays outside the client's render range - the "state was not loaded correctly" symptom
+        // of quitting mid-quest. Dungeons are bounded and small, so a saved position far below
+        // the entry point there is always the void snapshot; the overworld is not, and is left
+        // alone.
+        var loginScene = this.getScene();
+        if (loginScene != null) {
+            var sceneConfig = loginScene.getScriptManager().getConfig();
+            if (sceneConfig != null
+                    && loginScene.getSceneType() == SceneType.SCENE_DUNGEON
+                    && sceneConfig.born_pos != null
+                    && this.position.getY() < sceneConfig.born_pos.getY() - LOGIN_FLOOR_MARGIN) {
+                Grasscutter.getLogger()
+                        .warn(
+                                "Player {} logged in at Y {} in dungeon scene {}, {}m below the entry"
+                                        + " point - moving back to the scene's born_pos",
+                                this.getUid(),
+                                this.position.getY(),
+                                this.getSceneId(),
+                                sceneConfig.born_pos.getY() - this.position.getY());
+                this.position.set(sceneConfig.born_pos);
+                if (sceneConfig.born_rot != null) this.rotation.set(sceneConfig.born_rot);
+            }
+
+            this.getTeamManager().applyAbilities(loginScene);
+        }
 
         this.setProperty(PlayerProperty.PROP_PLAYER_MP_SETTING_TYPE, this.getMpSetting().getNumber(), false);
         this.setProperty(PlayerProperty.PROP_IS_MP_MODE_AVAILABLE, 1, false);

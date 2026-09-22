@@ -1044,7 +1044,12 @@ public final class TeamManager extends BasePlayerDataManager {
             if (avatarIds != null && avatarIds.size() > 0) {
 
                 specifiedAvatarList.clear();
+                // The list holds every variant of the forced character; the scene only admits
+                // maxSpecifiedAvatarNum of them, so stop once that many are in the party.
+                int maxSpecified = scene.getSceneData().getMaxSpecifiedAvatarNum();
+                int limit = maxSpecified > 0 ? maxSpecified : Integer.MAX_VALUE;
                 for (int id : avatarIds) {
+                    if (specifiedAvatarList.size() >= limit) break;
                     var avatar = avatars.getAvatarById(id);
                     if (avatar == null) continue;
 

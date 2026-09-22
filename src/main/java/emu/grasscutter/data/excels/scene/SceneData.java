@@ -18,4 +18,9 @@ public final class SceneData extends GameResource {
     private String scriptData;
     private String levelEntityConfig;
     private List<Integer> specifiedAvatarList;
+
+    // Scenes with a specifiedAvatarList name every variant of the forced character (both Travelers,
+    // both Wanderers) but only ever admit maxSpecifiedAvatarNum of them - one, the variant the
+    // player actually owns.
+    private int maxSpecifiedAvatarNum;
 }

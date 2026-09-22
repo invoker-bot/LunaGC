@@ -338,6 +338,24 @@ public class World implements Iterable<Player> {
                         () -> {
                             try {
                                 Thread.sleep(delayMs);
+                                // The player can log out during the delay: onLogout ->
+                                // World.removePlayer nulls their world reference, and the
+                                // enter-scene notify dereferences it unconditionally, so a
+                                // teleport that fires after the session closed used to NPE
+                                // down the whole transfer chain instead of being dropped.
+                                // There is nothing to teleport at that point -- the client is
+                                // gone and would never have read the packet anyway.
+                                if (player.getWorld() == null) {
+                                    Grasscutter.getLogger()
+                                            .trace(
+                                                    "queueTransferPlayerToScene: skipping teleport to"
+                                                            + " scene {} for uid {} - no world (logged out"
+                                                            + " during the {}ms delay)",
+                                                    sceneId,
+                                                    player.getUid(),
+                                                    delayMs);
+                                    return;
+                                }
                                 transferPlayerToScene(player, sceneId, pos);
                             } catch (InterruptedException e) {
                                 Grasscutter.getLogger()
