@@ -128,6 +128,28 @@ public class ConfigContainer {
 
         public Dispatch dispatch = new Dispatch();
         public DebugMode debugMode = new DebugMode();
+        public GM gm = new GM();
+    }
+
+    /*
+     * The web GM console. Mounted on the dispatch HTTP server under /gm, so it inherits that
+     * server's bind address and does not open a second port of its own -- a separate port buys no
+     * isolation on one machine, and the console's own guard is the token below.
+     *
+     * The shipped default is empty, which refuses every request: a server that has never been told
+     * a token has not consented to a remote command line, and /gm answers nothing until one is set.
+     */
+    public static class GM {
+        /** Secret required by every /gm route. Empty disables the console entirely (403). */
+        public String accessToken = "";
+
+        /**
+         * Binds the console to the loopback interface only, so that only the machine running the
+         * server can reach it. Off by default to match the dispatch server, which LAN players reach
+         * over 0.0.0.0 -- turn this on when the token is the only thing standing between /gm and the
+         * internet.
+         */
+        public boolean loopbackOnly = false;
     }
 
     public static class Language {

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LunaGC GM Console</title>
+<style>
+  :root {
+    --bg: #171a21;
+    --panel: #1e242d;
+    --panel2: #252d38;
+    --line: #333d4a;
+    --text: #d7e0ea;
+    --dim: #8b98a8;
+    --accent: #4f8cff;
+    --accent2: #2f6ae0;
+    --ok: #3fb96c;
+    --err: #e05a5a;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.5 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; }
+  header { display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+           background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+  header .spacer { flex: 1; }
+  button { background: var(--accent); color: #fff; border: none; border-radius: 6px;
+           padding: 6px 12px; font: inherit; cursor: pointer; }
+  button:hover { background: var(--accent2); }
+  button.ghost { background: var(--panel2); color: var(--text); border: 1px solid var(--line); }
+  button.ghost:hover { background: #31404f; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  input, select { background: #12161c; color: var(--text); border: 1px solid var(--line);
+                  border-radius: 6px; padding: 6px 10px; font: inherit; outline: none; }
+  input:focus, select:focus { border-color: var(--accent); }
+  input[type="password"] { width: 220px; }
+  main { display: grid; grid-template-columns: 340px 1fr; gap: 1px; background: var(--line);
+         height: calc(100vh - 53px); }
+  section { background: var(--panel); overflow-y: auto; padding: 12px; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim);
+       margin: 14px 0 8px; }
+  h2:first-child { margin-top: 0; }
+  .cmd { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px;
+         padding: 7px 9px; margin-bottom: 6px; cursor: pointer; }
+  .cmd:hover { border-color: var(--accent); }
+  .cmd .label { font-family: var(--mono); font-weight: 600; color: #9fc0ff; }
+  .cmd .usage { font-family: var(--mono); font-size: 12px; color: var(--dim); word-break: break-all; }
+  .cmd .tag { display: inline-block; font-size: 10px; padding: 0 5px; margin-left: 6px;
+              border-radius: 4px; background: #3a2f4d; color: #c9a9ff; vertical-align: 1px; }
+  .player { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px;
+            padding: 7px 9px; margin-bottom: 6px; cursor: pointer; }
+  .player:hover { border-color: var(--accent); }
+  .player.sel { border-color: var(--ok); background: #1f2f26; }
+  .player .nm { font-weight: 600; }
+  .player .meta { font-size: 12px; color: var(--dim); font-family: var(--mono); }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row input#command { flex: 1; min-width: 260px; font-family: var(--mono); }
+  .row input#target { width: 110px; font-family: var(--mono); }
+  #output { background: #10141a; border: 1px solid var(--line); border-radius: 6px;
+            font-family: var(--mono); font-size: 12.5px; padding: 10px; white-space: pre-wrap;
+            word-break: break-all; min-height: 280px; max-height: calc(100vh - 260px); overflow-y: auto; }
+  #output .line { padding: 1px 0; }
+  #output .line.err { color: var(--err); }
+  #output .line.cmd { color: #9fc0ff; }
+  .empty { color: var(--dim); font-style: italic; }
+  #gate { display: none; max-width: 420px; margin: 60px auto; background: var(--panel);
+          border: 1px solid var(--line); border-radius: 10px; padding: 24px; }
+  #gate.show { display: block; }
+  #gate p { color: var(--dim); font-size: 13px; }
+  #work { display: block; }
+  #work.hide { display: none; }
+  .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--line);
+          border-top-color: #fff; border-radius: 50%; animation: sp .7s linear infinite;
+          vertical-align: -2px; margin-right: 6px; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; height: auto; } }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <h1 style="margin-top:0">LunaGC GM Console</h1>
+  <p>服务器要求访问令牌才能使用 GM 控制台。令牌只存在本机 localStorage，随每个请求发送。</p>
+  <div class="row">
+    <input type="password" id="gateToken" placeholder="server.gm.accessToken">
+    <button id="gateOk">进入</button>
+  </div>
+  <p id="gateErr" style="color:var(--err)"></p>
+</div>
+
+<div id="work">
+<header>
+  <h1>LunaGM</h1>
+  <span class="spacer"></span>
+  <label style="color:var(--dim)">目标 UID</label>
+  <input id="target" placeholder="@uid">
+  <button id="playersBtn" class="ghost">刷新在线</button>
+  <button id="logout" class="ghost">换令牌</button>
+</header>
+<main>
+  <section>
+    <h2>在线玩家</h2>
+    <div id="playerList"><span class="empty">点击「刷新在线」</span></div>
+    <h2>命令目录</h2>
+    <input id="cmdFilter" placeholder="搜索命令…" style="width:100%;margin-bottom:8px">
+    <div id="cmdList"><span class="empty">加载中…</span></div>
+  </section>
+  <section>
+    <h2>执行命令</h2>
+    <div class="row" style="margin-bottom:10px">
+      <input id="command" placeholder="give 11101 1" >
+      <button id="runBtn">运行</button>
+    </div>
+    <div style="margin-bottom:10px;color:var(--dim);font-size:12px">
+      命令以服务器控制台身份运行（全部权限）。填了目标 UID 时会前置 <span style="font-family:var(--mono)">@uid</span>，
+      即游戏内 <span style="font-family:var(--mono)">give @10001 11101 1</span> 的写法。
+    </div>
+    <div id="output"><span class="empty">输出会显示在这里。</span></div>
+  </section>
+</main>
+</div>
+
+<script>
+"use strict";
+const TOKEN_KEY = "lunagc.gm.token";
+let token = localStorage.getItem(TOKEN_KEY) || "";
+let commands = [];
+
+const $ = id => document.getElementById(id);
+
+function api(path, opts) {
+  opts = Object.assign({ headers: {} }, opts);
+  opts.headers["Authorization"] = "Bearer " + token;
+  return fetch(path, opts).then(r => {
+    if (r.status === 403) {
+      showGate(r.status);
+      throw new Error("403");
+    }
+    const type = r.headers.get("content-type") || "";
+    return type.includes("json") ? r.json().then(j => ({ ok: r.ok, json: j }))
+                                 : r.text().then(t => ({ ok: r.ok, text: t }));
+  });
+}
+
+function showGate() {
+  $("gate").classList.add("show");
+  $("work").classList.add("hide");
+}
+function showWork() {
+  $("gate").classList.remove("show");
+  $("work").classList.remove("hide");
+}
+
+$("gateOk").onclick = () => {
+  token = $("gateToken").value.trim();
+  if (!token) { $("gateErr").textContent = "令牌不能为空。"; return; }
+  api("/gm/api/players").then(() => {
+    localStorage.setItem(TOKEN_KEY, token);
+    $("gateErr").textContent = "";
+    showWork();
+    loadCommands();
+  }).catch(() => { $("gateErr").textContent = "令牌被拒绝（403）。"; });
+};
+$("gateToken").addEventListener("keydown", e => { if (e.key === "Enter") $("gateOk").click(); });
+
+$("logout").onclick = () => {
+  localStorage.removeItem(TOKEN_KEY);
+  token = "";
+  $("gateToken").value = "";
+  showGate();
+};
+
+function out(text, cls) {
+  const box = $("output");
+  if (box.querySelector(".empty")) box.textContent = "";
+  const el = document.createElement("div");
+  el.className = "line" + (cls ? " " + cls : "");
+  el.textContent = text;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+function loadCommands() {
+  if (commands.length) { renderCommands(); return; }
+  api("/gm/api/commands").then(r => {
+    if (!r.ok) { out("加载命令目录失败: " + JSON.stringify(r.json), "err"); return; }
+    commands = r.json.commands || [];
+    renderCommands();
+  }).catch(e => { if (e.message !== "403") out("无法连接服务器: " + e, "err"); });
+}
+
+function renderCommands() {
+  const q = ($("cmdFilter").value || "").toLowerCase();
+  const list = $("cmdList");
+  list.textContent = "";
+  const rows = commands
+    .filter(c => !q || c.label.toLowerCase().includes(q)
+                 || (c.usage || "").toLowerCase().includes(q)
+                 || (c.aliases || []).some(a => a.toLowerCase().includes(q)))
+    .slice(0, 200);
+  if (!rows.length) { list.textContent = "无匹配命令。"; return; }
+  for (const c of rows) {
+    const el = document.createElement("div");
+    el.className = "cmd";
+    const tag = c.target && c.target !== "NONE"
+      ? `<span class="tag">需目标</span>` : (c.threading ? `<span class="tag">异步</span>` : "");
+    el.innerHTML = `<div class="label">${esc(c.label)}${tag}</div>
+                    <div class="usage">${esc(c.usage || "")}</div>`;
+    el.title = "点击填入命令框";
+    el.onclick = () => {
+      // usage like "give <avatarId> [lv]" starts with the label; the rest is the argument template.
+      const rest = c.usage && c.usage.startsWith(c.label) ? c.usage.slice(c.label.length).trim() : "";
+      $("command").value = c.label + (rest ? " " + rest : "");
+      $("command").focus();
+    };
+    list.appendChild(el);
+  }
+}
+$("cmdFilter").oninput = renderCommands;
+
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function loadPlayers() {
+  $("playerList").textContent = "加载中…";
+  api("/gm/api/players").then(r => {
+    const list = $("playerList");
+    list.textContent = "";
+    if (!r.ok) { list.textContent = "失败: " + JSON.stringify(r.json); return; }
+    const players = r.json.players || [];
+    if (!players.length) { list.innerHTML = '<span class="empty">没有在线玩家</span>'; return; }
+    for (const p of players) {
+      const el = document.createElement("div");
+      el.className = "player";
+      el.innerHTML = `<div class="nm">${esc(p.nickname)} <span class="meta">${p.uid}</span></div>
+        <div class="meta">Lv ${p.level} · WL ${p.worldLevel} · 场景 ${p.sceneId} ·
+        (${p.position[0]|0}, ${p.position[1]|0}, ${p.position[2]|0})</div>`;
+      el.onclick = () => {
+        document.querySelectorAll(".player.sel").forEach(x => x.classList.remove("sel"));
+        el.classList.add("sel");
+        $("target").value = p.uid;
+      };
+      list.appendChild(el);
+    }
+  }).catch(e => { if (e.message !== "403") $("playerList").textContent = "无法连接服务器"; });
+}
+$("playersBtn").onclick = loadPlayers;
+
+$("runBtn").onclick = () => {
+  const command = $("command").value.trim();
+  if (!command) return;
+  const target = $("target").value.trim().replace(/^@/, "");
+  out("$ " + (target ? "@" + target + " " : "") + command, "cmd");
+  $("runBtn").disabled = true;
+  $("runBtn").innerHTML = '<span class="spin"></span>运行中';
+  api("/gm/api/command", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ command, target: target || null })
+  }).then(r => {
+    if (!r.ok) {
+      out("错误 " + (r.json && r.json.retcode || "") + ": " + (r.json && JSON.stringify(r.json) || r.text), "err");
+      return;
+    }
+    const lines = (r.json.output || []);
+    if (!lines.length) out("(命令没有输出)", "");
+    for (const line of lines) out(line);
+  }).catch(e => { if (e.message !== "403") out("请求失败: " + e, "err"); })
+  .finally(() => {
+    $("runBtn").disabled = false;
+    $("runBtn").textContent = "运行";
+  });
+};
+$("command").addEventListener("keydown", e => { if (e.key === "Enter") $("runBtn").click(); });
+
+// Boot: a bookmarked URL may carry ?token=; otherwise use what the browser kept, else ask.
+const urlToken = new URLSearchParams(location.search).get("token");
+if (urlToken) {
+  token = urlToken;
+  localStorage.setItem(TOKEN_KEY, token);
+  history.replaceState(null, "", "/gm");
+}
+if (token) {
+  api("/gm/api/players").then(() => { showWork(); loadCommands(); }).catch(() => showGate());
+} else {
+  showGate();
+}
+</script>
+</body>
+</html>

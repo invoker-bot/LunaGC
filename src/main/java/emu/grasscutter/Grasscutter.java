@@ -144,6 +144,7 @@ public final class Grasscutter {
             httpServer.addRouter(GachaHandler.class);
             httpServer.addRouter(DocumentationServerHandler.class);
             httpServer.addRouter(HandbookHandler.class);
+            httpServer.addRouter(emu.grasscutter.server.http.handlers.GmHandler.class);
         }
 
         // Check if the HTTP server should start.
