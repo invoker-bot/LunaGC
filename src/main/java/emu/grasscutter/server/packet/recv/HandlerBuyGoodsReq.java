@@ -89,8 +89,6 @@ public class HandlerBuyGoodsReq extends PacketHandler {
                 continue;
             }
 
-            player.addShopLimit(
-                    sg.getGoodsId(), buyCount, ShopSystem.getShopNextRefreshTime(sg));
             int itemId = sg.getGoodsItem().getId();
             int itemCount;
             try {
@@ -111,8 +109,22 @@ public class HandlerBuyGoodsReq extends PacketHandler {
                 player.getInventory().addItems(rolled, ActionReason.Shop);
             } else {
                 GameItem item = new GameItem(itemId, itemCount);
-                player.getInventory().addItem(item, ActionReason.Shop, true);
+                // A bundle is useOnGain, so the default path consumes it and hands out whatever the
+                // chest table holds - and if that table is missing the purchase just vanishes.
+                // The player bought the item, so put the item in the bag and let them open it.
+                boolean delivered = player.getInventory().addItem(item, ActionReason.Shop, true, true);
+                if (!delivered) {
+                    // The bag was full or the stack could not take the count. Hand the currency back
+                    // and answer failure, rather than charging for a good that never arrived.
+                    costs.forEach(cost -> player.getInventory().addItem(cost.getId(), cost.getCount() * buyCount));
+                    session.send(new PacketBuyGoodsRsp(Retcode.RET_PACK_EXCEED_MAX_WEIGHT));
+                    continue;
+                }
             }
+            // Only now that the goods are in the bag does the purchase count against the refresh
+            // limit. Recording it earlier would burn a player's limited buys on a failed delivery.
+            player.addShopLimit(
+                    sg.getGoodsId(), buyCount, ShopSystem.getShopNextRefreshTime(sg));
             session.send(
                     new PacketBuyGoodsRsp(
                             buyGoodsReq.getShopType(),

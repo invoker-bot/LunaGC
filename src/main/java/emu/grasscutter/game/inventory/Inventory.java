@@ -117,7 +117,21 @@ public class Inventory extends BasePlayerManager implements Iterable<GameItem> {
     }
 
     public boolean addItem(GameItem item) {
-        GameItem result = putItem(item);
+        return addItem(item, false);
+    }
+
+    /**
+     * Adds an item, optionally bypassing the use-on-gain interception.
+     *
+     * @param item The item to add.
+     * @param skipUseOnGain Items flagged useOnGain are consumed by putItem() and never reach the
+     *     bag, which is right for a dropped bundle but wrong for one that was bought and paid for.
+     *     Passing true puts the item in the store like any other, so the player actually receives
+     *     it and can open it themselves.
+     * @return True if the item was stored.
+     */
+    public boolean addItem(GameItem item, boolean skipUseOnGain) {
+        GameItem result = putItem(item, skipUseOnGain);
 
         if (result != null) {
             this.triggerAddItemEvents(result);
@@ -136,7 +150,12 @@ public class Inventory extends BasePlayerManager implements Iterable<GameItem> {
     }
 
     public boolean addItem(GameItem item, ActionReason reason, boolean forceNotify) {
-        boolean result = addItem(item);
+        return addItem(item, reason, forceNotify, false);
+    }
+
+    public boolean addItem(
+            GameItem item, ActionReason reason, boolean forceNotify, boolean skipUseOnGain) {
+        boolean result = addItem(item, skipUseOnGain);
 
         // putItem() bails out on a null itemData, so an unknown item id gets this far with none.
         var itemData = item.getItemData();
@@ -185,7 +204,9 @@ public class Inventory extends BasePlayerManager implements Iterable<GameItem> {
         }
         getPlayer().sendPacket(new PacketStoreItemChangeNotify(changedItems));
         if (reason != null) {
-            getPlayer().sendPacket(new PacketItemAddHintNotify(items, reason));
+            // The originals may have merged into an existing stack or been consumed by a
+            // use-on-gain item, so the toast has to name what the bag actually gained.
+            getPlayer().sendPacket(new PacketItemAddHintNotify(changedItems, reason));
         }
     }
 
@@ -284,6 +305,10 @@ public class Inventory extends BasePlayerManager implements Iterable<GameItem> {
     }
 
     private synchronized GameItem putItem(GameItem item) {
+        return putItem(item, false);
+    }
+
+    private synchronized GameItem putItem(GameItem item, boolean skipUseOnGain) {
         // Dont add items that dont have a valid item definition.
         var data = item.getItemData();
         if (data == null) return null;
@@ -293,7 +318,7 @@ public class Inventory extends BasePlayerManager implements Iterable<GameItem> {
             Grasscutter.getLogger().debug("addItemObtainedHistory failed", e);
         }
 
-        if (data.isUseOnGain()) {
+        if (!skipUseOnGain && data.isUseOnGain()) {
             var params = new UseItemParams(this.player, data.getUseTarget());
             params.usedItemId = data.getId();
             this.player.getServer().getInventorySystem().useItemDirect(data, params);

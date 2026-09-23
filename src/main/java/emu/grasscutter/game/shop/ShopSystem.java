@@ -10,6 +10,7 @@ import emu.grasscutter.server.game.*;
 import emu.grasscutter.utils.Utils;
 import it.unimi.dsi.fastutil.ints.*;
 import java.util.*;
+// import java.util.stream.Collectors;
 import lombok.Getter;
 
 public class ShopSystem extends BaseGameSystem {
@@ -62,21 +63,44 @@ public class ShopSystem extends BaseGameSystem {
             }
 
             if (GAME_OPTIONS.enableShopItems) {
-                // Shop.json is the curated source and every one of its shops also exists in the
-                // excel data, so appending there would list those items twice. Fill only the
-                // shops it does not define.
+                // Shop.json is a curated snapshot, not the whole catalogue: it trails the excel by
+                // hundreds of goods in the city shops and misses 53 shops outright. Fill what it
+                // lacks - a shop it defines gets only the goodsIds it does not already list, so a
+                // curated price or level override is never duplicated or overwritten.
                 GameData.getShopGoodsDataEntries()
                         .forEach(
                                 (k, v) -> {
                                     int shopId = k.intValue();
-                                    if (getShopData().containsKey(shopId)) return;
+                                    var items =
+                                            getShopData().computeIfAbsent(shopId, x -> new ArrayList<>());
+                                    var known = new HashMap<Integer, ShopInfo>();
+                                    for (ShopInfo curated : items) known.put(curated.getGoodsId(), curated);
 
-                                    var items = new ArrayList<ShopInfo>(v.size());
                                     for (ShopGoodsData sgd : v) {
-                                        items.add(new ShopInfo(sgd));
+                                        var curated = known.get(sgd.getGoodsId());
+                                        if (curated == null) {
+                                            items.add(new ShopInfo(sgd));
+                                            continue;
+                                        }
+                                        // A curated good that costs nothing at all is not a giveaway, it
+                                        // is a price someone scrubbed: Shop.json ships shop 902 (the
+                                        // package shop) and 1052 with every good free. Charge nothing and
+                                        // payItems waves any count through, so this was the other half of
+                                        // the purchase exploit. Only currency is restored - costItemList
+                                        // is left alone because the fork prices some shops in materials on
+                                        // purpose, and those goods already fail the all-free test.
+                                        if (curated.getScoin() == 0
+                                                && curated.getHcoin() == 0
+                                                && curated.getMcoin() == 0
+                                                && (curated.getCostItemList() == null
+                                                        || curated.getCostItemList().isEmpty())) {
+                                            curated.setScoin(sgd.getCostScoin());
+                                            curated.setHcoin(sgd.getCostHcoin());
+                                            curated.setMcoin(sgd.getCostMcoin());
+                                        }
                                     }
-                                    getShopData().put(shopId, items);
                                 });
+                Grasscutter.getLogger().debug("Shop data filled with excel goods.");
             }
         } catch (Exception e) {
             Grasscutter.getLogger().error("Unable to load shop data.", e);

@@ -295,7 +295,7 @@ public class ConfigContainer {
         public boolean isPreventEntityError = true;
 
         public boolean watchGachaConfig = false;
-        public boolean enableShopItems = false;
+        public boolean enableShopItems = true;
         public ArtifactShopOptions artifactShop = new ArtifactShopOptions();
         public boolean staminaUsage = true;
         public boolean energyUsage = true;
