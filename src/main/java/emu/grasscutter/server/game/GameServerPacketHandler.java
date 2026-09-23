@@ -15,6 +15,9 @@ public final class GameServerPacketHandler {
 
     private final Int2ObjectMap<PacketHandler> handlers;
 
+    /** Opcodes whose handlers are annotated {@link NoResponseExpected}. */
+    private final IntSet noResponseOpcodes = new IntOpenHashSet();
+
     public GameServerPacketHandler(Class<? extends PacketHandler> handlerClass) {
         this.handlers = new Int2ObjectOpenHashMap<>();
 
@@ -30,6 +33,13 @@ public final class GameServerPacketHandler {
 
             var packetHandler = handlerClass.getDeclaredConstructor().newInstance();
             this.handlers.put(opcode.value(), packetHandler);
+
+            // Collected here so the NO_RESPONSE check below can skip it in one lookup. Without this,
+            // a handler that is silent on purpose would be refiled as an unimplemented request at the
+            // start of every session, burying the gaps the report exists to name.
+            if (handlerClass.isAnnotationPresent(NoResponseExpected.class)) {
+                this.noResponseOpcodes.add(opcode.value());
+            }
         } catch (Exception e) {
             Grasscutter.getLogger()
                     .warn("Unable to register handler {}.", handlerClass.getSimpleName(), e);
@@ -111,7 +121,8 @@ public final class GameServerPacketHandler {
                     handler.handle(session, header, event.getPacketData());
                     if (emu.grasscutter.GameConstants.DEVELOPER_MODE
                             && session.getPacketsSent() == sentBefore
-                            && PacketOpcodesUtils.getOpcodeName(opcode).endsWith("Req")) {
+                            && PacketOpcodesUtils.getOpcodeName(opcode).endsWith("Req")
+                            && !this.noResponseOpcodes.contains(opcode)) {
                         new emu.grasscutter.server.event.game.UnimplementedRequestEvent(
                                         session, opcode, payload, describeFields(payload),
                                         emu.grasscutter.server.event.game.UnimplementedRequestEvent.Reason
