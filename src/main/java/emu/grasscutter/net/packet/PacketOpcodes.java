@@ -2193,16 +2193,18 @@ public final class PacketOpcodes {
     public static final int UnnamedOpcode9980 = 9980;
 
     // Pinned from a second live session (2026-09-21 22:22-22:43, uid 10001). The eight pinned above
-    // stopped arriving the moment their handlers registered, which is the loop closing; these three
+    // stopped arriving the moment their handlers registered, which is the loop closing; these four
     // are what the client reached for next, so the backlog is a moving record of the feature path
-    // walked rather than a fixed list. All three are unnamed in the dump, and their payloads are
+    // walked rather than a fixed list. All four are unnamed in the dump, and their payloads are
     // small enough to be a single field, so the id is still the only thing a later real name can be
     // attached to. The field dumps from the announcement, kept in the harvest, are what will name
     // them: 98 carries {15:varint=1002}, 21870 a 4-byte length-delimited blob, 26587 the pair
-    // {10:varint=10000007, 15:varint=7} whose first value is the avatar-guid range.
+    // {10:varint=10000007, 15:varint=7} whose first value is the avatar-guid range, and 4599 an
+    // empty body whose feature gave it nothing to say.
     public static final int UnnamedOpcode98 = 98;
     public static final int UnnamedOpcode21870 = 21870;
     public static final int UnnamedOpcode26587 = 26587;
+    public static final int UnnamedOpcode4599 = 4599;
 
     public static final HashSet<Integer> BANNED_PACKETS = new HashSet<>() {
         {
