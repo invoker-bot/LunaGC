@@ -121,6 +121,11 @@ YuanShenResources/
 /LunaGC/
 /LunaGC-Resources/
 
+# A full clone of upstream Grasscutter (development branch) kept locally to diff
+# LunaGC's behaviour against it. A quarter of a gigabyte of someone else's source
+# does not belong in this history, so it is read-only here.
+/ref/
+
 # `task dev` session output. *.log already covers the live logs; the rotated
 # copies and the ad-hoc launch batches do not end in those extensions.
 # start_stdout.log.* catches every rotation (.predev, .prequest, ...) instead
