@@ -905,13 +905,36 @@ public class InventorySystem extends BaseGameSystem {
             int count,
             int optionId,
             boolean isEnterMpDungeonTeam) {
-        Grasscutter.getLogger().debug("Attempting to use item from inventory");
+        Grasscutter.getLogger()
+                .debug(
+                        "Attempting to use item from inventory: guid {} count {} target guid {}",
+                        itemGuid,
+                        count,
+                        targetGuid);
         Avatar target = player.getAvatars().getAvatarByGuid(targetGuid);
         GameItem item = player.getInventory().getItemByGuid(itemGuid);
-        if (item == null) return null;
-        if (item.getCount() < count) return null;
+        if (item == null) {
+            Grasscutter.getLogger()
+                    .warn(
+                            "Item use rejected: no inventory item with guid {} (uid {}).",
+                            itemGuid, player.getUid());
+            return null;
+        }
+        if (item.getCount() < count) {
+            Grasscutter.getLogger()
+                    .warn(
+                            "Item use rejected: item {} has count {} but {} were requested (uid {}).",
+                            item.getItemId(), item.getCount(), count, player.getUid());
+            return null;
+        }
         ItemData itemData = item.getItemData();
-        if (itemData == null) return null;
+        if (itemData == null) {
+            Grasscutter.getLogger()
+                    .warn(
+                            "Item use rejected: item {} (guid {}) has no ItemData (uid {}).",
+                            item.getItemId(), itemGuid, player.getUid());
+            return null;
+        }
 
         var params =
                 new UseItemParams(
@@ -921,10 +944,14 @@ public class InventorySystem extends BaseGameSystem {
             player.getInventory().removeItem(item, count);
             var actions = itemData.getItemUseActions();
             if (actions != null) actions.forEach(use -> use.postUseItem(params));
-            Grasscutter.getLogger().debug("Item use succeeded!");
+            Grasscutter.getLogger()
+                    .debug("Item use succeeded: item {} (guid {}).", item.getItemId(), itemGuid);
             return item;
         } else {
-            Grasscutter.getLogger().debug("Item use failed!");
+            // useItemDirect() reports which condition it was; that is the interesting half of
+            // this line, because every failure looks identical from the handler's side.
+            Grasscutter.getLogger()
+                    .debug("Item use failed: item {} (guid {}).", item.getItemId(), itemGuid);
             return null;
         }
     }
@@ -938,13 +965,33 @@ public class InventorySystem extends BaseGameSystem {
         switch (params.itemUseTarget) {
             case ITEM_USE_TARGET_NONE -> {}
             case ITEM_USE_TARGET_SPECIFY_AVATAR -> {
-                if (target.isEmpty()) return false;
+                if (target.isEmpty()) {
+                    Grasscutter.getLogger()
+                            .debug(
+                                    "Item use rejected: item {} targets a specified avatar but the request named none.",
+                                    itemData.getId());
+                    return false;
+                }
             }
             case ITEM_USE_TARGET_SPECIFY_ALIVE_AVATAR -> {
-                if (target.map(a -> !a.getAsEntity().isAlive()).orElse(true)) return false;
+                if (target.map(a -> !a.getAsEntity().isAlive()).orElse(true)) {
+                    Grasscutter.getLogger()
+                            .debug(
+                                    "Item use rejected: item {} targets a living avatar, but the target is dead or absent ({}).",
+                                    itemData.getId(),
+                                    target.map(a -> a.getAvatarId()).orElse(null));
+                    return false;
+                }
             }
             case ITEM_USE_TARGET_SPECIFY_DEAD_AVATAR -> {
-                if (target.map(a -> a.getAsEntity().isAlive()).orElse(true)) return false;
+                if (target.map(a -> a.getAsEntity().isAlive()).orElse(true)) {
+                    Grasscutter.getLogger()
+                            .debug(
+                                    "Item use rejected: item {} targets a fallen avatar, but the target is alive or absent ({}).",
+                                    itemData.getId(),
+                                    target.map(a -> a.getAvatarId()).orElse(null));
+                    return false;
+                }
             }
             case ITEM_USE_TARGET_CUR_AVATAR -> {}
             case ITEM_USE_TARGET_CUR_TEAM -> {}
@@ -956,7 +1003,13 @@ public class InventorySystem extends BaseGameSystem {
             var event =
                     new PlayerUseFoodEvent(params.player, itemData, params.targetAvatar.getAsEntity());
             event.call();
-            if (event.isCanceled()) return false;
+            if (event.isCanceled()) {
+                Grasscutter.getLogger()
+                        .debug(
+                                "Item use rejected: a listener canceled PlayerUseFoodEvent for item {}.",
+                                itemData.getId());
+                return false;
+            }
 
             float satiationIncrease =
                     satiationParams[0]
@@ -969,6 +1022,10 @@ public class InventorySystem extends BaseGameSystem {
                             params.targetAvatar,
                             satiationIncrease,
                             itemData.getId())) { // Make sure avatar can eat
+                Grasscutter.getLogger()
+                        .debug(
+                                "Item use rejected: item {} is food and the avatar is too full (satiation).",
+                                itemData.getId());
                 return false;
             }
         }
@@ -977,9 +1034,28 @@ public class InventorySystem extends BaseGameSystem {
         var actions = itemData.getItemUseActions();
         Grasscutter.getLogger().trace("Using - actions - {}", actions);
         if (actions == null) return true; // Maybe returning false would be more appropriate?
-        return actions.stream()
-                .map(use -> use.useItem(params))
-                .reduce(false, (a, b) -> a || b); // Don't short-circuit!!!
+        // Every action gets run (the reduce does not short-circuit), so a false here means none
+        // of them claimed the use. Log per-action results so a food/relic/etc. item that has an
+        // action the server cannot apply is distinguishable from one that has no usable action.
+        boolean used = false;
+        for (var use : actions) {
+            var applied = use.useItem(params);
+            Grasscutter.getLogger()
+                    .trace(
+                            "Item use action {} for item {} returned {}.",
+                            use.getClass().getSimpleName(),
+                            itemData.getId(),
+                            applied);
+            used |= applied;
+        }
+        if (!used) {
+            Grasscutter.getLogger()
+                    .debug(
+                            "Item use rejected: item {} has {} use action(s) and none applied.",
+                            itemData.getId(),
+                            actions.size());
+        }
+        return used;
     }
     public void favouriteEquip(Player player, long itemId, boolean isFavourite) {
         GameItem equip = player.getInventory().getItemByGuid(itemId);
