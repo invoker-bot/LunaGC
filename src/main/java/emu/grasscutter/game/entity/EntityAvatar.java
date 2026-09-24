@@ -345,7 +345,7 @@ public class EntityAvatar extends GameEntity {
 
         boolean inNatlan = this.getPlayer().getScene() != null && this.getPlayer().getScene().getId() == 101;
         int phlogistonHash = Utils.abilityHash("DynamicAbility_Phlogiston");
-        for (int id : GameConstants.DEFAULT_ABILITY_HASHES) {
+        for (int id : GameConstants.defaultAbilityHashes()) {
             if (id == phlogistonHash && !inNatlan) continue;
             AbilityEmbryo emb =
                     AbilityEmbryo.newBuilder()

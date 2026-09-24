@@ -1,10 +1,13 @@
 package emu.grasscutter;
 
+import emu.grasscutter.data.GameData;
 import emu.grasscutter.game.world.Position;
 import emu.grasscutter.utils.Utils;
 import emu.grasscutter.utils.objects.SparseSet;
 
 import java.util.Arrays;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class GameConstants {
     public static String VERSION = "7.0.0";
@@ -51,13 +54,11 @@ public final class GameConstants {
          "Ability_Avatar_Dive_CrabShield",
          "ActivityAbility_Absorb_Shoot",
          "SceneAbility_DiveVolume",
-         "Avatar_PlayerGirl_DiveStamina_Reduction",
          "Ability_Avatar_Dive_Team",
          "Avatar_Absorb_TrackingMissile",
          "Avatar_Absorb_SwordFishSlash",
          "TeamAbility_Natsaurus_Transfer_Vehicle_Skill",
          "DynamicAbility_Phlogiston",
-         "DynamicAbility_NightsoulBlessing",
          "TeamAbility_Natsaurus_Vehicle_State_Listener",
          "DynamicAbility_ArcLight_Predicate",
          "DynamicAbility_CommonArcLight_Invincible_V5_0",
@@ -67,7 +68,6 @@ public final class GameConstants {
          "TeamAbility_Natsaurus_Preload_Hookwalker",
          "TeamAbility_Natsaurus_Preload_Mosasaurus",
          "TeamAbility_Natsaurus_Hookwalker_ElementalArt_TriggerBullet",
-         "TeamAbility_NightsoulBurst",
          "TeamAbility_Natsaurus_Hookwalker_ElementalArt_TriggerBullet_01",
          "TeamAbility_Natsaurus_Hookwalker_ElementalArt_TriggerBullet_02",
          "TeamAbility_Natsaurus_Hookwalker_ElementalArt_TriggerBullet_03",
@@ -106,8 +106,7 @@ public final class GameConstants {
              "TeamAbility_Natsaurus_Hookwalker_ElementalArt_TriggerBullet_05",
              "TeamAbility_Natsaurus_Hookwalker_ElementalArt_TriggerBullet_06",
              "TeamAbility_Natsaurus_Hookwalker_ElementalArt_TriggerBullet_07",
-             "TeamAbility_Natsaurus_Hookwalker_ElementalArt_TriggerBullet_5001",
-             "TeamAbility_NightsoulBurst"
+             "TeamAbility_Natsaurus_Hookwalker_ElementalArt_TriggerBullet_5001"
      };
     public static final SparseSet ILLEGAL_WEAPONS = new SparseSet("""
         10000-10008, 11411, 11506-11508, 12505, 12506, 12508, 12509,
@@ -121,7 +120,64 @@ public final class GameConstants {
         105001, 105004, 106000-107000, 107011, 108000, 109000-110000,
         115000-130000, 200200-200899, 220050, 220054
         """);
-    public static final int[] DEFAULT_ABILITY_HASHES =
+    /**
+     * Hashes of {@link #DEFAULT_ABILITY_STRINGS}.
+     *
+     * <p>Read these through {@link #defaultAbilityHashes()} rather than using the array directly.
+     * The client resolves every embryo's hash against its own string table and raises an error
+     * dialog for one it cannot resolve, so a name that no longer exists in this client version must
+     * never be sent. These lists were carried forward from 6.x, which is how three renamed/removed
+     * abilities reached a 7.0 client and kept throwing its error dialog; the accessor filters them
+     * against the loaded ability data so a later drift costs a dropped embryo instead of a crash.
+     */
+    private static final int[] DEFAULT_ABILITY_HASHES =
             Arrays.stream(DEFAULT_ABILITY_STRINGS).mapToInt(Utils::abilityHash).toArray();
+
+    public static int[] defaultAbilityHashes() {
+        return filterKnownHashes(DEFAULT_ABILITY_HASHES);
+    }
+
+    /** Same guard as {@link #defaultAbilityHashes()} for the team list; the caller hashes it. */
+    public static String[] defaultTeamAbilityStrings() {
+        return filterKnownNames(DEFAULT_TEAM_ABILITY_STRINGS);
+    }
+
+    private static int[] filterKnownHashes(int[] hashes) {
+        var known = GameData.getAbilityHashes();
+        if (known.isEmpty()) return hashes; // Resources not loaded yet; empty means unknown, not none.
+        var out = new int[hashes.length];
+        int n = 0;
+        for (int hash : hashes) {
+            if (known.containsKey(hash)) out[n++] = hash;
+            else reportDropped(hash);
+        }
+        return n == out.length ? out : Arrays.copyOf(out, n);
+    }
+
+    private static String[] filterKnownNames(String[] names) {
+        var known = GameData.getAbilityHashes();
+        if (known.isEmpty()) return names;
+        var out = new String[names.length];
+        int n = 0;
+        for (String name : names) {
+            if (known.containsKey(Utils.abilityHash(name))) out[n++] = name;
+            else reportDropped(name);
+        }
+        return n == out.length ? out : Arrays.copyOf(out, n);
+    }
+
+    /** One warning per dead entry, so the next stale name surfaces once instead of once per avatar. */
+    private static final Set<String> reportedDropped = ConcurrentHashMap.newKeySet();
+
+    private static void reportDropped(Object what) {
+        if (reportedDropped.add(String.valueOf(what))) {
+            Grasscutter.getLogger()
+                    .warn(
+                            "Default ability {} is not in the loaded ability data; dropping it from the"
+                                    + " embryo list because the client errors on hashes it cannot resolve.",
+                            what);
+        }
+    }
+
     public static final int DEFAULT_ABILITY_NAME = Utils.abilityHash("Default");
 }

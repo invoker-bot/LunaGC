@@ -1159,7 +1159,7 @@ public final class AbilityManager extends BasePlayerManager {
         }
         boolean inNatlan = player.getScene() != null && player.getScene().getId() == 101;
         int phlogistonHash = emu.grasscutter.utils.Utils.abilityHash("DynamicAbility_Phlogiston");
-        for (int hash : emu.grasscutter.GameConstants.DEFAULT_ABILITY_HASHES) {
+        for (int hash : emu.grasscutter.GameConstants.defaultAbilityHashes()) {
             if (hash == phlogistonHash && !inNatlan) continue;
             addAbilityByHash(avatar, hash);
         }
