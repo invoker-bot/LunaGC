@@ -21,10 +21,10 @@ param(
     [ValidateSet('start', 'stop', 'status', 'report')]
     [string] $Mode = 'status',
 
-    # Extra server arguments. The dev default is '-dev': DEBUG logging plus the
-    # unimplemented-request check, which files anything the server probably does
-    # not implement into debug/dev-report/unimplemented.md. '-dev all' adds
-    # packet logging on top. See StartupArguments and
+    # Extra server arguments. The dev default is '-dev': DEBUG logging, packet
+    # logging per server.debugMode, and the unimplemented-request check, which
+    # files anything the server probably does not implement into
+    # debug/dev-report/unimplemented.md. See StartupArguments and
     # UnimplementedRequestReporter. Passed straight through to serve.ps1, which
     # quotes the whole java command line as one cmd statement, so spaces are
     # fine.

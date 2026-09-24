@@ -19,7 +19,11 @@ param(
     # Extra arguments appended to the java command line. The runner passes
     # none by default; '-debug' turns on DEBUG logging (quest acceptance,
     # quest exec handlers, packet routing decisions) without packet logging,
-    # and '-debug all' adds packet logging. See StartupArguments.
+    # '-debugall' adds packet logging, and '-dev' is the full developer setup
+    # (debug plus the unimplemented-request reporter and packet logging).
+    # NOTE: the space form '-debug all' does not work -- the space lands as its
+    # own argv entry, no handler matches the bare word 'all', and it is dropped
+    # silently. Use '-debugall' or the '=' form. See StartupArguments.
     [string] $ServerArgs = ''
 )
 
@@ -130,8 +134,18 @@ if ($Mode -eq 'start') {
             $err = Get-Content $stderrLog -ErrorAction SilentlyContinue
             if ($err -and ($err -join "`n").Length -gt 0) {
                 # the server writes ordinary startup progress to stderr too, so
-                # only bail on a hard failure marker
-                $bad = $err | Where-Object { $_ -match 'Exception in thread|Could not find or load|Unable to' }
+                # only bail on a hard failure marker. JLine's "WARNING: Unable
+                # to create a system terminal, creating a dumb terminal" is on
+                # that list and is harmless -- it prints whenever this script
+                # launches java from a shell without a real console (which is
+                # every launch from a task runner), the server keeps booting and
+                # the port comes up. Matching bare 'Unable to' turned that into
+                # a phantom startup failure, which in turn made dev.ps1 abort
+                # before it launched the game. WARNING: lines are advice from a
+                # library, not a failure, so they are filtered out first; the
+                # remaining markers are things java itself cannot recover from.
+                $bad = $err | Where-Object { $_ -notmatch '^WARNING:' } |
+                    Where-Object { $_ -match 'Exception in thread|Could not find or load|UnsatisfiedLinkError|Unable to (load|initialize|start|access)' }
                 if ($bad) {
                     Write-Host "server failed to start:"
                     $bad | Select-Object -First 5 | ForEach-Object { Write-Host "  $_" }

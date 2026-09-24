@@ -123,10 +123,7 @@ public interface StartupArguments {
     private static boolean enableDebug(String parameter) {
         if (parameter != null && parameter.equals("all")) {
             // Override default debug configs
-            GAME_INFO.isShowLoopPackets = DEBUG_MODE_INFO.isShowLoopPackets;
-            GAME_INFO.isShowPacketPayload = DEBUG_MODE_INFO.isShowPacketPayload;
-            GAME_INFO.logPackets = DEBUG_MODE_INFO.logPackets;
-            DISPATCH_INFO.logRequests = DEBUG_MODE_INFO.logRequests;
+            applyDebugLoggingOverrides();
 
             // Log level to other third-party services
             Level loggerLevel = DEBUG_MODE_INFO.servicesLoggersLevel;
@@ -155,15 +152,52 @@ public interface StartupArguments {
      * {@link emu.grasscutter.server.dev.UnimplementedRequestReporter}. Debug logging comes along
      * for free, because that reporter's output is useless without it.
      *
+     * <p>Developer mode also applies the packet/request-logging overrides from {@code
+     * server.debugMode}. This box is meant to be fully observable, but until it did, {@code
+     * enableDebug} only wired them up for the '-debugall'/'-dev all' spellings -- a bare '-dev'
+     * bound a {@code null} parameter, skipped that block, and left {@code server.game.logPackets}
+     * at whatever {@code config.json} said (NONE), so not one RECV/SEND line was ever written while
+     * everything else looked like debug was on. The third-party logger levels are intentionally
+     * left alone here: that part of '-debugall' is noise on a server that answers HTTP all day.
+     *
      * @param parameter Additional parameters (unused; '-dev all' behaves like '-dev').
      * @return False to continue execution.
      */
     private static boolean enableDeveloperMode(String parameter) {
         StartupArguments.enableDebug(parameter);
 
+        // Wire up packet/dispatch logging from the debug configuration. enableDebug() only does
+        // this for '-debugall', so a bare '-dev' left logPackets at NONE and every recv/send line
+        // stayed invisible while the rest of the box read as fully in debug.
+        applyDebugLoggingOverrides();
+
         GameConstants.DEVELOPER_MODE = true;
         Grasscutter.getLogger().info("Developer mode is enabled -- unimplemented requests will be reported.");
         return false;
+    }
+
+    /**
+     * Copies the packet and request logging knobs from {@code server.debugMode} into the live
+     * configuration.
+     */
+    private static void applyDebugLoggingOverrides() {
+        GAME_INFO.isShowLoopPackets = DEBUG_MODE_INFO.isShowLoopPackets;
+        GAME_INFO.isShowPacketPayload = DEBUG_MODE_INFO.isShowPacketPayload;
+        GAME_INFO.logPackets = DEBUG_MODE_INFO.logPackets;
+        DISPATCH_INFO.logRequests = DEBUG_MODE_INFO.logRequests;
+
+        // The effective modes are only visible by reading them back here: server.game.logPackets
+        // in config.json stays whatever it was, and these fields are what send()/handleReceive()
+        // actually switch on. Without this line there is no way to tell from the log whether a
+        // session is being recorded until the first client connects -- or, as it turned out,
+        // discovers it is not.
+        Grasscutter.getLogger()
+                .info(
+                        "Packet logging: {} (loop: {}, payload: {}), dispatch request logging: {}.",
+                        GAME_INFO.logPackets,
+                        GAME_INFO.isShowLoopPackets,
+                        GAME_INFO.isShowPacketPayload,
+                        DISPATCH_INFO.logRequests);
     }
 
     /**
