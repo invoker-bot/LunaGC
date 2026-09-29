@@ -6,6 +6,7 @@ import emu.grasscutter.*;
 import emu.grasscutter.database.DatabaseHelper;
 import emu.grasscutter.game.player.Player;
 import emu.grasscutter.net.packet.*;
+import emu.grasscutter.net.proto.GetPlayerTokenReqOuterClass.GetPlayerTokenReq;
 import emu.grasscutter.server.event.game.PlayerCreationEvent;
 import emu.grasscutter.server.game.GameSession;
 import emu.grasscutter.server.game.GameSession.SessionState;
@@ -19,22 +20,13 @@ import javax.crypto.Cipher;
 @Opcodes(PacketOpcodes.GetPlayerTokenReq)
 public class HandlerGetPlayerTokenReq extends PacketHandler {
 
-    // A 7.0 client renumbered this message, so the generated class cannot read it - it declares
-    // field 3 a string where 7.0 sends a varint, and parseFrom throws on that rather than handing
-    // back the fields that do still line up. These four numbers are what a real 7.0.0 client put on
-    // the wire on 2026-08-12, identified by the shape of their values: one 344-character base64 RSA
-    // blob, one 64-hex token, the account id, and the key slot. 6.7 numbers in the comments.
-    private static final int F_ACCOUNT_UID = 2; // 6.7: 2
-    private static final int F_ACCOUNT_TOKEN = 6; // 6.7: 3
-    private static final int F_KEY_ID = 588; // 6.7: 41
-    private static final int F_CLIENT_RAND_KEY = 932; // 6.7: 1475
-
     @Override
     public void handle(GameSession session, byte[] header, byte[] payload) throws Exception {
-        var accountId = ProtoRead.string(payload, F_ACCOUNT_UID);
-        var accountToken = ProtoRead.string(payload, F_ACCOUNT_TOKEN);
-        var clientRandKey = ProtoRead.string(payload, F_CLIENT_RAND_KEY);
-        var keyId = (int) ProtoRead.varint(payload, F_KEY_ID);
+        var request = GetPlayerTokenReq.parseFrom(payload);
+        var accountId = request.getAccountUid();
+        var accountToken = request.getAccountToken();
+        var clientRandKey = request.getClientRandKey();
+        var keyId = request.getKeyId();
 
         var account = DispatchUtils.authenticate(accountId, accountToken);
 

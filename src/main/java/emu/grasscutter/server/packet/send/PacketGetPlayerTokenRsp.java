@@ -8,12 +8,7 @@ import emu.grasscutter.server.game.GameSession;
 import emu.grasscutter.utils.Crypto;
 
 /**
- * GetPlayerTokenRsp for 7.0 (CmdId 6000).
- *
- * <p>Built from the regenerated proto rather than hand-packed. It was hand-packed for a while
- * because the tree had no 7.0 protos and the 6.7 generated class would have silently serialised 6.7
- * field numbers - `token` at 496, which is really `birthday`, and `sign` at 1477, which is really
- * `client_ip_str`. That is why the client received neither and the handshake never completed.
+ * GetPlayerTokenRsp built with the current protocol schema.
  */
 public class PacketGetPlayerTokenRsp extends BasePacket {
 
@@ -73,7 +68,7 @@ public class PacketGetPlayerTokenRsp extends BasePacket {
                 .setClientVersionRandomKey("c25-314dd05b0b5f")
                 .setClientIpStr(session.getAddress().getAddress().getHostAddress())
                 .setAuthAppid("csc")
-                .setKONDBANCCAH("OSRELWin" + GameConstants.VERSION);
+                .setClientVersion("OSRELWin" + GameConstants.VERSION);
 
         if (serverRandKey != null && !serverRandKey.isEmpty()) {
             // The negotiated path: the client decrypts the seed with its own private key, so the

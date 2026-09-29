@@ -32,7 +32,7 @@ $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $repo
 
-$jarName = if ($env:LUNAGC_JAR) { $env:LUNAGC_JAR } else { 'LunaGC-7.0.0.jar' }
+$jarName = if ($env:LUNAGC_JAR) { $env:LUNAGC_JAR } else { 'LunaGC-7.1.0.jar' }
 $jar = Join-Path $repo $jarName
 
 $mongoContainer = if ($env:LUNAGC_MONGO) { $env:LUNAGC_MONGO } else { 'luna-mongo' }

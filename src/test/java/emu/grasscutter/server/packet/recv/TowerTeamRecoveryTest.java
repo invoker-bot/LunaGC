@@ -11,12 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Pins TowerTeamSelectReq's field numbers to what the 7.0 client actually writes.
- *
- * <p>Genshin.proto reads fields out of the client's parse routine, so this message - which the
- * client only sends - came back as floor_id and nothing else, and the abyss silently got no team.
- * The numbers below come from GenshinImpact-OSRELWin7.0.0.proto, which reads the write routine too
- * and agrees with the first dump on the CmdId, the WriteTo address and floor_id.
+ * Pins TowerTeamSelectReq's 7.1 field numbers so abyss team selection remains parseable.
  *
  * <p>These cases build the payload by hand at those numbers rather than through the generated
  * builder, so a regeneration that dropped tower_team_list again would fail here instead of in game.
@@ -34,12 +29,12 @@ public class TowerTeamRecoveryTest {
         return b.build().toByteArray();
     }
 
-    /** The request as the client lays it out: teams at field 8, floor at field 9. */
+    /** The 7.1 request puts teams at field 6 and the floor at field 3. */
     private static TowerTeamSelectReq onTheWire(int floorId, byte[]... teams) throws Exception {
         var baos = new ByteArrayOutputStream();
         var cos = CodedOutputStream.newInstance(baos);
-        for (byte[] t : teams) cos.writeByteArray(8, t);
-        cos.writeUInt32(9, floorId);
+        for (byte[] t : teams) cos.writeByteArray(6, t);
+        cos.writeUInt32(3, floorId);
         cos.flush();
         return TowerTeamSelectReq.parseFrom(baos.toByteArray());
     }
@@ -77,7 +72,7 @@ public class TowerTeamRecoveryTest {
     }
 
     @Test
-    @DisplayName("floor_id is still field 9 and not confused with the team list")
+    @DisplayName("floor_id is field 3 and not confused with the team list")
     public void floorIdUnchanged() throws Exception {
         var req = onTheWire(1025);
         assertEquals(1025, req.getFloorId());
@@ -87,9 +82,7 @@ public class TowerTeamRecoveryTest {
     @Test
     @DisplayName("the mid-chamber team-change notify still builds and serialises to nothing")
     public void middleLevelChangeTeamNotifyLoads() {
-        // 7.0 does not name this message, so it keeps its 6.7 class - and a restored 6.7 class is
-        // exactly where a corrupt embedded descriptor bites, at first load rather than at build.
-        // Its body is empty by design; only the CmdId carries meaning, and that is still unknown.
+        // The 7.1 dump still has no named source or CmdId for this empty message.
         var proto =
                 emu.grasscutter.net.proto.TowerMiddleLevelChangeTeamNotifyOuterClass
                         .TowerMiddleLevelChangeTeamNotify.newBuilder()

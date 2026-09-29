@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-#  LunaGC 7.0.0 task runner.
+#  LunaGC 7.1.0 task runner.
 #
 #  Common workflows:
 #
@@ -39,7 +39,7 @@ vars:
   # after the gradle project version. Both are referenced by more than one
   # task, so they are resolved once here.
   PATCH_DLL: patch/target/release/ext.dll
-  SERVER_JAR: '{{ .LUNAGC_JAR | default "LunaGC-7.0.0.jar" }}'
+  SERVER_JAR: '{{ .LUNAGC_JAR | default "LunaGC-7.1.0.jar" }}'
 
 tasks:
   default:

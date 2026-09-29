@@ -46,11 +46,10 @@ public class HandlerSceneInitFinishReq extends PacketHandler {
 
         session.send(new PacketSceneInitFinishRsp(player));
 
-        // The wind seed CmdId is unconfirmed for 6.7; a wrong one can hang the client here, so
-        // cmdId=0 suppresses the packet entirely rather than falling back to the UID watermark.
+        // A negative configured CmdId suppresses the watermark for this scene.
         var sweep = Configuration.GAME_OPTIONS.watermark.sweep;
         if (PacketWindSeedClientNotify.disabled()) {
-            Grasscutter.getLogger().info("[watermark] suppressed (cmdId=0)");
+            Grasscutter.getLogger().info("[watermark] suppressed (cmdId<0)");
         } else if (sweep != null && sweep.length > 0) {
             sendSweep(session, sweep);
         } else {
@@ -89,7 +88,7 @@ public class HandlerSceneInitFinishReq extends PacketHandler {
             int cmdId, field;
             try {
                 cmdId = Integer.parseInt(parts[0].trim());
-                field = parts.length > 1 ? Integer.parseInt(parts[1].trim()) : 1;
+                field = parts.length > 1 ? Integer.parseInt(parts[1].trim()) : 5;
             } catch (Exception e) {
                 Grasscutter.getLogger().warn("[watermark] ignoring malformed sweep entry '{}'", entry);
                 continue;
@@ -97,7 +96,7 @@ public class HandlerSceneInitFinishReq extends PacketHandler {
 
             // These two are PlayerLoginRsp and GetPlayerTokenRsp. A Lua payload under either breaks
             // the login handshake instead of the watermark, which is a far worse failure to debug.
-            if (cmdId == 8191 || cmdId == 9250) {
+            if (cmdId == PacketOpcodes.PlayerLoginRsp || cmdId == PacketOpcodes.GetPlayerTokenRsp) {
                 Grasscutter.getLogger().warn("[watermark] refusing to sweep {}, it is a login packet", cmdId);
                 continue;
             }

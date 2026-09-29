@@ -19,25 +19,25 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>uint32 enter_point_id = 7;</code>
+     * <code>uint32 enter_point_id = 2;</code>
      * @return The enterPointId.
      */
     int getEnterPointId();
 
     /**
-     * <code>uint32 activity_id = 9;</code>
+     * <code>uint32 activity_id = 14;</code>
      * @return The activityId.
      */
     int getActivityId();
 
     /**
-     * <code>uint32 _enter_training_step = 10;</code>
+     * <code>uint32 _enter_training_step = 6;</code>
      * @return The enterTrainingStep.
      */
     int getEnterTrainingStep();
 
     /**
-     * <code>uint32 trial_avatar_index_id = 11;</code>
+     * <code>uint32 trial_avatar_index_id = 8;</code>
      * @return The trialAvatarIndexId.
      */
     int getTrialAvatarIndexId();
@@ -87,24 +87,24 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
             case 0:
               done = true;
               break;
-            case 56: {
+            case 16: {
 
               enterPointId_ = input.readUInt32();
               break;
             }
-            case 72: {
-
-              activityId_ = input.readUInt32();
-              break;
-            }
-            case 80: {
+            case 48: {
 
               EnterTrainingStep_ = input.readUInt32();
               break;
             }
-            case 88: {
+            case 64: {
 
               trialAvatarIndexId_ = input.readUInt32();
+              break;
+            }
+            case 112: {
+
+              activityId_ = input.readUInt32();
               break;
             }
             default: {
@@ -139,10 +139,10 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
               emu.grasscutter.net.proto.EnterTrialAvatarActivityDungeonReqOuterClass.EnterTrialAvatarActivityDungeonReq.class, emu.grasscutter.net.proto.EnterTrialAvatarActivityDungeonReqOuterClass.EnterTrialAvatarActivityDungeonReq.Builder.class);
     }
 
-    public static final int ENTER_POINT_ID_FIELD_NUMBER = 7;
+    public static final int ENTER_POINT_ID_FIELD_NUMBER = 2;
     private int enterPointId_;
     /**
-     * <code>uint32 enter_point_id = 7;</code>
+     * <code>uint32 enter_point_id = 2;</code>
      * @return The enterPointId.
      */
     @java.lang.Override
@@ -150,10 +150,10 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
       return enterPointId_;
     }
 
-    public static final int ACTIVITY_ID_FIELD_NUMBER = 9;
+    public static final int ACTIVITY_ID_FIELD_NUMBER = 14;
     private int activityId_;
     /**
-     * <code>uint32 activity_id = 9;</code>
+     * <code>uint32 activity_id = 14;</code>
      * @return The activityId.
      */
     @java.lang.Override
@@ -161,10 +161,10 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
       return activityId_;
     }
 
-    public static final int _ENTER_TRAINING_STEP_FIELD_NUMBER = 10;
+    public static final int _ENTER_TRAINING_STEP_FIELD_NUMBER = 6;
     private int EnterTrainingStep_;
     /**
-     * <code>uint32 _enter_training_step = 10;</code>
+     * <code>uint32 _enter_training_step = 6;</code>
      * @return The enterTrainingStep.
      */
     @java.lang.Override
@@ -172,10 +172,10 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
       return EnterTrainingStep_;
     }
 
-    public static final int TRIAL_AVATAR_INDEX_ID_FIELD_NUMBER = 11;
+    public static final int TRIAL_AVATAR_INDEX_ID_FIELD_NUMBER = 8;
     private int trialAvatarIndexId_;
     /**
-     * <code>uint32 trial_avatar_index_id = 11;</code>
+     * <code>uint32 trial_avatar_index_id = 8;</code>
      * @return The trialAvatarIndexId.
      */
     @java.lang.Override
@@ -198,16 +198,16 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (enterPointId_ != 0) {
-        output.writeUInt32(7, enterPointId_);
-      }
-      if (activityId_ != 0) {
-        output.writeUInt32(9, activityId_);
+        output.writeUInt32(2, enterPointId_);
       }
       if (EnterTrainingStep_ != 0) {
-        output.writeUInt32(10, EnterTrainingStep_);
+        output.writeUInt32(6, EnterTrainingStep_);
       }
       if (trialAvatarIndexId_ != 0) {
-        output.writeUInt32(11, trialAvatarIndexId_);
+        output.writeUInt32(8, trialAvatarIndexId_);
+      }
+      if (activityId_ != 0) {
+        output.writeUInt32(14, activityId_);
       }
       unknownFields.writeTo(output);
     }
@@ -220,19 +220,19 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
       size = 0;
       if (enterPointId_ != 0) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(7, enterPointId_);
-      }
-      if (activityId_ != 0) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(9, activityId_);
+          .computeUInt32Size(2, enterPointId_);
       }
       if (EnterTrainingStep_ != 0) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(10, EnterTrainingStep_);
+          .computeUInt32Size(6, EnterTrainingStep_);
       }
       if (trialAvatarIndexId_ != 0) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(11, trialAvatarIndexId_);
+          .computeUInt32Size(8, trialAvatarIndexId_);
+      }
+      if (activityId_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(14, activityId_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -538,7 +538,7 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
 
       private int enterPointId_ ;
       /**
-       * <code>uint32 enter_point_id = 7;</code>
+       * <code>uint32 enter_point_id = 2;</code>
        * @return The enterPointId.
        */
       @java.lang.Override
@@ -546,7 +546,7 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
         return enterPointId_;
       }
       /**
-       * <code>uint32 enter_point_id = 7;</code>
+       * <code>uint32 enter_point_id = 2;</code>
        * @param value The enterPointId to set.
        * @return This builder for chaining.
        */
@@ -557,7 +557,7 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
         return this;
       }
       /**
-       * <code>uint32 enter_point_id = 7;</code>
+       * <code>uint32 enter_point_id = 2;</code>
        * @return This builder for chaining.
        */
       public Builder clearEnterPointId() {
@@ -569,7 +569,7 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
 
       private int activityId_ ;
       /**
-       * <code>uint32 activity_id = 9;</code>
+       * <code>uint32 activity_id = 14;</code>
        * @return The activityId.
        */
       @java.lang.Override
@@ -577,7 +577,7 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
         return activityId_;
       }
       /**
-       * <code>uint32 activity_id = 9;</code>
+       * <code>uint32 activity_id = 14;</code>
        * @param value The activityId to set.
        * @return This builder for chaining.
        */
@@ -588,7 +588,7 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
         return this;
       }
       /**
-       * <code>uint32 activity_id = 9;</code>
+       * <code>uint32 activity_id = 14;</code>
        * @return This builder for chaining.
        */
       public Builder clearActivityId() {
@@ -600,7 +600,7 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
 
       private int EnterTrainingStep_ ;
       /**
-       * <code>uint32 _enter_training_step = 10;</code>
+       * <code>uint32 _enter_training_step = 6;</code>
        * @return The enterTrainingStep.
        */
       @java.lang.Override
@@ -608,7 +608,7 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
         return EnterTrainingStep_;
       }
       /**
-       * <code>uint32 _enter_training_step = 10;</code>
+       * <code>uint32 _enter_training_step = 6;</code>
        * @param value The enterTrainingStep to set.
        * @return This builder for chaining.
        */
@@ -619,7 +619,7 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
         return this;
       }
       /**
-       * <code>uint32 _enter_training_step = 10;</code>
+       * <code>uint32 _enter_training_step = 6;</code>
        * @return This builder for chaining.
        */
       public Builder clearEnterTrainingStep() {
@@ -631,7 +631,7 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
 
       private int trialAvatarIndexId_ ;
       /**
-       * <code>uint32 trial_avatar_index_id = 11;</code>
+       * <code>uint32 trial_avatar_index_id = 8;</code>
        * @return The trialAvatarIndexId.
        */
       @java.lang.Override
@@ -639,7 +639,7 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
         return trialAvatarIndexId_;
       }
       /**
-       * <code>uint32 trial_avatar_index_id = 11;</code>
+       * <code>uint32 trial_avatar_index_id = 8;</code>
        * @param value The trialAvatarIndexId to set.
        * @return This builder for chaining.
        */
@@ -650,7 +650,7 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
         return this;
       }
       /**
-       * <code>uint32 trial_avatar_index_id = 11;</code>
+       * <code>uint32 trial_avatar_index_id = 8;</code>
        * @return This builder for chaining.
        */
       public Builder clearTrialAvatarIndexId() {
@@ -728,9 +728,9 @@ public final class EnterTrialAvatarActivityDungeonReqOuterClass {
     java.lang.String[] descriptorData = {
       "\n(EnterTrialAvatarActivityDungeonReq.pro" +
       "to\"\216\001\n\"EnterTrialAvatarActivityDungeonRe" +
-      "q\022\026\n\016enter_point_id\030\007 \001(\r\022\023\n\013activity_id" +
-      "\030\t \001(\r\022\034\n\024_enter_training_step\030\n \001(\r\022\035\n\025" +
-      "trial_avatar_index_id\030\013 \001(\rBI\n\031emu.grass" +
+      "q\022\026\n\016enter_point_id\030\002 \001(\r\022\023\n\013activity_id" +
+      "\030\016 \001(\r\022\034\n\024_enter_training_step\030\006 \001(\r\022\035\n\025" +
+      "trial_avatar_index_id\030\010 \001(\rBI\n\031emu.grass" +
       "cutter.net.protoB,EnterTrialAvatarActivi" +
       "tyDungeonReqOuterClassb\006proto3"
     };

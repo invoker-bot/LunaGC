@@ -1,6 +1,6 @@
 @echo off
 rem ---------------------------------------------------------------------------
-rem  LunaGC 7.0.0 -- double-click launcher for `task serve`.
+rem  LunaGC 7.1.0 -- double-click launcher for `task serve`.
 rem
 rem  This is now a thin wrapper: the real logic lives in tools/serve.ps1, which
 rem  is what `task serve` runs. Keeping one implementation means the docker,
@@ -38,7 +38,7 @@ rem
 rem  echo Starting LunaGC (HTTP dispatch on 0.0.0.0:8088, game server on 127.0.0.1:22101)...
 rem  echo Log files: start_stdout.log / start_stderr.log  (overwritten each launch)
 rem  echo.
-rem  java -jar LunaGC-7.0.0.jar > start_stdout.log 2> start_stderr.log
+rem  java -jar LunaGC-7.1.0.jar > start_stdout.log 2> start_stderr.log
 rem  echo.
 rem  echo LunaGC exited with code %ERRORLEVEL% -- see start_stderr.log
 rem  pause

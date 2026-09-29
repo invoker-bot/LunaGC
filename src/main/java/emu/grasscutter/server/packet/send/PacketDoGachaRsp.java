@@ -31,6 +31,7 @@ public class PacketDoGachaRsp extends BasePacket {
                         .setNewGachaRandom(12345)
                         .setLeftGachaTimes(leftGachaTimes)
                         .setGachaTimesLimit(gachaTimesLimit)
+                        .setIsCapturingRadiance(list.stream().anyMatch(GachaItem::getIsFlashCard))
                         .setCostItemId(costItem.getId())
                         .setCostItemNum(costItem.getCount())
                         .setTenCostItemId(costItem10.getId())
@@ -38,8 +39,7 @@ public class PacketDoGachaRsp extends BasePacket {
                         .addAllGachaItemList(list);
 
         if (banner.hasEpitomized()) {
-            rsp.setIsEpitomized(true)
-                    .setWishItemId(gachaInfo.getWishItemId())
+            rsp.setWishItemId(gachaInfo.getWishItemId())
                     .setWishProgress(gachaInfo.getFailedChosenItemPulls())
                     .setWishMaxProgress(banner.getWishMaxProgress());
         }

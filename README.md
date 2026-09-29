@@ -1,8 +1,19 @@
-# LunaGC 7.0.0
+# LunaGC 7.1.0
 
-A private server for the **CN Genshin Impact 7.0.0** client. A fork of girluh's
+A private server being migrated to the **CN Genshin Impact 7.1.0** client. A fork of girluh's
 [LunaGC](https://github.com/girluh/LunaGC), itself a fork of Grasscutter, reworked
-for the 7.0 protocol and the CN launcher's login chain.
+for the 7.1 protocol while retaining the CN launcher's login chain.
+
+The 7.1 proto sources, generated Java messages, CmdIds, login/heartbeat field parsing,
+and versioned jar defaults are in place. Login and scene entry were verified on the
+previous local build; they must be exercised again with a 7.1 client after this wire
+format change. The feature notes below record that earlier 7.0 validation and are
+not a claim that every feature has been retested on 7.1.
+
+Local handlers with no verified 7.1 CmdId use negative placeholders, so they cannot
+accidentally consume an unrelated 7.1 packet. Their features need fresh captures
+before being enabled. `BlossomBriefInfoNotify` and `DelTeamEntityNotify` use the
+7.1 fan-out map in `data/proto-fanout.json`.
 
 Very WIP — expect broken things. What is implemented is listed below; everything
 else is not.
@@ -16,7 +27,7 @@ This is possibly the only public PS with updated mob and gadget spawns! (Up to V
 
 Contribute if you want/can...
 
-# What works
+# 7.0 validation history
 
 - **The CN 7.0 login chain end to end**: the dispatch server serves the CN 7.0
   SDK's session routes and a `RegionInfo` with the right `game_biz`, so the
@@ -209,8 +220,7 @@ known-broken, not unknown:
 - **[Rust](https://rust-lang.org/learn/get-started/) + Cargo** — only for the
   client patch. The patch crate needs the **nightly** toolchain and the `windows`
   crate, both of which `cargo` fetches.
-- **The CN game version 7.0.0** (`YuanShen.exe`). Other regions and other
-  versions will not connect.
+- **The CN game version 7.1.0** (`YuanShen.exe`) for testing the migrated protocol.
 - **[Go Task](https://taskfile.dev/)** — the runner every command below goes
   through. On Windows, `winget install Task.Task` or `scoop install task`.
 
@@ -247,7 +257,7 @@ This runs both:
 | Task | What it does |
 | --- | --- |
 | `task build:patch` | `cargo build --release` in `patch/` → `patch/target/release/ext.dll` |
-| `task build:jar` | `gradlew jar` → `LunaGC-7.0.0.jar` in the repo root |
+| `task build:jar` | `gradlew jar` → `LunaGC-7.1.0.jar` in the repo root |
 
 `task build:jar` is timestamp-based, not checksum-based: the proto sources are
 tens of thousands of generated files and hashing them all takes longer than the

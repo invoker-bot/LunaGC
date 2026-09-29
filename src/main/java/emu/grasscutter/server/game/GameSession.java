@@ -42,7 +42,7 @@ public class GameSession implements GameSessionManager.KcpChannel {
     /** Whether this session has already reported a frame that would not decrypt. */
     private volatile boolean reportedBadMagic;
 
-    /** Packet classes already reported as having no 7.0 CmdId, so each is said once. */
+    /** Packet classes already reported as having no current CmdId, so each is said once. */
     private static final java.util.Set<String> missingCmdIdReported =
             java.util.concurrent.ConcurrentHashMap.newKeySet();
     @Getter @Setter private SessionState state;
@@ -118,10 +118,7 @@ public class GameSession implements GameSessionManager.KcpChannel {
         send(basePacket);
     }
 
-    private static final java.util.Set<Integer> MUTED_LOG_OPCODES = java.util.Set.of(2497);
-
     public void logPacket(String sendOrRecv, int opcode, byte[] payload) {
-        if (MUTED_LOG_OPCODES.contains(opcode)) return;
         Grasscutter.getLogger()
                 .info(sendOrRecv + ": " + PacketOpcodesUtils.getOpcodeName(opcode) + " (" + opcode + ")");
         if (GAME_INFO.isShowPacketPayload) System.out.println(Utils.bytesToHex(payload));
@@ -138,14 +135,18 @@ public class GameSession implements GameSessionManager.KcpChannel {
             return;
         }
 
+        if (packet.getOpcode() <= 0 && FanOut.send(this, packet)) {
+            return;
+        }
+
         if (packet.getOpcode() <= 0) {
             // A non-positive opcode is one of the negative sentinels in PacketOpcodes - a message
-            // 7.0 has no known CmdId for. Name it once per packet class instead of repeating an
+            // 7.1 has no known CmdId for. Name it once per packet class instead of repeating an
             // anonymous warning for every send, which drowned the console.
             if (missingCmdIdReported.add(packet.getClass().getSimpleName())) {
                 Grasscutter.getLogger()
                         .warn(
-                                "{} has no 7.0 CmdId, so it is not being sent.",
+                                "{} has no 7.1 CmdId, so it is not being sent.",
                                 packet.getClass().getSimpleName());
             }
             return;

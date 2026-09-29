@@ -10,8 +10,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class GameConstants {
-    public static String VERSION = "7.0.0";
-    public static int[] VERSION_PARTS = {7, 0, 0};
+    public static String VERSION = BuildConfig.VERSION;
+    public static int[] VERSION_PARTS = Arrays.stream(VERSION.split("\\.")).mapToInt(Integer::parseInt).toArray();
     public static boolean DEBUG = false;
 
     /*

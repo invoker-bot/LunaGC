@@ -19,37 +19,37 @@ public final class PlayerCookReqOuterClass {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>uint32 KLACBPCPCMJ = 2;</code>
+     * <code>uint32 KLACBPCPCMJ = 50000;</code>
      * @return The kLACBPCPCMJ.
      */
     int getKLACBPCPCMJ();
 
     /**
-     * <code>uint32 assist_avatar = 4;</code>
+     * <code>uint32 assist_avatar = 6;</code>
      * @return The assistAvatar.
      */
     int getAssistAvatar();
 
     /**
-     * <code>uint32 DDACKLBMIKL = 5;</code>
+     * <code>uint32 DDACKLBMIKL = 50001;</code>
      * @return The dDACKLBMIKL.
      */
     int getDDACKLBMIKL();
 
     /**
-     * <code>uint32 recipe_id = 8;</code>
+     * <code>uint32 recipe_id = 14;</code>
      * @return The recipeId.
      */
     int getRecipeId();
 
     /**
-     * <code>uint32 OLLOPKLIIAC = 12;</code>
+     * <code>uint32 OLLOPKLIIAC = 50002;</code>
      * @return The oLLOPKLIIAC.
      */
     int getOLLOPKLIIAC();
 
     /**
-     * <code>uint32 JJPABEHGMCH = 15;</code>
+     * <code>uint32 JJPABEHGMCH = 50003;</code>
      * @return The jJPABEHGMCH.
      */
     int getJJPABEHGMCH();
@@ -99,32 +99,32 @@ public final class PlayerCookReqOuterClass {
             case 0:
               done = true;
               break;
-            case 16: {
-
-              kLACBPCPCMJ_ = input.readUInt32();
-              break;
-            }
-            case 32: {
+            case 48: {
 
               assistAvatar_ = input.readUInt32();
               break;
             }
-            case 40: {
-
-              dDACKLBMIKL_ = input.readUInt32();
-              break;
-            }
-            case 64: {
+            case 112: {
 
               recipeId_ = input.readUInt32();
               break;
             }
-            case 96: {
+            case 400000: {
+
+              kLACBPCPCMJ_ = input.readUInt32();
+              break;
+            }
+            case 400008: {
+
+              dDACKLBMIKL_ = input.readUInt32();
+              break;
+            }
+            case 400016: {
 
               oLLOPKLIIAC_ = input.readUInt32();
               break;
             }
-            case 120: {
+            case 400024: {
 
               jJPABEHGMCH_ = input.readUInt32();
               break;
@@ -161,10 +161,10 @@ public final class PlayerCookReqOuterClass {
               emu.grasscutter.net.proto.PlayerCookReqOuterClass.PlayerCookReq.class, emu.grasscutter.net.proto.PlayerCookReqOuterClass.PlayerCookReq.Builder.class);
     }
 
-    public static final int KLACBPCPCMJ_FIELD_NUMBER = 2;
+    public static final int KLACBPCPCMJ_FIELD_NUMBER = 50000;
     private int kLACBPCPCMJ_;
     /**
-     * <code>uint32 KLACBPCPCMJ = 2;</code>
+     * <code>uint32 KLACBPCPCMJ = 50000;</code>
      * @return The kLACBPCPCMJ.
      */
     @java.lang.Override
@@ -172,10 +172,10 @@ public final class PlayerCookReqOuterClass {
       return kLACBPCPCMJ_;
     }
 
-    public static final int ASSIST_AVATAR_FIELD_NUMBER = 4;
+    public static final int ASSIST_AVATAR_FIELD_NUMBER = 6;
     private int assistAvatar_;
     /**
-     * <code>uint32 assist_avatar = 4;</code>
+     * <code>uint32 assist_avatar = 6;</code>
      * @return The assistAvatar.
      */
     @java.lang.Override
@@ -183,10 +183,10 @@ public final class PlayerCookReqOuterClass {
       return assistAvatar_;
     }
 
-    public static final int DDACKLBMIKL_FIELD_NUMBER = 5;
+    public static final int DDACKLBMIKL_FIELD_NUMBER = 50001;
     private int dDACKLBMIKL_;
     /**
-     * <code>uint32 DDACKLBMIKL = 5;</code>
+     * <code>uint32 DDACKLBMIKL = 50001;</code>
      * @return The dDACKLBMIKL.
      */
     @java.lang.Override
@@ -194,10 +194,10 @@ public final class PlayerCookReqOuterClass {
       return dDACKLBMIKL_;
     }
 
-    public static final int RECIPE_ID_FIELD_NUMBER = 8;
+    public static final int RECIPE_ID_FIELD_NUMBER = 14;
     private int recipeId_;
     /**
-     * <code>uint32 recipe_id = 8;</code>
+     * <code>uint32 recipe_id = 14;</code>
      * @return The recipeId.
      */
     @java.lang.Override
@@ -205,10 +205,10 @@ public final class PlayerCookReqOuterClass {
       return recipeId_;
     }
 
-    public static final int OLLOPKLIIAC_FIELD_NUMBER = 12;
+    public static final int OLLOPKLIIAC_FIELD_NUMBER = 50002;
     private int oLLOPKLIIAC_;
     /**
-     * <code>uint32 OLLOPKLIIAC = 12;</code>
+     * <code>uint32 OLLOPKLIIAC = 50002;</code>
      * @return The oLLOPKLIIAC.
      */
     @java.lang.Override
@@ -216,10 +216,10 @@ public final class PlayerCookReqOuterClass {
       return oLLOPKLIIAC_;
     }
 
-    public static final int JJPABEHGMCH_FIELD_NUMBER = 15;
+    public static final int JJPABEHGMCH_FIELD_NUMBER = 50003;
     private int jJPABEHGMCH_;
     /**
-     * <code>uint32 JJPABEHGMCH = 15;</code>
+     * <code>uint32 JJPABEHGMCH = 50003;</code>
      * @return The jJPABEHGMCH.
      */
     @java.lang.Override
@@ -241,23 +241,23 @@ public final class PlayerCookReqOuterClass {
     @java.lang.Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (kLACBPCPCMJ_ != 0) {
-        output.writeUInt32(2, kLACBPCPCMJ_);
-      }
       if (assistAvatar_ != 0) {
-        output.writeUInt32(4, assistAvatar_);
-      }
-      if (dDACKLBMIKL_ != 0) {
-        output.writeUInt32(5, dDACKLBMIKL_);
+        output.writeUInt32(6, assistAvatar_);
       }
       if (recipeId_ != 0) {
-        output.writeUInt32(8, recipeId_);
+        output.writeUInt32(14, recipeId_);
+      }
+      if (kLACBPCPCMJ_ != 0) {
+        output.writeUInt32(50000, kLACBPCPCMJ_);
+      }
+      if (dDACKLBMIKL_ != 0) {
+        output.writeUInt32(50001, dDACKLBMIKL_);
       }
       if (oLLOPKLIIAC_ != 0) {
-        output.writeUInt32(12, oLLOPKLIIAC_);
+        output.writeUInt32(50002, oLLOPKLIIAC_);
       }
       if (jJPABEHGMCH_ != 0) {
-        output.writeUInt32(15, jJPABEHGMCH_);
+        output.writeUInt32(50003, jJPABEHGMCH_);
       }
       unknownFields.writeTo(output);
     }
@@ -268,29 +268,29 @@ public final class PlayerCookReqOuterClass {
       if (size != -1) return size;
 
       size = 0;
-      if (kLACBPCPCMJ_ != 0) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(2, kLACBPCPCMJ_);
-      }
       if (assistAvatar_ != 0) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(4, assistAvatar_);
-      }
-      if (dDACKLBMIKL_ != 0) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(5, dDACKLBMIKL_);
+          .computeUInt32Size(6, assistAvatar_);
       }
       if (recipeId_ != 0) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(8, recipeId_);
+          .computeUInt32Size(14, recipeId_);
+      }
+      if (kLACBPCPCMJ_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(50000, kLACBPCPCMJ_);
+      }
+      if (dDACKLBMIKL_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(50001, dDACKLBMIKL_);
       }
       if (oLLOPKLIIAC_ != 0) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(12, oLLOPKLIIAC_);
+          .computeUInt32Size(50002, oLLOPKLIIAC_);
       }
       if (jJPABEHGMCH_ != 0) {
         size += com.google.protobuf.CodedOutputStream
-          .computeUInt32Size(15, jJPABEHGMCH_);
+          .computeUInt32Size(50003, jJPABEHGMCH_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -616,7 +616,7 @@ public final class PlayerCookReqOuterClass {
 
       private int kLACBPCPCMJ_ ;
       /**
-       * <code>uint32 KLACBPCPCMJ = 2;</code>
+       * <code>uint32 KLACBPCPCMJ = 50000;</code>
        * @return The kLACBPCPCMJ.
        */
       @java.lang.Override
@@ -624,7 +624,7 @@ public final class PlayerCookReqOuterClass {
         return kLACBPCPCMJ_;
       }
       /**
-       * <code>uint32 KLACBPCPCMJ = 2;</code>
+       * <code>uint32 KLACBPCPCMJ = 50000;</code>
        * @param value The kLACBPCPCMJ to set.
        * @return This builder for chaining.
        */
@@ -635,7 +635,7 @@ public final class PlayerCookReqOuterClass {
         return this;
       }
       /**
-       * <code>uint32 KLACBPCPCMJ = 2;</code>
+       * <code>uint32 KLACBPCPCMJ = 50000;</code>
        * @return This builder for chaining.
        */
       public Builder clearKLACBPCPCMJ() {
@@ -647,7 +647,7 @@ public final class PlayerCookReqOuterClass {
 
       private int assistAvatar_ ;
       /**
-       * <code>uint32 assist_avatar = 4;</code>
+       * <code>uint32 assist_avatar = 6;</code>
        * @return The assistAvatar.
        */
       @java.lang.Override
@@ -655,7 +655,7 @@ public final class PlayerCookReqOuterClass {
         return assistAvatar_;
       }
       /**
-       * <code>uint32 assist_avatar = 4;</code>
+       * <code>uint32 assist_avatar = 6;</code>
        * @param value The assistAvatar to set.
        * @return This builder for chaining.
        */
@@ -666,7 +666,7 @@ public final class PlayerCookReqOuterClass {
         return this;
       }
       /**
-       * <code>uint32 assist_avatar = 4;</code>
+       * <code>uint32 assist_avatar = 6;</code>
        * @return This builder for chaining.
        */
       public Builder clearAssistAvatar() {
@@ -678,7 +678,7 @@ public final class PlayerCookReqOuterClass {
 
       private int dDACKLBMIKL_ ;
       /**
-       * <code>uint32 DDACKLBMIKL = 5;</code>
+       * <code>uint32 DDACKLBMIKL = 50001;</code>
        * @return The dDACKLBMIKL.
        */
       @java.lang.Override
@@ -686,7 +686,7 @@ public final class PlayerCookReqOuterClass {
         return dDACKLBMIKL_;
       }
       /**
-       * <code>uint32 DDACKLBMIKL = 5;</code>
+       * <code>uint32 DDACKLBMIKL = 50001;</code>
        * @param value The dDACKLBMIKL to set.
        * @return This builder for chaining.
        */
@@ -697,7 +697,7 @@ public final class PlayerCookReqOuterClass {
         return this;
       }
       /**
-       * <code>uint32 DDACKLBMIKL = 5;</code>
+       * <code>uint32 DDACKLBMIKL = 50001;</code>
        * @return This builder for chaining.
        */
       public Builder clearDDACKLBMIKL() {
@@ -709,7 +709,7 @@ public final class PlayerCookReqOuterClass {
 
       private int recipeId_ ;
       /**
-       * <code>uint32 recipe_id = 8;</code>
+       * <code>uint32 recipe_id = 14;</code>
        * @return The recipeId.
        */
       @java.lang.Override
@@ -717,7 +717,7 @@ public final class PlayerCookReqOuterClass {
         return recipeId_;
       }
       /**
-       * <code>uint32 recipe_id = 8;</code>
+       * <code>uint32 recipe_id = 14;</code>
        * @param value The recipeId to set.
        * @return This builder for chaining.
        */
@@ -728,7 +728,7 @@ public final class PlayerCookReqOuterClass {
         return this;
       }
       /**
-       * <code>uint32 recipe_id = 8;</code>
+       * <code>uint32 recipe_id = 14;</code>
        * @return This builder for chaining.
        */
       public Builder clearRecipeId() {
@@ -740,7 +740,7 @@ public final class PlayerCookReqOuterClass {
 
       private int oLLOPKLIIAC_ ;
       /**
-       * <code>uint32 OLLOPKLIIAC = 12;</code>
+       * <code>uint32 OLLOPKLIIAC = 50002;</code>
        * @return The oLLOPKLIIAC.
        */
       @java.lang.Override
@@ -748,7 +748,7 @@ public final class PlayerCookReqOuterClass {
         return oLLOPKLIIAC_;
       }
       /**
-       * <code>uint32 OLLOPKLIIAC = 12;</code>
+       * <code>uint32 OLLOPKLIIAC = 50002;</code>
        * @param value The oLLOPKLIIAC to set.
        * @return This builder for chaining.
        */
@@ -759,7 +759,7 @@ public final class PlayerCookReqOuterClass {
         return this;
       }
       /**
-       * <code>uint32 OLLOPKLIIAC = 12;</code>
+       * <code>uint32 OLLOPKLIIAC = 50002;</code>
        * @return This builder for chaining.
        */
       public Builder clearOLLOPKLIIAC() {
@@ -771,7 +771,7 @@ public final class PlayerCookReqOuterClass {
 
       private int jJPABEHGMCH_ ;
       /**
-       * <code>uint32 JJPABEHGMCH = 15;</code>
+       * <code>uint32 JJPABEHGMCH = 50003;</code>
        * @return The jJPABEHGMCH.
        */
       @java.lang.Override
@@ -779,7 +779,7 @@ public final class PlayerCookReqOuterClass {
         return jJPABEHGMCH_;
       }
       /**
-       * <code>uint32 JJPABEHGMCH = 15;</code>
+       * <code>uint32 JJPABEHGMCH = 50003;</code>
        * @param value The jJPABEHGMCH to set.
        * @return This builder for chaining.
        */
@@ -790,7 +790,7 @@ public final class PlayerCookReqOuterClass {
         return this;
       }
       /**
-       * <code>uint32 JJPABEHGMCH = 15;</code>
+       * <code>uint32 JJPABEHGMCH = 50003;</code>
        * @return This builder for chaining.
        */
       public Builder clearJJPABEHGMCH() {
@@ -866,12 +866,12 @@ public final class PlayerCookReqOuterClass {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\023PlayerCookReq.proto\"\215\001\n\rPlayerCookReq\022" +
-      "\023\n\013KLACBPCPCMJ\030\002 \001(\r\022\025\n\rassist_avatar\030\004 " +
-      "\001(\r\022\023\n\013DDACKLBMIKL\030\005 \001(\r\022\021\n\trecipe_id\030\010 " +
-      "\001(\r\022\023\n\013OLLOPKLIIAC\030\014 \001(\r\022\023\n\013JJPABEHGMCH\030" +
-      "\017 \001(\rB4\n\031emu.grasscutter.net.protoB\027Play" +
-      "erCookReqOuterClassb\006proto3"
+      "\n\023PlayerCookReq.proto\"\225\001\n\rPlayerCookReq\022" +
+      "\025\n\013KLACBPCPCMJ\030\320\206\003 \001(\r\022\025\n\rassist_avatar\030" +
+      "\006 \001(\r\022\025\n\013DDACKLBMIKL\030\321\206\003 \001(\r\022\021\n\trecipe_i" +
+      "d\030\016 \001(\r\022\025\n\013OLLOPKLIIAC\030\322\206\003 \001(\r\022\025\n\013JJPABE" +
+      "HGMCH\030\323\206\003 \001(\rB4\n\031emu.grasscutter.net.pro" +
+      "toB\027PlayerCookReqOuterClassb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,

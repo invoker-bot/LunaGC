@@ -79,7 +79,7 @@ public class DailyTask {
         return true;
     }
 
-    /** This tree has no generated class for the message, so it is written by hand. */
+    /** Serializes this task with the current protocol schema. */
     public byte[] toProto() {
         return DailyTaskProto.info(this);
     }

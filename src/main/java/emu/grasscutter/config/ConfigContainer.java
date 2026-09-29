@@ -493,8 +493,8 @@ public class ConfigContainer {
             /* Set to fade from "color" to this one across the text. Blank means a flat colour.
              * A gradient costs ~24 bytes per character, so it fits roughly 10 characters. */
             public String gradientTo = "#6032a8";
-            /* CmdId to send the wind seed notify under. 0 uses PacketOpcodes.WindSeedClientNotify,
-             * which the 7.0 dump gives as 226. Set to -1 to send nothing at all.
+            /* CmdId to send the wind seed notify under. 0 uses PacketOpcodes.WindSeedType1Notify,
+             * which the 7.1 dump gives as 29056. Set to -1 to send nothing at all.
              *
              * If the client ever starts crashing a second or two after login, set this to -1 first:
              * this is the one packet whose payload the client EXECUTES as Lua, so a payload it does
@@ -502,13 +502,13 @@ public class ConfigContainer {
              * when area_notify was sent with its two uint32s left at zero. */
             public int cmdId = 0;
             /* Protobuf field number the Lua payload is written to, flat at the top level.
-             * 0 uses the built-in default (6, which is `payload` on 7.0's message). */
+             * 0 uses the built-in default (5, which is `payload` on 7.1's message). */
             public int payloadField = 0;
             /* Try several candidates in one login instead of one per restart. Each entry is
              * "cmdId:payloadField"; the watermark is sent once under each. The client ignores a
              * CmdId it does not know, so the wrong ones are inert - if the text appears, bisect
              * this list to find which one landed. Empty means just use cmdId/payloadField above.
-             * Never put 8191 or 9250 in here: those are PlayerLoginRsp and GetPlayerTokenRsp, and
+             * Never put 4026 or 3713 in here: those are PlayerLoginRsp and GetPlayerTokenRsp, and
              * a Lua payload sent under them breaks login rather than the watermark. */
             public String[] sweep = {};
         }

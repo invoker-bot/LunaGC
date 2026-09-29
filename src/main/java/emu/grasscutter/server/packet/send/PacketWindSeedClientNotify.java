@@ -15,9 +15,7 @@ import java.nio.file.Paths;
 
 public class PacketWindSeedClientNotify extends BasePacket {
     /**
-     * The message is `WindSeedType1Notify`, which is this project's name for what 7.0 calls
-     * `_PlayerNormalLuaShellNotify` - CmdId 27286, shaped `{uint32 config_id = 4, bytes payload = 6}`
-     * and matching 6.7's `{uint32 config_id, bytes payload}` field-for-field by name.
+     * The message is `WindSeedType1Notify` (7.1 CmdId 29056), whose payload is field 5.
      *
      * <p>It is NOT `WindSeedClientNotify`. That is a different message (a oneof carrying
      * area/refresh/wind-bullet arms), and pointing this at it is what crashed the client: its
@@ -29,8 +27,8 @@ public class PacketWindSeedClientNotify extends BasePacket {
         return configured > 0 ? configured : PacketOpcodes.WindSeedType1Notify;
     }
 
-    /** `payload` on 7.0's _PlayerNormalLuaShellNotify. 6.7 had it at 11, 6.6 at 8. */
-    private static final int DEFAULT_PAYLOAD_FIELD = 6;
+    /** `payload` on 7.1's WindSeedType1Notify. */
+    private static final int DEFAULT_PAYLOAD_FIELD = 5;
 
     /**
      * True when the wind seed notify is switched off entirely - the safe setting if a CmdId hangs
@@ -49,13 +47,8 @@ public class PacketWindSeedClientNotify extends BasePacket {
     /**
      * Encodes a payload at an explicit field number, for sweeping candidates in one login.
      *
-     * <p>The bytes do NOT sit at the top level. WindSeedClientNotify is a oneof, and the arm the
-     * client runs is `area_notify` - so the payload is wrapped: field {@value #AREA_NOTIFY_FIELD}
-     * holds a sub-message, and the Lua lives in `field` inside it. Writing the bytes at the top
-     * level instead, which is what this did before, produces a message the client parses happily
-     * and then ignores, so nothing appears and nothing errors.
+     * WindSeedType1Notify carries the Lua bytes directly at this field number.
      */
-    private static final int AREA_NOTIFY_FIELD = 1;
 
     static byte[] encode(byte[] luac, int field) {
         if (field <= 0) field = DEFAULT_PAYLOAD_FIELD;

@@ -19,21 +19,21 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 2;</code>
+     * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 5;</code>
      * @return The enum numeric value on the wire for updateType.
      */
     int getUpdateTypeValue();
     /**
-     * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 2;</code>
+     * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 5;</code>
      * @return The updateType.
      */
     emu.grasscutter.net.proto.AbilityMetaUpdateMoonOvergrowValueOuterClass.AbilityMetaUpdateMoonOvergrowValue._UpdateType getUpdateType();
 
     /**
-     * <code>float FOMPMBNENPH = 15;</code>
-     * @return The fOMPMBNENPH.
+     * <code>float _value = 6;</code>
+     * @return The value.
      */
-    float getFOMPMBNENPH();
+    float getValue();
   }
   /**
    * Protobuf type {@code AbilityMetaUpdateMoonOvergrowValue}
@@ -81,15 +81,15 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
             case 0:
               done = true;
               break;
-            case 16: {
+            case 40: {
               int rawValue = input.readEnum();
 
               updateType_ = rawValue;
               break;
             }
-            case 125: {
+            case 53: {
 
-              fOMPMBNENPH_ = input.readFloat();
+              Value_ = input.readFloat();
               break;
             }
             default: {
@@ -232,17 +232,17 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
       // @@protoc_insertion_point(enum_scope:AbilityMetaUpdateMoonOvergrowValue._UpdateType)
     }
 
-    public static final int UPDATE_TYPE_FIELD_NUMBER = 2;
+    public static final int UPDATE_TYPE_FIELD_NUMBER = 5;
     private int updateType_;
     /**
-     * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 2;</code>
+     * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 5;</code>
      * @return The enum numeric value on the wire for updateType.
      */
     @java.lang.Override public int getUpdateTypeValue() {
       return updateType_;
     }
     /**
-     * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 2;</code>
+     * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 5;</code>
      * @return The updateType.
      */
     @java.lang.Override public emu.grasscutter.net.proto.AbilityMetaUpdateMoonOvergrowValueOuterClass.AbilityMetaUpdateMoonOvergrowValue._UpdateType getUpdateType() {
@@ -251,15 +251,15 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
       return result == null ? emu.grasscutter.net.proto.AbilityMetaUpdateMoonOvergrowValueOuterClass.AbilityMetaUpdateMoonOvergrowValue._UpdateType.UNRECOGNIZED : result;
     }
 
-    public static final int FOMPMBNENPH_FIELD_NUMBER = 15;
-    private float fOMPMBNENPH_;
+    public static final int _VALUE_FIELD_NUMBER = 6;
+    private float Value_;
     /**
-     * <code>float FOMPMBNENPH = 15;</code>
-     * @return The fOMPMBNENPH.
+     * <code>float _value = 6;</code>
+     * @return The value.
      */
     @java.lang.Override
-    public float getFOMPMBNENPH() {
-      return fOMPMBNENPH_;
+    public float getValue() {
+      return Value_;
     }
 
     private byte memoizedIsInitialized = -1;
@@ -277,10 +277,10 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (updateType_ != emu.grasscutter.net.proto.AbilityMetaUpdateMoonOvergrowValueOuterClass.AbilityMetaUpdateMoonOvergrowValue._UpdateType.INVALUE.getNumber()) {
-        output.writeEnum(2, updateType_);
+        output.writeEnum(5, updateType_);
       }
-      if (fOMPMBNENPH_ != 0F) {
-        output.writeFloat(15, fOMPMBNENPH_);
+      if (Value_ != 0F) {
+        output.writeFloat(6, Value_);
       }
       unknownFields.writeTo(output);
     }
@@ -293,11 +293,11 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
       size = 0;
       if (updateType_ != emu.grasscutter.net.proto.AbilityMetaUpdateMoonOvergrowValueOuterClass.AbilityMetaUpdateMoonOvergrowValue._UpdateType.INVALUE.getNumber()) {
         size += com.google.protobuf.CodedOutputStream
-          .computeEnumSize(2, updateType_);
+          .computeEnumSize(5, updateType_);
       }
-      if (fOMPMBNENPH_ != 0F) {
+      if (Value_ != 0F) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFloatSize(15, fOMPMBNENPH_);
+          .computeFloatSize(6, Value_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -315,9 +315,9 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
       emu.grasscutter.net.proto.AbilityMetaUpdateMoonOvergrowValueOuterClass.AbilityMetaUpdateMoonOvergrowValue other = (emu.grasscutter.net.proto.AbilityMetaUpdateMoonOvergrowValueOuterClass.AbilityMetaUpdateMoonOvergrowValue) obj;
 
       if (updateType_ != other.updateType_) return false;
-      if (java.lang.Float.floatToIntBits(getFOMPMBNENPH())
+      if (java.lang.Float.floatToIntBits(getValue())
           != java.lang.Float.floatToIntBits(
-              other.getFOMPMBNENPH())) return false;
+              other.getValue())) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
       return true;
     }
@@ -331,9 +331,9 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
       hash = (19 * hash) + getDescriptor().hashCode();
       hash = (37 * hash) + UPDATE_TYPE_FIELD_NUMBER;
       hash = (53 * hash) + updateType_;
-      hash = (37 * hash) + FOMPMBNENPH_FIELD_NUMBER;
+      hash = (37 * hash) + _VALUE_FIELD_NUMBER;
       hash = (53 * hash) + java.lang.Float.floatToIntBits(
-          getFOMPMBNENPH());
+          getValue());
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -469,7 +469,7 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
         super.clear();
         updateType_ = 0;
 
-        fOMPMBNENPH_ = 0F;
+        Value_ = 0F;
 
         return this;
       }
@@ -498,7 +498,7 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
       public emu.grasscutter.net.proto.AbilityMetaUpdateMoonOvergrowValueOuterClass.AbilityMetaUpdateMoonOvergrowValue buildPartial() {
         emu.grasscutter.net.proto.AbilityMetaUpdateMoonOvergrowValueOuterClass.AbilityMetaUpdateMoonOvergrowValue result = new emu.grasscutter.net.proto.AbilityMetaUpdateMoonOvergrowValueOuterClass.AbilityMetaUpdateMoonOvergrowValue(this);
         result.updateType_ = updateType_;
-        result.fOMPMBNENPH_ = fOMPMBNENPH_;
+        result.Value_ = Value_;
         onBuilt();
         return result;
       }
@@ -550,8 +550,8 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
         if (other.updateType_ != 0) {
           setUpdateTypeValue(other.getUpdateTypeValue());
         }
-        if (other.getFOMPMBNENPH() != 0F) {
-          setFOMPMBNENPH(other.getFOMPMBNENPH());
+        if (other.getValue() != 0F) {
+          setValue(other.getValue());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -584,14 +584,14 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
 
       private int updateType_ = 0;
       /**
-       * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 2;</code>
+       * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 5;</code>
        * @return The enum numeric value on the wire for updateType.
        */
       @java.lang.Override public int getUpdateTypeValue() {
         return updateType_;
       }
       /**
-       * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 2;</code>
+       * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 5;</code>
        * @param value The enum numeric value on the wire for updateType to set.
        * @return This builder for chaining.
        */
@@ -602,7 +602,7 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
         return this;
       }
       /**
-       * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 2;</code>
+       * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 5;</code>
        * @return The updateType.
        */
       @java.lang.Override
@@ -612,7 +612,7 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
         return result == null ? emu.grasscutter.net.proto.AbilityMetaUpdateMoonOvergrowValueOuterClass.AbilityMetaUpdateMoonOvergrowValue._UpdateType.UNRECOGNIZED : result;
       }
       /**
-       * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 2;</code>
+       * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 5;</code>
        * @param value The updateType to set.
        * @return This builder for chaining.
        */
@@ -626,7 +626,7 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
         return this;
       }
       /**
-       * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 2;</code>
+       * <code>.AbilityMetaUpdateMoonOvergrowValue._UpdateType update_type = 5;</code>
        * @return This builder for chaining.
        */
       public Builder clearUpdateType() {
@@ -636,33 +636,33 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
         return this;
       }
 
-      private float fOMPMBNENPH_ ;
+      private float Value_ ;
       /**
-       * <code>float FOMPMBNENPH = 15;</code>
-       * @return The fOMPMBNENPH.
+       * <code>float _value = 6;</code>
+       * @return The value.
        */
       @java.lang.Override
-      public float getFOMPMBNENPH() {
-        return fOMPMBNENPH_;
+      public float getValue() {
+        return Value_;
       }
       /**
-       * <code>float FOMPMBNENPH = 15;</code>
-       * @param value The fOMPMBNENPH to set.
+       * <code>float _value = 6;</code>
+       * @param value The value to set.
        * @return This builder for chaining.
        */
-      public Builder setFOMPMBNENPH(float value) {
+      public Builder setValue(float value) {
         
-        fOMPMBNENPH_ = value;
+        Value_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>float FOMPMBNENPH = 15;</code>
+       * <code>float _value = 6;</code>
        * @return This builder for chaining.
        */
-      public Builder clearFOMPMBNENPH() {
+      public Builder clearValue() {
         
-        fOMPMBNENPH_ = 0F;
+        Value_ = 0F;
         onChanged();
         return this;
       }
@@ -734,13 +734,13 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
   static {
     java.lang.String[] descriptorData = {
       "\n(AbilityMetaUpdateMoonOvergrowValue.pro" +
-      "to\"\244\001\n\"AbilityMetaUpdateMoonOvergrowValu" +
-      "e\022D\n\013update_type\030\002 \001(\0162/.AbilityMetaUpda" +
-      "teMoonOvergrowValue._UpdateType\022\023\n\013FOMPM" +
-      "BNENPH\030\017 \001(\002\"#\n\013_UpdateType\022\013\n\007INVALUE\020\000" +
-      "\022\007\n\003SET\020\001BI\n\031emu.grasscutter.net.protoB," +
-      "AbilityMetaUpdateMoonOvergrowValueOuterC" +
-      "lassb\006proto3"
+      "to\"\237\001\n\"AbilityMetaUpdateMoonOvergrowValu" +
+      "e\022D\n\013update_type\030\005 \001(\0162/.AbilityMetaUpda" +
+      "teMoonOvergrowValue._UpdateType\022\016\n\006_valu" +
+      "e\030\006 \001(\002\"#\n\013_UpdateType\022\013\n\007INVALUE\020\000\022\007\n\003S" +
+      "ET\020\001BI\n\031emu.grasscutter.net.protoB,Abili" +
+      "tyMetaUpdateMoonOvergrowValueOuterClassb" +
+      "\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -751,7 +751,7 @@ public final class AbilityMetaUpdateMoonOvergrowValueOuterClass {
     internal_static_AbilityMetaUpdateMoonOvergrowValue_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_AbilityMetaUpdateMoonOvergrowValue_descriptor,
-        new java.lang.String[] { "UpdateType", "FOMPMBNENPH", });
+        new java.lang.String[] { "UpdateType", "Value", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

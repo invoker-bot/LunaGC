@@ -1,0 +1,36 @@
+{
+ "BlossomBriefInfoNotify": [
+  {
+   "cmdId": 6743,
+   "symbol": "ABJOMOIIDHH",
+   "fields": {
+    "brief_info_list": 10
+   }
+  },
+  {
+   "cmdId": 20484,
+   "symbol": "GIIGDONJFPJ",
+   "fields": {
+    "brief_info_list": 14
+   }
+  }
+ ],
+ "DelTeamEntityNotify": [
+  {
+   "cmdId": 2050,
+   "symbol": "HHDADFOPFFM",
+   "fields": {
+    "scene_id": 15,
+    "del_entity_id_list": 11
+   }
+  },
+  {
+   "cmdId": 26830,
+   "symbol": "HAFBDBHDKHD",
+   "fields": {
+    "scene_id": 15,
+    "del_entity_id_list": 3
+   }
+  }
+ ]
+}
