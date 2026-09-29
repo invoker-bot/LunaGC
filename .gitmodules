@@ -7,3 +7,7 @@
 [submodule "patch"]
 	path = patch
 	url = https://github.com/capyb2222/animegamepatch.git
+[submodule "resources"]
+	path = resources
+	url = https://github.com/invoker-bot/LunaGC-Resources.git
+	branch = main

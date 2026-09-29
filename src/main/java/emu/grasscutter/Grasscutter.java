@@ -80,6 +80,9 @@ public final class Grasscutter {
         // Attempt to update configuration.
         ConfigContainer.updateConfig();
 
+        // Apply the local checkout after config migration, which may reload config.json.
+        config.applyResourceDirectoryOverride(System.getenv("LUNAGC_RESOURCES_DIR"));
+
         Grasscutter.getLogger().info("Loading Grasscutter...");
 
         // Load translation files.

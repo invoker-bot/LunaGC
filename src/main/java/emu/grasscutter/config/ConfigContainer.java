@@ -87,6 +87,13 @@ public class ConfigContainer {
     // DO NOT. TOUCH. THE VERSION NUMBER.
     public int version = version();
 
+    /** Uses a machine-local resource checkout when one is configured. */
+    public void applyResourceDirectoryOverride(String resourceDirectory) {
+        if (resourceDirectory != null && !resourceDirectory.isBlank()) {
+            folderStructure.resources = resourceDirectory.trim();
+        }
+    }
+
     /* Option containers. */
 
     public static class Database {

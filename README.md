@@ -234,24 +234,43 @@ known-broken, not unknown:
 # First-time setup
 
 ```
-git clone --recurse-submodules https://github.com/capyb2222/LunaGC.git
+git lfs install
+git clone --recurse-submodules <LunaGC-repository-url>
 ```
 
-If `patch/` is empty you forgot the flag — run `git submodule update --init`, or
-clone [animegamepatch](https://github.com/capyb2222/animegamepatch) into `patch/`
-yourself.
+For an existing checkout, run `git submodule update --init patch resources` and
+`git -C resources lfs pull`. The resources submodule is pinned to a commit
+of [LunaGC-Resources](https://github.com/invoker-bot/LunaGC-Resources).
 
 Then:
 
-1. **Resources.** Download [LunaGC-Resources](https://github.com/capyb2222/LunaGC-Resources)
-   and extract it into a `resources/` folder inside the repository. Without it the
-   server starts but has no text maps, no drop tables and no quest scripts.
-2. **`.env`.** Copy `.env.example` to `.env`. Everything in it is optional —
+1. **Resources.** Use the `resources/` Git submodule for a deployed checkout.
+   Git LFS is required for its larger files. For local development with a
+   separate resource checkout, put
+   `LUNAGC_RESOURCES_DIR=D:/Projects/Experiment/LunaGC-Resources` in the ignored
+   `.env.local`. `task serve` and `task dev` load this file and read that
+   directory directly. Restart the server after changing resources that are
+   loaded at startup. For a direct `java -jar` launch, export the same
+   environment variable in the shell.
+2. **`.env`.** Copy `.env.example` to `.env`. `.env.local` overrides it. Everything
+   else in the template is optional —
    `GAME_PATH` can stay empty and the game directory is read from the miHoYo
    launcher registry. Set it only if the client lives outside the launcher.
 3. **Build.** `task build` makes both the patch DLL and the server jar. See below.
 4. **Patch the client.** `task patch`. See below.
 5. **Start the server.** `task serve`.
+
+To advance the deployed resource version, run:
+
+```
+git submodule update --remote resources
+git -C resources lfs pull
+git add resources
+git commit -m "Update resources submodule"
+```
+
+A deployment then uses that same pinned commit via
+`git submodule update --init resources`.
 
 # Building
 
@@ -650,10 +669,10 @@ Setting the last three to `1`, `1` and `0` gives you plain, unweighted domain ro
   not exist).
 - **The cooking panel shows no recipes** — the default-unlocked set is computed
   from `CookRecipeExcelConfigData` at login, so a server started before the
-  resources finished extracting, or a resource tree missing that excel, yields an
-  empty panel. Confirm `resources/ExcelBinOutput/CookRecipeExcelConfigData.json`
-  is present and non-empty; the set rebuilds on demand while it is still empty, so
-  a re-login after the resources are in place is enough.
+  resource checkout was ready, or a resource tree missing that excel, yields an
+  empty panel. Confirm `ExcelBinOutput/CookRecipeExcelConfigData.json` exists
+  under the configured resource directory. The set rebuilds on demand while it
+  is still empty, so a re-login after the resources are in place is enough.
 - **A feature silently does nothing** — run `task dev`, reproduce it,
   `task dev:stop`, and look at `debug/harvest-opcodes.txt`. If the feature's
   request is there, the server received it and had no handler for it. Most entries
@@ -669,9 +688,10 @@ src/            the server
 build/generated/source/proto/  generated Java; ignored by Git
 tools/          every task command lives here as its own .ps1
 debug/          `task dev` session output (gitignored)
-resources/      LunaGC-Resources, extracted here (gitignored)
+resources/      LunaGC-Resources (git submodule)
 Taskfile.yml    the task definitions
 .env            machine-local settings, copied from .env.example (gitignored)
+.env.local      machine-local overrides, including external resources (gitignored)
 ```
 
 Everything in `tools/` that the Taskfile invokes is named without a leading

@@ -55,7 +55,6 @@ tmp/
 
 # Grasscutter
 /cache
-/resources
 /logs
 /plugins
 /keys
