@@ -1,0 +1,23 @@
+// Recovered from KCIOKGPKCOJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KCIOKGPKCOJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KCIOKGPKCOJOuterClass";
+import "CBAGDKGAHHI.proto";
+import "JGAJEMMPJMD.proto";
+
+message KCIOKGPKCOJ {
+  repeated .recovered.p_CBAGDKGAHHI.CBAGDKGAHHI HABBFDFOENL = 13;
+  repeated .recovered.p_JGAJEMMPJMD.JGAJEMMPJMD show_avatar_info_list = 3;
+  repeated uint32 EMKCGKHEDBL = 2;
+  repeated uint32 ENPIFHJFFGD = 11;
+  uint32 FFBIBMEBAHJ = 7;
+  uint32 OLJMLPBFGLD = 14;
+  uint32 cost_time = 4;
+  uint32 level_id = 8;
+  bool is_finish = 1;
+  bool is_open = 15;
+  bool AJNMBHGPLNI = 6;
+  uint32 GCBELODNLFA = 10;
+}

@@ -1,0 +1,13 @@
+// Recovered from NGJNJHLIJILOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NGJNJHLIJIL;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NGJNJHLIJILOuterClass";
+
+message NGJNJHLIJIL {
+  uint32 ANNBKMPDJCG = 1;
+  uint32 stage_id = 12;
+  bool is_open = 9;
+  bool is_finish = 10;
+}

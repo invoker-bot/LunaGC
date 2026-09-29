@@ -1,0 +1,15 @@
+// Recovered from JGHLHIGMLCJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JGHLHIGMLCJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JGHLHIGMLCJOuterClass";
+
+message JGHLHIGMLCJ {
+  repeated uint32 CEFGIMINOOB = 12;
+  repeated uint32 FCNBCLMLCEC = 8;
+  repeated uint32 IMMKKBDHHOA = 2;
+  uint32 player_uid = 10;
+  uint32 GPAHLENALFF = 7;
+  bool IHDGGKCACLO = 3;
+}

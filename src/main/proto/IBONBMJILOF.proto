@@ -1,0 +1,12 @@
+// Recovered from IBONBMJILOFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_IBONBMJILOF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "IBONBMJILOFOuterClass";
+import "MIOLDMCFEAL.proto";
+
+message IBONBMJILOF {
+  repeated .recovered.p_MIOLDMCFEAL.MIOLDMCFEAL ILMJFKCGPOD = 11;
+  uint32 IKHGLOCOGOI = 13;
+}

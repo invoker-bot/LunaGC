@@ -1,0 +1,11 @@
+// Recovered from FGGHEHMBLEOOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FGGHEHMBLEO;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FGGHEHMBLEOOuterClass";
+
+message FGGHEHMBLEO {
+  uint32 OMEBOHLACPH = 13;
+  uint32 start_time = 10;
+}

@@ -1,0 +1,13 @@
+// Recovered from AvatarWeaponSkinDataNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AvatarWeaponSkinDataNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AvatarWeaponSkinDataNotifyOuterClass";
+import "AvatarWeaponSkin.proto";
+
+message AvatarWeaponSkinDataNotify {
+  repeated .recovered.p_AvatarWeaponSkin.AvatarWeaponSkin weapon_skin_list = 8;
+  repeated uint32 weapon_skin_id_list = 14;
+  uint64 something2 = 10;
+}

@@ -1,0 +1,11 @@
+// Recovered from PlayerApplyEnterHomeResultReqOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PlayerApplyEnterHomeResultReq;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PlayerApplyEnterHomeResultReqOuterClass";
+
+message PlayerApplyEnterHomeResultReq {
+  bool is_agreed = 13;
+  uint32 apply_uid = 1;
+}

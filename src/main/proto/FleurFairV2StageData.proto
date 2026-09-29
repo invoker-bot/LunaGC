@@ -1,0 +1,13 @@
+// Recovered from FleurFairV2StageDataOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FleurFairV2StageData;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FleurFairV2StageDataOuterClass";
+
+message FleurFairV2StageData {
+  bool is_open = 5;
+  bool is_finish = 2;
+  uint32 best_score = 12;
+  uint32 stage_id = 3;
+}

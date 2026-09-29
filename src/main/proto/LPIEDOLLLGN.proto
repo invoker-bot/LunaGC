@@ -1,0 +1,11 @@
+// Recovered from LPIEDOLLLGNOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_LPIEDOLLLGN;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "LPIEDOLLLGNOuterClass";
+import "OJLJIFOILFM.proto";
+
+message LPIEDOLLLGN {
+  repeated .recovered.p_OJLJIFOILFM.OJLJIFOILFM level_info_list = 14;
+}

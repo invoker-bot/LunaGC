@@ -1,0 +1,12 @@
+// Recovered from AreaNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AreaNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AreaNotifyOuterClass";
+
+message AreaNotify {
+  bytes area_code = 9;
+  uint32 area_type = 1;
+  uint32 area_id = 14;
+}

@@ -1,0 +1,15 @@
+// Recovered from _NahidaBirthDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__NahidaBirthDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_NahidaBirthDetailInfoOuterClass";
+import "BBIBJKCJINF.proto";
+import "HFNONNBFKOE.proto";
+import "LLINKLDMOCF.proto";
+
+message _NahidaBirthDetailInfo {
+  .HFNONNBFKOE PHGKJLCIBMG = 7;
+  .BBIBJKCJINF POKCBHFGDLE = 8;
+  .LLINKLDMOCF MEDJFGIIACB = 11;
+}

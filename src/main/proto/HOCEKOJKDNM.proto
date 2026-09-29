@@ -1,0 +1,11 @@
+// Recovered from HOCEKOJKDNMOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_HOCEKOJKDNM;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "HOCEKOJKDNMOuterClass";
+import "NHLCDKKNKAC.proto";
+
+message HOCEKOJKDNM {
+  repeated .recovered.p_NHLCDKKNKAC.NHLCDKKNKAC GGOKKDEKPJM = 9;
+}

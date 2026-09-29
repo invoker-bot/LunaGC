@@ -1,0 +1,15 @@
+// Recovered from KDBMBNAGJLAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KDBMBNAGJLA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KDBMBNAGJLAOuterClass";
+import "DEPJBKMIDPC.proto";
+
+message KDBMBNAGJLA {
+  repeated .recovered.p_DEPJBKMIDPC.DEPJBKMIDPC JDJPLJPMCJH = 13;
+  bool is_open = 9;
+  bool is_finish = 4;
+  uint32 score = 5;
+  uint32 level_id = 1;
+}

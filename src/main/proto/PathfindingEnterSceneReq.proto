@@ -1,0 +1,16 @@
+// Recovered from PathfindingEnterSceneReqOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PathfindingEnterSceneReq;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PathfindingEnterSceneReqOuterClass";
+import "ObstacleInfo.proto";
+
+message PathfindingEnterSceneReq {
+  repeated .recovered.p_ObstacleInfo.ObstacleInfo obstacles = 9;
+  repeated int32 NBFPJJIDPJB = 12;
+  bool is_editor = 3;
+  uint32 version = 14;
+  uint32 JJDKCJNCKEK = 4;
+  uint32 scene_id = 7;
+}

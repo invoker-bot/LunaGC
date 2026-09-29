@@ -1,0 +1,15 @@
+// Recovered from DropItemReqOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DropItemReq;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DropItemReqOuterClass";
+import "Vector.proto";
+import "StoreType.proto";
+
+message DropItemReq {
+  .Vector pos = 11;
+  uint64 guid = 9;
+  uint32 count = 14;
+  .StoreType store_type = 13;
+}

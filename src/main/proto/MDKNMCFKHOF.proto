@@ -1,0 +1,13 @@
+// Recovered from MDKNMCFKHOFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MDKNMCFKHOF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MDKNMCFKHOFOuterClass";
+
+message MDKNMCFKHOF {
+  uint32 CLFLBPJPBJB = 15;
+  repeated uint32 affix_list = 13;
+  uint32 max_score = 2;
+  uint32 level_id = 14;
+}

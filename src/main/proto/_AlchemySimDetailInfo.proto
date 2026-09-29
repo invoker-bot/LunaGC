@@ -1,0 +1,27 @@
+// Recovered from _AlchemySimDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__AlchemySimDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_AlchemySimDetailInfoOuterClass";
+import "BBCHHKCMIOJ.proto";
+import "CDOHBLNEKCJ.proto";
+import "CKFHELMIGOP.proto";
+import "FLJBHAGNLOF.proto";
+import "HMNAKLDLGGF.proto";
+import "KKILGCLBMCJ.proto";
+import "LGNCGIEICJJ.proto";
+import "MKJLLPCIMCM.proto";
+import "MPJDIGIFJMA.proto";
+
+message _AlchemySimDetailInfo {
+  .recovered.p_FLJBHAGNLOF.FLJBHAGNLOF IJGCBAKELPE = 1;
+  .recovered.p_MPJDIGIFJMA.MPJDIGIFJMA AEGECEPLBKK = 2;
+  .MKJLLPCIMCM BJLMKGHFMDA = 4;
+  .CKFHELMIGOP PMMPDHCPONP = 5;
+  .BBCHHKCMIOJ basic_info = 6;
+  repeated .LGNCGIEICJJ NLKBEFDOFKN = 7;
+  repeated .CDOHBLNEKCJ CCKABEMPMAP = 8;
+  .recovered.p_KKILGCLBMCJ.KKILGCLBMCJ KINNLCJKLGL = 11;
+  .HMNAKLDLGGF KLIJBFPJEDF = 12;
+}

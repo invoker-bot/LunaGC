@@ -1,0 +1,11 @@
+// Recovered from _RechargeDiskDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__RechargeDiskDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_RechargeDiskDetailInfoOuterClass";
+import "NHCBLLBBFMI.proto";
+
+message _RechargeDiskDetailInfo {
+  repeated .NHCBLLBBFMI level_info_list = 5;
+}

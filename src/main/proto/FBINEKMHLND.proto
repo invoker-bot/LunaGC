@@ -1,0 +1,16 @@
+// Recovered from FBINEKMHLNDOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FBINEKMHLND;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FBINEKMHLNDOuterClass";
+import "KALFHGHCCMO.proto";
+
+message FBINEKMHLND {
+  map<uint32, .recovered.p_KALFHGHCCMO.KALFHGHCCMO> JBMNPKNJNAK = 7;
+  uint32 open_time = 13;
+  bool is_open = 1;
+  bool is_finish = 4;
+  uint32 BMEFBFDABBJ = 3;
+  uint32 stage_id = 6;
+}

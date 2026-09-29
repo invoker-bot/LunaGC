@@ -1,0 +1,10 @@
+// Recovered from GetFriendShowNameCardInfoReqOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GetFriendShowNameCardInfoReq;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GetFriendShowNameCardInfoReqOuterClass";
+
+message GetFriendShowNameCardInfoReq {
+  uint32 uid = 13;
+}

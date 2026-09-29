@@ -1,0 +1,13 @@
+// Recovered from BCIEMCLCDNDOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BCIEMCLCDND;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BCIEMCLCDNDOuterClass";
+
+enum BCIEMCLCDND {
+  BCIEMCLCDND_NONE = 0;
+  BCIEMCLCDND_FINISH = 1;
+  BCIEMCLCDND_PRE_START = 2;
+  BCIEMCLCDND_START = 3;
+}

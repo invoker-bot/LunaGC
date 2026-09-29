@@ -1,0 +1,15 @@
+// Recovered from NLGAEMCDIANOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NLGAEMCDIAN;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NLGAEMCDIANOuterClass";
+import "NPGMLKKPNGO.proto";
+
+message NLGAEMCDIAN {
+  .recovered.p_NPGMLKKPNGO.NPGMLKKPNGO NFGNKKJOKKA = 1;
+  uint32 OAPGHDJLPMN = 6;
+  uint32 ADADHFBFMEB = 12;
+  uint32 OJPNMAJCDND = 2;
+  uint32 DGFADMCLNDI = 9;
+}

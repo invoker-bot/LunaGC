@@ -1,0 +1,11 @@
+// Recovered from EvtAiSyncSkillCdNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EvtAiSyncSkillCdNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EvtAiSyncSkillCdNotifyOuterClass";
+import "AiSkillCdInfo.proto";
+
+message EvtAiSyncSkillCdNotify {
+  map<uint32, .recovered.p_AiSkillCdInfo.AiSkillCdInfo> ai_cd_map = 1;
+}

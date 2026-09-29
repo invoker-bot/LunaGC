@@ -1,0 +1,13 @@
+// Recovered from NKJFLMLNHDPOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NKJFLMLNHDP;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NKJFLMLNHDPOuterClass";
+
+enum NKJFLMLNHDP {
+  NKJFLMLNHDP_WISP_CAGE_STATE_NOT_EXIST = 0;
+  NKJFLMLNHDP_WISP_CAGE_STATE_CREATED = 1;
+  NKJFLMLNHDP_WISP_CAGE_STATE_MATERIAL_DELIVERED = 2;
+  NKJFLMLNHDP_WISP_CAGE_STATE_NOT_TAKE_REWARD = 3;
+}

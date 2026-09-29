@@ -1,0 +1,17 @@
+// Recovered from EPIAFADAJANOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EPIAFADAJAN;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EPIAFADAJANOuterClass";
+import "Vector.proto";
+import "DIIHAAGDDJK.proto";
+
+message EPIAFADAJAN {
+  .Vector rot = 14;
+  .recovered.p_DIIHAAGDDJK.DIIHAAGDDJK state = 7;
+  uint32 scene_id = 3;
+  uint32 gadget_entity_id = 15;
+  uint32 GIMDMFFKJKK = 1;
+  .Vector pos = 13;
+}

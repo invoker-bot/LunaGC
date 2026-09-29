@@ -1,0 +1,12 @@
+// Recovered from GmTalkRspOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GmTalkRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GmTalkRspOuterClass";
+
+message GmTalkRsp {
+  string retmsg = 7;
+  string msg = 3;
+  int32 retcode = 14;
+}

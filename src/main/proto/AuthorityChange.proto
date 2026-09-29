@@ -1,0 +1,13 @@
+// Recovered from AuthorityChangeOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AuthorityChange;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AuthorityChangeOuterClass";
+import "EntityAuthorityInfo.proto";
+
+message AuthorityChange {
+  .EntityAuthorityInfo entity_authority_info = 10;
+  uint32 entity_id = 9;
+  uint32 authority_peer_id = 12;
+}

@@ -1,0 +1,17 @@
+// Recovered from WindSeedClientNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_WindSeedClientNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "WindSeedClientNotifyOuterClass";
+import "AreaNotify.proto";
+import "RefreshNotify.proto";
+import "AddWindBulletNotify.proto";
+
+message WindSeedClientNotify {
+  oneof notify {
+    .recovered.p_AreaNotify.AreaNotify area_notify = 7;
+    .recovered.p_RefreshNotify.RefreshNotify refresh_notify = 6;
+    .recovered.p_AddWindBulletNotify.AddWindBulletNotify add_wind_bullet_notify = 12;
+  }
+}

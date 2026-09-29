@@ -1,0 +1,15 @@
+// Recovered from _CeremonyDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__CeremonyDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_CeremonyDetailInfoOuterClass";
+import "EJIGDIIFDBI.proto";
+import "MHENKMCEHHJ.proto";
+import "PDKKLGIEJCN.proto";
+
+message _CeremonyDetailInfo {
+  .MHENKMCEHHJ battle_info = 5;
+  .PDKKLGIEJCN PMPNJDABMKM = 7;
+  .EJIGDIIFDBI MFNFNCFKEHO = 10;
+}

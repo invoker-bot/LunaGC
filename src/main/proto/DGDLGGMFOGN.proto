@@ -1,0 +1,11 @@
+// Recovered from DGDLGGMFOGNOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DGDLGGMFOGN;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DGDLGGMFOGNOuterClass";
+
+message DGDLGGMFOGN {
+  uint32 open_time = 3;
+  uint32 PCFKHMFDNPI = 12;
+}

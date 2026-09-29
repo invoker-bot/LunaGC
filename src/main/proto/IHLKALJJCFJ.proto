@@ -1,0 +1,11 @@
+// Recovered from IHLKALJJCFJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_IHLKALJJCFJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "IHLKALJJCFJOuterClass";
+import "MDPMJOECKBC.proto";
+
+message IHLKALJJCFJ {
+  repeated .recovered.p_MDPMJOECKBC.MDPMJOECKBC level_info_list = 5;
+}

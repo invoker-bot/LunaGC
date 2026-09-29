@@ -1,0 +1,13 @@
+// Recovered from EABCJHIGCNPOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EABCJHIGCNP;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EABCJHIGCNPOuterClass";
+
+message EABCJHIGCNP {
+  uint64 AAHNFINJFAF = 2;
+  bool is_finish = 6;
+  bool is_open = 4;
+  uint32 level_id = 10;
+}

@@ -1,0 +1,18 @@
+// Recovered from OLHFPPIPMOCOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OLHFPPIPMOC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OLHFPPIPMOCOuterClass";
+import "BCIEMCLCDND.proto";
+
+message OLHFPPIPMOC {
+  repeated uint32 JJIIBMLIBJC = 7;
+  bool LBONMKPEFDK = 1;
+  uint32 EJOFCJAAMAF = 6;
+  uint32 AFOLCHGGNBJ = 10;
+  .recovered.p_BCIEMCLCDND.BCIEMCLCDND HPNFNHGAMGA = 8;
+  uint32 MAPILIHJGMM = 5;
+  uint32 CECAGFEFJDA = 14;
+  uint32 PBLFHCLNOEK = 9;
+}

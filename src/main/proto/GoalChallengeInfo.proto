@@ -1,0 +1,12 @@
+// Recovered from GoalChallengeInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GoalChallengeInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GoalChallengeInfoOuterClass";
+import "PIOMCMDPDHD.proto";
+
+message GoalChallengeInfo {
+  repeated .recovered.p_PIOMCMDPDHD.PIOMCMDPDHD NGMHFHPAAMF = 12;
+  uint32 OIKCAAFICCB = 7;
+}

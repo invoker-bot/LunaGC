@@ -1,0 +1,14 @@
+// Recovered from MOEJCPOJHJMOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MOEJCPOJHJM;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MOEJCPOJHJMOuterClass";
+
+message MOEJCPOJHJM {
+  uint32 name_id = 12;
+  uint32 fungus_id = 4;
+  bool HAMNPNGJECA = 10;
+  uint32 DOBMNGKDBGC = 6;
+  uint32 LEHONJFIMMG = 1;
+}

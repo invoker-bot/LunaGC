@@ -1,0 +1,10 @@
+// Recovered from HomePreChangeEditModeNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_HomePreChangeEditModeNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "HomePreChangeEditModeNotifyOuterClass";
+
+message HomePreChangeEditModeNotify {
+  bool is_enter_edit_mode = 14;
+}

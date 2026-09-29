@@ -1,0 +1,11 @@
+// Recovered from CJIFCLJCLEIOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_CJIFCLJCLEI;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "CJIFCLJCLEIOuterClass";
+import "BAAGJLIGKMD.proto";
+
+message CJIFCLJCLEI {
+  repeated .recovered.p_BAAGJLIGKMD.BAAGJLIGKMD GMGBBPFMNFN = 13;
+}

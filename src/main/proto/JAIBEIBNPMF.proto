@@ -1,0 +1,16 @@
+// Recovered from JAIBEIBNPMFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JAIBEIBNPMF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JAIBEIBNPMFOuterClass";
+import "AbilityString.proto";
+
+message JAIBEIBNPMF {
+  .AbilityString parent_ability_name = 6;
+  uint32 instanced_ability_id = 11;
+  int32 local_id = 8;
+  int32 modifier_local_id = 4;
+  uint32 instanced_modifier_id = 13;
+  uint32 caster_id = 9;
+}

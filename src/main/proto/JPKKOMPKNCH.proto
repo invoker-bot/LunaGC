@@ -1,0 +1,12 @@
+// Recovered from JPKKOMPKNCHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JPKKOMPKNCH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JPKKOMPKNCHOuterClass";
+import "JDIDDFNMNEN.proto";
+
+message JPKKOMPKNCH {
+  repeated .recovered.p_JDIDDFNMNEN.JDIDDFNMNEN GGOKKDEKPJM = 11;
+  bool DCEPCGLNGPE = 8;
+}

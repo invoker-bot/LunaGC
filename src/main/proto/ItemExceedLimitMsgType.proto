@@ -1,0 +1,13 @@
+// Recovered from ItemExceedLimitMsgTypeOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ItemExceedLimitMsgType;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ItemExceedLimitMsgTypeOuterClass";
+
+enum ItemExceedLimitMsgType {
+  ItemExceedLimitMsgType_ITEM_EXCEED_LIMIT_MSG_DEFAULT = 0;
+  ItemExceedLimitMsgType_ITEM_EXCEED_LIMIT_MSG_TEXT = 1;
+  ItemExceedLimitMsgType_ITEM_EXCEED_LIMIT_MSG_DIALOG = 2;
+  ItemExceedLimitMsgType_ITEM_EXCEED_LIMIT_MSG_DIALOG_NONBLOCK = 3;
+}

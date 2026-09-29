@@ -1,0 +1,13 @@
+// Recovered from DropItemRspOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DropItemRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DropItemRspOuterClass";
+import "StoreType.proto";
+
+message DropItemRsp {
+  int32 retcode = 6;
+  .StoreType store_type = 10;
+  uint64 guid = 2;
+}

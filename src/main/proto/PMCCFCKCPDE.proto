@@ -1,0 +1,12 @@
+// Recovered from PMCCFCKCPDEOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PMCCFCKCPDE;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PMCCFCKCPDEOuterClass";
+
+message PMCCFCKCPDE {
+  uint32 OMEBOHLACPH = 2;
+  bool is_open = 5;
+  uint32 stage_id = 7;
+}

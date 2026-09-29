@@ -1,0 +1,18 @@
+// Recovered from OEOHEENALFKOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OEOHEENALFK;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OEOHEENALFKOuterClass";
+import "NLGAEMCDIAN.proto";
+
+message OEOHEENALFK {
+  repeated .recovered.p_NLGAEMCDIAN.NLGAEMCDIAN OKNFDEJIFIC = 11;
+  repeated uint32 DPJCJNOMBNO = 8;
+  uint32 ADADHFBFMEB = 7;
+  uint32 KMPHJMINLLJ = 15;
+  uint32 AFLHEALEAOA = 2;
+  uint32 MEIOIOHJIFF = 3;
+  uint32 LNLJFHHFJDA = 4;
+  uint32 IMDNAHBFKLL = 9;
+}

@@ -1,0 +1,11 @@
+// Recovered from MEJPJACBPIGOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MEJPJACBPIG;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MEJPJACBPIGOuterClass";
+import "CJCLCFNAGDO.proto";
+
+message MEJPJACBPIG {
+  repeated .recovered.p_CJCLCFNAGDO.CJCLCFNAGDO level_info_list = 10;
+}

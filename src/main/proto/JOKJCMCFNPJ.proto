@@ -1,0 +1,22 @@
+// Recovered from JOKJCMCFNPJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JOKJCMCFNPJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JOKJCMCFNPJOuterClass";
+import "DHMPFJLOPMK.proto";
+
+message JOKJCMCFNPJ {
+  .recovered.p_DHMPFJLOPMK.DHMPFJLOPMK NDFIGFGPKNB = 13;
+  repeated uint32 PDHMMGPJAJC = 12;
+  repeated uint32 MACKNGHJMLA = 11;
+  repeated uint32 finish_progress_list = 10;
+  uint32 parent_quest_id = 6;
+  uint32 quest_id = 1;
+  uint32 accept_time = 9;
+  uint32 start_time = 4;
+  bool CBNGIEDIBJO = 5;
+  uint32 state = 2;
+  uint32 start_game_time = 8;
+  uint32 ENMKMEPADON = 7;
+}

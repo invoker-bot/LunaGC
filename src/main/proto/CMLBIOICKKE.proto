@@ -1,0 +1,12 @@
+// Recovered from CMLBIOICKKEOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_CMLBIOICKKE;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "CMLBIOICKKEOuterClass";
+import "NLFDCDOJHDK.proto";
+
+message CMLBIOICKKE {
+  repeated .recovered.p_NLFDCDOJHDK.NLFDCDOJHDK KBGJCPOKLFB = 3;
+  repeated uint32 skill_id_list = 10;
+}

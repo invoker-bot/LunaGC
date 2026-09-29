@@ -1,0 +1,15 @@
+// Recovered from PlayerOfferingDataOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PlayerOfferingData;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PlayerOfferingDataOuterClass";
+
+message PlayerOfferingData {
+  repeated uint32 taken_level_reward_list = 11;
+  map<uint32, uint32> BHKEFOHMJHM = 14;
+  uint32 offering_id = 9;
+  uint32 level = 1;
+  bool is_first_interact = 4;
+  bool LPOPPMKEFJL = 601;
+}

@@ -1,0 +1,13 @@
+// Recovered from AranaraCollectionStateOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AranaraCollectionState;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AranaraCollectionStateOuterClass";
+
+enum AranaraCollectionState {
+  AranaraCollectionState_NONE = 0;
+  AranaraCollectionState_COLLECTABLE = 1;
+  AranaraCollectionState_COLLECTED = 2;
+  AranaraCollectionState_FINISHED = 3;
+}

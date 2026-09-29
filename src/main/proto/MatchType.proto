@@ -1,0 +1,15 @@
+// Recovered from MatchTypeOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MatchType;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MatchTypeOuterClass";
+
+enum MatchType {
+  MatchType_NONE = 0;
+  MatchType_DUNGEON = 1;
+  MatchType_MP_PLAY = 2;
+  MatchType_MECHANICUS = 3;
+  MatchType_GENERAL = 4;
+  MatchType_GCG = 5;
+}

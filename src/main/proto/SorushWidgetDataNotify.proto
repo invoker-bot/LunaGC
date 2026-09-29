@@ -1,0 +1,11 @@
+// Recovered from SorushWidgetDataNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_SorushWidgetDataNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "SorushWidgetDataNotifyOuterClass";
+import "SorushWidgetData.proto";
+
+message SorushWidgetDataNotify {
+  .SorushWidgetData sorush_widget_data = 6;
+}

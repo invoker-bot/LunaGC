@@ -1,0 +1,16 @@
+// Recovered from MNOCNPEKOKPOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MNOCNPEKOKP;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MNOCNPEKOKPOuterClass";
+import "NFICKHNFNLN.proto";
+
+message MNOCNPEKOKP {
+  repeated .recovered.p_NFICKHNFNLN.NFICKHNFNLN avatar_list = 9;
+  repeated uint32 NJOFPKEAALM = 2;
+  bool is_finish = 4;
+  bool is_open = 1;
+  uint32 level_id = 8;
+  uint32 ugc_guid = 13;
+}

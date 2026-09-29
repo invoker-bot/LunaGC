@@ -1,0 +1,17 @@
+// Recovered from IELPDCJPMNMOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_IELPDCJPMNM;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "IELPDCJPMNMOuterClass";
+
+message IELPDCJPMNM {
+  repeated uint32 DAMFEBKDIBJ = 7;
+  uint32 level_id = 2;
+  uint32 BOPBGFFKKDG = 8;
+  uint32 MIAAFHGOIHF = 14;
+  bool HDIKBBEMGGA = 1;
+  bool DADJBDLKDFO = 11;
+  bool is_finished = 13;
+  uint32 LMACMHJCEJJ = 6;
+}

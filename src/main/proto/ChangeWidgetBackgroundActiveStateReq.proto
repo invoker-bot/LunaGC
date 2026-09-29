@@ -1,0 +1,11 @@
+// Recovered from ChangeWidgetBackgroundActiveStateReqOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ChangeWidgetBackgroundActiveStateReq;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ChangeWidgetBackgroundActiveStateReqOuterClass";
+
+message ChangeWidgetBackgroundActiveStateReq {
+  bool is_active = 1;
+  uint32 material_id = 15;
+}

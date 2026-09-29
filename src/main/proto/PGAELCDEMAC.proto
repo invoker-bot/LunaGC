@@ -1,0 +1,19 @@
+// Recovered from PGAELCDEMACOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PGAELCDEMAC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PGAELCDEMACOuterClass";
+import "Vector.proto";
+
+message PGAELCDEMAC {
+  .Vector AFFAELMAHHG = 4;
+  uint32 DGDCJNEEGAN = 8;
+  uint32 start_time = 14;
+  uint32 scene_id = 15;
+  bool NKKAKKKIAKB = 2;
+  bool AMIOCBODMGB = 10;
+  uint32 OOMELCGLGHP = 1;
+  uint32 region_id = 12;
+  uint32 NOMGAHEGPML = 13;
+}

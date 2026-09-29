@@ -1,0 +1,13 @@
+// Recovered from BeyondCosmeticSetOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BeyondCosmeticSet;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BeyondCosmeticSetOuterClass";
+import "BeyondCosmeticPieceInfo.proto";
+import "BeyondCosmeticPieceAdjustment.proto";
+
+message BeyondCosmeticSet {
+  repeated .recovered.p_BeyondCosmeticPieceInfo.BeyondCosmeticPieceInfo piece_info = 1;
+  repeated .recovered.p_BeyondCosmeticPieceAdjustment.BeyondCosmeticPieceAdjustment piece_adjustment = 2;
+}

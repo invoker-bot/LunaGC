@@ -1,0 +1,12 @@
+// Recovered from JACEJALMFGCOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JACEJALMFGC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JACEJALMFGCOuterClass";
+import "LLNNPDEJOIC.proto";
+
+message JACEJALMFGC {
+  repeated .recovered.p_LLNNPDEJOIC.LLNNPDEJOIC BAKFBBJHLHC = 1;
+  uint32 LCAJIJCPOFJ = 9;
+}

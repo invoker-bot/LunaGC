@@ -1,0 +1,15 @@
+// Recovered from _PoetryFestivalDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__PoetryFestivalDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_PoetryFestivalDetailInfoOuterClass";
+import "BNLFGDGHCJH.proto";
+import "GBPENPLJMNG.proto";
+import "GECNMHDPJKN.proto";
+
+message _PoetryFestivalDetailInfo {
+  .BNLFGDGHCJH HIHIOBJPCEF = 4;
+  .GBPENPLJMNG NFIPAFAGGED = 6;
+  .GECNMHDPJKN CPKPABJNLNJ = 9;
+}

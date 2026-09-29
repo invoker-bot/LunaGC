@@ -1,0 +1,16 @@
+// Recovered from GHMOJELOENLOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GHMOJELOENL;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GHMOJELOENLOuterClass";
+
+message GHMOJELOENL {
+  uint32 IOEGCDKFHGN = 4;
+  uint32 score = 15;
+  bool is_finish = 8;
+  bool is_open = 3;
+  uint32 GLKPILMHIMJ = 9;
+  uint32 level_id = 5;
+  uint32 EJOJHAKNCCB = 13;
+}

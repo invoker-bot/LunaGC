@@ -1,0 +1,14 @@
+// Recovered from RogueCellInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_RogueCellInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "RogueCellInfoOuterClass";
+import "RogueCellState.proto";
+
+message RogueCellInfo {
+  uint32 cell_id = 10;
+  .recovered.p_RogueCellState.RogueCellState state = 6;
+  uint32 dungeon_id = 3;
+  uint32 EEEOIJHJIJJ = 5;
+}

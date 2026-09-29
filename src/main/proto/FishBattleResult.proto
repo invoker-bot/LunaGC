@@ -1,0 +1,15 @@
+// Recovered from FishBattleResultOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FishBattleResult;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FishBattleResultOuterClass";
+
+enum FishBattleResult {
+  FishBattleResult_NONE = 0;
+  FishBattleResult_SUCC = 1;
+  FishBattleResult_FAIL = 2;
+  FishBattleResult_TIMEOUT = 3;
+  FishBattleResult_CANCEL = 4;
+  FishBattleResult_EXIT = 5;
+}

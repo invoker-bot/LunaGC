@@ -1,0 +1,14 @@
+// Recovered from ADGPIOIDKENOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ADGPIOIDKEN;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ADGPIOIDKENOuterClass";
+import "GHLNJPGDFKE.proto";
+
+message ADGPIOIDKEN {
+  repeated .recovered.p_GHLNJPGDFKE.GHLNJPGDFKE LECHLBOPCJB = 9;
+  uint32 AEKADMBGKBI = 7;
+  uint32 LFBCKCGJKLE = 13;
+  uint32 NLAKKHAHFCD = 12;
+}

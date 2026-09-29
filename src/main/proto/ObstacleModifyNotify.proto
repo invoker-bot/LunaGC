@@ -1,0 +1,14 @@
+// Recovered from ObstacleModifyNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ObstacleModifyNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ObstacleModifyNotifyOuterClass";
+import "ObstacleInfo.proto";
+
+message ObstacleModifyNotify {
+  repeated int32 remove_obstacle_ids = 5;
+  repeated .recovered.p_ObstacleInfo.ObstacleInfo add_obstacles = 10;
+  repeated int32 EFBNDPGCKBA = 9;
+  uint32 scene_id = 4;
+}

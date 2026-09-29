@@ -1,0 +1,24 @@
+// Recovered from NPGMLKKPNGOOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NPGMLKKPNGO;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NPGMLKKPNGOOuterClass";
+import "INHJIGDLLNE.proto";
+
+message NPGMLKKPNGO {
+  repeated uint32 GMEBHEHENCI = 1;
+  repeated uint32 CFEFODOPFPN = 8;
+  repeated uint32 tag_list = 9;
+  repeated .recovered.p_INHJIGDLLNE.INHJIGDLLNE GCFJJKEJKJG = 6;
+  uint32 BBCHMDOENKP = 3;
+  bool CLLJGPPBDOP = 14;
+  bool JFNPIMPFMOG = 11;
+  bool EEMLNHLNIFA = 13;
+  uint32 guid = 12;
+  uint32 PDMECOHELAA = 2;
+  uint32 LBPPPGOBEEJ = 7;
+  uint32 EAJHJEGLCOA = 10;
+  uint32 level = 15;
+  uint32 JPOHOJELPGO = 5;
+}

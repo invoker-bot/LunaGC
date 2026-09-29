@@ -1,0 +1,15 @@
+// Recovered from ANHFAKADIAOOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ANHFAKADIAO;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ANHFAKADIAOOuterClass";
+import "OBIKHFFAIDL.proto";
+
+message ANHFAKADIAO {
+  repeated uint32 NHPMFANKGII = 1;
+  repeated uint32 NPOLECGHMBF = 2;
+  repeated .recovered.p_OBIKHFFAIDL.OBIKHFFAIDL KEBKELKNABD = 5;
+  bool is_open = 4;
+  uint32 stage_id = 13;
+}

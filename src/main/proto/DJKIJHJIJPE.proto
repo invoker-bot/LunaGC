@@ -1,0 +1,14 @@
+// Recovered from DJKIJHJIJPEOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DJKIJHJIJPE;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DJKIJHJIJPEOuterClass";
+
+message DJKIJHJIJPE {
+  uint32 ECOIIJNIMKE = 7;
+  uint32 stage_id = 6;
+  bool is_finished = 5;
+  bool is_open = 12;
+  uint32 difficulty = 14;
+}

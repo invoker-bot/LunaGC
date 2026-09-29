@@ -1,0 +1,14 @@
+// Recovered from CHJOJKNAHLNOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_CHJOJKNAHLN;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "CHJOJKNAHLNOuterClass";
+
+message CHJOJKNAHLN {
+  repeated uint32 ALFBIABDKNJ = 10;
+  bool OMCLANOKDAF = 2;
+  uint32 LOHAJIABHDJ = 6;
+  uint32 stage_id = 4;
+  uint32 cur_round = 5;
+}

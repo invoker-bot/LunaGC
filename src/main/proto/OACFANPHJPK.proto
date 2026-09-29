@@ -1,0 +1,13 @@
+// Recovered from OACFANPHJPKOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OACFANPHJPK;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OACFANPHJPKOuterClass";
+
+message OACFANPHJPK {
+  uint32 level_id = 7;
+  bool is_finish = 11;
+  bool is_open = 10;
+  uint32 GIOOGMBBEEA = 8;
+}

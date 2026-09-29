@@ -1,0 +1,15 @@
+// Recovered from ChangeHpDebtsOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ChangeHpDebts;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ChangeHpDebtsOuterClass";
+
+enum ChangeHpDebts {
+  ChangeHpDebts_CHANGE_HP_DEBTS_NONE = 0;
+  ChangeHpDebts_CHANGE_HP_DEBTS_PAY = 1;
+  ChangeHpDebts_CHANGE_HP_DEBTS_PAY_FINISH = 2;
+  ChangeHpDebts_CHANGE_HP_DEBTS_CLEAR = 21;
+  ChangeHpDebts_CHANGE_HP_DEBTS_REDUCE_ABILITY = 41;
+  ChangeHpDebts_CHANGE_HP_DEBTS_ADD_ABILITY = 51;
+}

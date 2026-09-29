@@ -1,0 +1,12 @@
+// Recovered from OFFICPDHBCIOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OFFICPDHBCI;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OFFICPDHBCIOuterClass";
+
+message OFFICPDHBCI {
+  uint32 route_id = 9;
+  bool is_open = 5;
+  bool is_finish = 11;
+}

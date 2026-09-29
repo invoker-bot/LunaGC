@@ -1,0 +1,29 @@
+// Recovered from BeginCameraSceneLookNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BeginCameraSceneLookNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BeginCameraSceneLookNotifyOuterClass";
+import "Vector.proto";
+import "KeepRotType.proto";
+
+message BeginCameraSceneLookNotify {
+  .Vector PKONLLGKBAI = 1;
+  repeated string LEMJKJIPEED = 7;
+  .Vector OCJINDALGCH = 16;
+  uint32 entity_id = 534;
+  float EFPNBOJMHOF = 506;
+  float FBJIPNLHIJM = 9;
+  float duration = 2;
+  bool IEFJNLANJNI = 8;
+  bool EFJMAKKIMCP = 4;
+  bool KONBEJGAKGH = 10;
+  bool LDFLPMKJHEE = 5;
+  .recovered.p_KeepRotType.KeepRotType AGIIGOAJHHO = 3;
+  float DKCCJKNOKLA = 6;
+  bool BPANEHAKPBC = 12;
+  bool OEOFPGNKOPB = 485;
+  bool DEGBPOEAHHC = 11;
+  uint32 OOFJPNJIAGG = 1399;
+  uint32 HEKPMBICIPF = 911;
+}

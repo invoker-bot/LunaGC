@@ -1,0 +1,18 @@
+// Recovered from DHMPFJLOPMKOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DHMPFJLOPMK;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DHMPFJLOPMKOuterClass";
+
+message DHMPFJLOPMK {
+  repeated uint32 FBNIECBNICA = 3;
+  repeated uint32 CPOHFLIIAAB = 9;
+  map<uint32, uint32> CPCHODAGCLI = 4;
+  map<uint32, uint32> HFAFGMPPOCF = 6;
+  repeated uint32 MGFLJOMAHDG = 8;
+  repeated uint32 OHLOGCNCHDG = 5;
+  map<uint32, uint32> BBNIGDHBMKH = 2;
+  repeated uint32 AGABIBPOOBJ = 1;
+  repeated uint32 LABEHOJBLOG = 7;
+}

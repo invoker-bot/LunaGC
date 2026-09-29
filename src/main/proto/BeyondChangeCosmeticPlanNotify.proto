@@ -1,0 +1,14 @@
+// Recovered from BeyondChangeCosmeticPlanNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BeyondChangeCosmeticPlanNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BeyondChangeCosmeticPlanNotifyOuterClass";
+import "BeyondCosmeticPlan.proto";
+
+message BeyondChangeCosmeticPlanNotify {
+  uint64 avatar_guid = 15;
+  uint32 cur_plan_id = 4;
+  .recovered.p_BeyondCosmeticPlan.BeyondCosmeticPlan changed_plan = 7;
+  uint32 effective_plan_id = 2;
+}

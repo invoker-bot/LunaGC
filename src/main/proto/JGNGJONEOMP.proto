@@ -1,0 +1,16 @@
+// Recovered from JGNGJONEOMPOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JGNGJONEOMP;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JGNGJONEOMPOuterClass";
+import "OLEECNGDJAJ.proto";
+import "HLJBGEHDOFC.proto";
+
+message JGNGJONEOMP {
+  repeated uint32 OCGPAPPBGKH = 3;
+  oneof detail {
+    .recovered.p_OLEECNGDJAJ.OLEECNGDJAJ exam_info = 5;
+    .recovered.p_HLJBGEHDOFC.HLJBGEHDOFC order_info = 12;
+  }
+}

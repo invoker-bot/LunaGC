@@ -1,0 +1,16 @@
+// Recovered from FKMJAPDCONHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FKMJAPDCONH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FKMJAPDCONHOuterClass";
+
+enum FKMJAPDCONH {
+  FKMJAPDCONH_PacmanDungeonStopNone = 0;
+  FKMJAPDCONH_PacmanDungeonStopSuccess = 1;
+  FKMJAPDCONH_PacmanDungeonStopTimeup = 2;
+  FKMJAPDCONH_PacmanDungeonStopClientInterrupt = 3;
+  FKMJAPDCONH_PacmanDungeonStopCancel = 4;
+  FKMJAPDCONH_PacmanDungeonStopActivityClosed = 5;
+  FKMJAPDCONH_PacmanDungeonStopFail = 6;
+}

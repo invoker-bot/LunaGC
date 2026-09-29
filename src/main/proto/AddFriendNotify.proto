@@ -1,0 +1,12 @@
+// Recovered from AddFriendNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AddFriendNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AddFriendNotifyOuterClass";
+import "FriendBrief.proto";
+
+message AddFriendNotify {
+  uint32 target_uid = 4;
+  .FriendBrief target_friend_brief = 6;
+}

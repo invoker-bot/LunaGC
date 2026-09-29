@@ -1,0 +1,13 @@
+// Recovered from BAAGJLIGKMDOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BAAGJLIGKMD;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BAAGJLIGKMDOuterClass";
+
+message BAAGJLIGKMD {
+  repeated uint32 PEDBPLCNCIP = 11;
+  repeated uint32 CEILNLBMLNA = 15;
+  uint32 stage_id = 14;
+  bool is_open = 1;
+}

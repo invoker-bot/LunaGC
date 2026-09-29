@@ -1,0 +1,16 @@
+// Recovered from MIOLDMCFEALOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MIOLDMCFEAL;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MIOLDMCFEALOuterClass";
+
+message MIOLDMCFEAL {
+  repeated uint32 EDLPALOPIHO = 12;
+  repeated uint32 GGJJCMKOCNG = 11;
+  uint32 KHMFJNCKNKF = 5;
+  uint32 NEJBMGADFKG = 15;
+  uint32 progress = 14;
+  uint32 PDLMGENNKOB = 2;
+  uint32 NNJLBAJNEOP = 4;
+}

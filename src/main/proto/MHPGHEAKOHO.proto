@@ -1,0 +1,14 @@
+// Recovered from MHPGHEAKOHOOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MHPGHEAKOHO;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MHPGHEAKOHOOuterClass";
+import "HFFPMBHGHDD.proto";
+
+message MHPGHEAKOHO {
+  repeated .recovered.p_HFFPMBHGHDD.HFFPMBHGHDD JOICAGLPIDG = 5;
+  uint32 OCDEMCAJIKF = 12;
+  uint32 begin_time = 3;
+  bool is_open = 6;
+}

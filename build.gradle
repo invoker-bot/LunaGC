@@ -265,27 +265,19 @@ publishing {
     }
 }
 
-clean {
-    delete protobuf.generatedFilesBaseDir
-}
-
 protobuf {
     protoc {
         // The artifact spec for the Protobuf Compiler
         artifact = 'com.google.protobuf:protoc:3.18.1'
     }
 
-    generatedFilesBaseDir = "$projectDir/src/generated/"
+    generatedFilesBaseDir = "$buildDir/generated/source/proto"
 }
 
 sourceSets {
     main {
-        proto {
-            // In addition to the default 'src/main/proto'
-            srcDir 'src/generated'
-        }
         java {
-            srcDir 'src/generated/main/java'
+            srcDir "$buildDir/generated/source/proto/main/java"
         }
     }
 }
@@ -302,7 +294,7 @@ idea {
 eclipse {
     classpath {
         file.whenMerged {
-            cp -> cp.entries.add(new SourceFolder('src/generated/main/java', null))
+            cp -> cp.entries.add(new SourceFolder('build/generated/source/proto/main/java', null))
         }
     }
 }
@@ -323,7 +315,7 @@ javadoc {
     options.addStringOption('Xdoclint:none', '-quiet')
     exclude '**/*.md'
     exclude 'src/handbook/**/*.*'
-    exclude 'src/generated/**/*.*'
+    exclude '**/net/proto/**'
 }
 
 tasks.register('injectGitHash') {

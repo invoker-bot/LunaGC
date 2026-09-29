@@ -1,0 +1,18 @@
+// Recovered from ObstacleInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ObstacleInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ObstacleInfoOuterClass";
+import "Vector.proto";
+import "Vector3Int.proto";
+import "MathQuaternion.proto";
+import "ShapeType.proto";
+
+message ObstacleInfo {
+  .Vector center = 10;
+  .Vector3Int extents = 8;
+  .MathQuaternion rotation = 12;
+  int32 obstacle_id = 1;
+  .recovered.p_ShapeType.ShapeType shape = 4;
+}

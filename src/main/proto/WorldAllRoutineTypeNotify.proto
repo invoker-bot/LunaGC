@@ -1,0 +1,11 @@
+// Recovered from WorldAllRoutineTypeNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_WorldAllRoutineTypeNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "WorldAllRoutineTypeNotifyOuterClass";
+import "WorldRoutineTypeInfo.proto";
+
+message WorldAllRoutineTypeNotify {
+  repeated .recovered.p_WorldRoutineTypeInfo.WorldRoutineTypeInfo world_routine_type_list = 1;
+}

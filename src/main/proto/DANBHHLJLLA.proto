@@ -1,0 +1,14 @@
+// Recovered from DANBHHLJLLAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DANBHHLJLLA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DANBHHLJLLAOuterClass";
+
+message DANBHHLJLLA {
+  uint32 id = 12;
+  bool is_finished = 6;
+  bool CEEBFADNFAG = 8;
+  bool MHIPFEMIHMK = 4;
+  uint32 HBILFAMJDKG = 2;
+}

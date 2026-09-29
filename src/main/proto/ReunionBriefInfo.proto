@@ -1,0 +1,30 @@
+// Recovered from ReunionBriefInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ReunionBriefInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ReunionBriefInfoOuterClass";
+import "ADGPIOIDKEN.proto";
+import "DHJCMCDPLIB.proto";
+import "ReunionReportType.proto";
+import "CAHBFLMLDMH.proto";
+import "BMGBEHFPFDF.proto";
+
+message ReunionBriefInfo {
+  .recovered.p_ADGPIOIDKEN.ADGPIOIDKEN OAEJHHNMLJA = 13;
+  repeated uint32 HNADKHIADAF = 74;
+  .recovered.p_DHJCMCDPLIB.DHJCMCDPLIB FKDMHOHFHEL = 1063;
+  .recovered.p_CAHBFLMLDMH.CAHBFLMLDMH OMPMBGFABEN = 520;
+  string version = 4;
+  repeated uint32 LGOKBPLJDAM = 301;
+  .recovered.p_BMGBEHFPFDF.BMGBEHFPFDF BFDOPIBBLII = 9;
+  uint32 start_time = 6;
+  uint32 finish_time = 14;
+  uint32 mission_id = 11;
+  uint32 FGJAEAJGGMI = 8;
+  uint32 AEKADMBGKBI = 1501;
+  uint32 first_day_start_time = 15;
+  bool IKKILCGOJJD = 12;
+  bool JCMAMEJKFJP = 16;
+  uint32 DCFLMEMCBFI = 5;
+}

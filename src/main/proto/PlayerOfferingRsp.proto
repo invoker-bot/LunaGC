@@ -1,0 +1,14 @@
+// Recovered from PlayerOfferingRspOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PlayerOfferingRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PlayerOfferingRspOuterClass";
+import "ItemParam.proto";
+import "PlayerOfferingData.proto";
+
+message PlayerOfferingRsp {
+  repeated .ItemParam item_list = 14;
+  .recovered.p_PlayerOfferingData.PlayerOfferingData offering_data = 2;
+  int32 retcode = 8;
+}

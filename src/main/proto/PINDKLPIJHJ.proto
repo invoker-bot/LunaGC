@@ -1,0 +1,17 @@
+// Recovered from PINDKLPIJHJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PINDKLPIJHJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PINDKLPIJHJOuterClass";
+
+message PINDKLPIJHJ {
+  repeated uint32 EAFNNLOAGAC = 1;
+  repeated uint32 AIOAAPOOOHE = 10;
+  repeated uint32 OOOAPFIENMC = 8;
+  repeated uint32 FAGAABFJLMF = 7;
+  uint32 score = 11;
+  bool is_open = 15;
+  bool is_finish = 4;
+  uint32 level_id = 2;
+}

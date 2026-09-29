@@ -1,0 +1,10 @@
+// Recovered from _BubbleDramaDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__BubbleDramaDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_BubbleDramaDetailInfoOuterClass";
+
+message _BubbleDramaDetailInfo {
+  uint32 HKBMJEAPLJO = 5;
+}

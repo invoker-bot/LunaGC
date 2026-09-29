@@ -1,0 +1,15 @@
+// Recovered from LABNGGHPGBPOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_LABNGGHPGBP;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "LABNGGHPGBPOuterClass";
+import "NFICKHNFNLN.proto";
+
+message LABNGGHPGBP {
+  repeated .recovered.p_NFICKHNFNLN.NFICKHNFNLN MJIOOMMMAND = 2;
+  uint32 ugc_guid = 4;
+  uint32 level_id = 5;
+  bool is_open = 1;
+  bool is_finish = 9;
+}

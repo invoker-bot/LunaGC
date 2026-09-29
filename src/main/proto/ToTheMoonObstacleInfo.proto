@@ -1,0 +1,17 @@
+// Recovered from ToTheMoonObstacleInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ToTheMoonObstacleInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ToTheMoonObstacleInfoOuterClass";
+import "Vector.proto";
+import "MathQuaternion.proto";
+import "ShapeType.proto";
+
+message ToTheMoonObstacleInfo {
+  .Vector center = 5;
+  .MathQuaternion rotation = 9;
+  .Vector half_extents = 3;
+  .recovered.p_ShapeType.ShapeType type = 14;
+  int32 handle_id = 11;
+}

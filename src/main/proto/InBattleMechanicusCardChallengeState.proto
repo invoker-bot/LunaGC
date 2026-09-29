@@ -1,0 +1,13 @@
+// Recovered from InBattleMechanicusCardChallengeStateOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_InBattleMechanicusCardChallengeState;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "InBattleMechanicusCardChallengeStateOuterClass";
+
+enum InBattleMechanicusCardChallengeState {
+  InBattleMechanicusCardChallengeState_IN_BATTLE_MECHANICUS_CARD_CHALLENGE_NONE = 0;
+  InBattleMechanicusCardChallengeState_IN_BATTLE_MECHANICUS_CARD_CHALLENGE_ON_GOING = 1;
+  InBattleMechanicusCardChallengeState_IN_BATTLE_MECHANICUS_CARD_CHALLENGE_FAIL = 2;
+  InBattleMechanicusCardChallengeState_IN_BATTLE_MECHANICUS_CARD_CHALLENGE_SUCCESS = 3;
+}

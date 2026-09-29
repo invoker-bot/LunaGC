@@ -1,0 +1,15 @@
+// Recovered from _ToyBattleDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__ToyBattleDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_ToyBattleDetailInfoOuterClass";
+import "EBPGBJPNECE.proto";
+import "MDCLJNPDHKG.proto";
+import "OGPKLKFOKMA.proto";
+
+message _ToyBattleDetailInfo {
+  .OGPKLKFOKMA camp_info = 5;
+  .MDCLJNPDHKG LPJNDCOPMLF = 8;
+  .EBPGBJPNECE ECIAOICLCLC = 13;
+}

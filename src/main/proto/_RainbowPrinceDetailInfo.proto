@@ -1,0 +1,13 @@
+// Recovered from _RainbowPrinceDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__RainbowPrinceDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_RainbowPrinceDetailInfoOuterClass";
+import "HEEIDHNNCDM.proto";
+import "LBGHHNDLACN.proto";
+
+message _RainbowPrinceDetailInfo {
+  repeated .LBGHHNDLACN HGNLKDCGLBO = 2;
+  repeated .HEEIDHNNCDM NBALJIPCLAF = 6;
+}

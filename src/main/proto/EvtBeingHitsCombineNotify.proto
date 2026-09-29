@@ -1,0 +1,13 @@
+// Recovered from EvtBeingHitsCombineNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EvtBeingHitsCombineNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EvtBeingHitsCombineNotifyOuterClass";
+import "EvtBeingHitInfo.proto";
+import "ForwardType.proto";
+
+message EvtBeingHitsCombineNotify {
+  repeated .EvtBeingHitInfo evt_being_hit_info_list = 1;
+  .ForwardType forward_type = 7;
+}

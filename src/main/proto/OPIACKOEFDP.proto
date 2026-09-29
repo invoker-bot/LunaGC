@@ -1,0 +1,12 @@
+// Recovered from OPIACKOEFDPOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OPIACKOEFDP;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OPIACKOEFDPOuterClass";
+
+message OPIACKOEFDP {
+  bool is_open = 7;
+  uint32 level_id = 6;
+  uint32 ugc_guid = 15;
+}

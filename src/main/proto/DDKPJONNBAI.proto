@@ -1,0 +1,12 @@
+// Recovered from DDKPJONNBAIOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DDKPJONNBAI;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DDKPJONNBAIOuterClass";
+import "MINHNFHALBI.proto";
+
+message DDKPJONNBAI {
+  repeated .recovered.p_MINHNFHALBI.MINHNFHALBI ICIIPIBDPMA = 7;
+  uint32 ACKHBHFDHLK = 6;
+}

@@ -1,0 +1,11 @@
+// Recovered from EvtAiSyncCombatThreatInfoNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EvtAiSyncCombatThreatInfoNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EvtAiSyncCombatThreatInfoNotifyOuterClass";
+import "AiThreatInfo.proto";
+
+message EvtAiSyncCombatThreatInfoNotify {
+  map<uint32, .recovered.p_AiThreatInfo.AiThreatInfo> combat_threat_info_map = 10;
+}

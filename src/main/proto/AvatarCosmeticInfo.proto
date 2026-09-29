@@ -1,0 +1,16 @@
+// Recovered from AvatarCosmeticInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AvatarCosmeticInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AvatarCosmeticInfoOuterClass";
+import "BeyondCosmeticPlan.proto";
+import "BeyondExpressionInfo.proto";
+
+message AvatarCosmeticInfo {
+  uint64 avatar_guid = 13;
+  uint32 cur_plan_id = 2;
+  repeated .recovered.p_BeyondCosmeticPlan.BeyondCosmeticPlan cosmetic_plan_list = 7;
+  uint32 effective_plan_id = 15;
+  repeated .BeyondExpressionInfo expression_list = 9;
+}

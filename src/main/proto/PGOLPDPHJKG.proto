@@ -1,0 +1,11 @@
+// Recovered from PGOLPDPHJKGOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PGOLPDPHJKG;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PGOLPDPHJKGOuterClass";
+
+message PGOLPDPHJKG {
+  bool is_open = 3;
+  uint32 gadget_id = 6;
+}

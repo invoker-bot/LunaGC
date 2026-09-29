@@ -1,0 +1,15 @@
+// Recovered from InBattleMechanicusCardInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_InBattleMechanicusCardInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "InBattleMechanicusCardInfoOuterClass";
+import "InBattleMechanicusCardChallengeState.proto";
+
+message InBattleMechanicusCardInfo {
+  uint32 OFKDBMGMAAA = 9;
+  uint32 cost_points = 10;
+  uint32 BBEFENDIHEG = 8;
+  uint32 card_id = 4;
+  .recovered.p_InBattleMechanicusCardChallengeState.InBattleMechanicusCardChallengeState challenge_state = 3;
+}

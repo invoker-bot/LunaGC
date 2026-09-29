@@ -1,0 +1,14 @@
+// Recovered from GFKOHEPPBBNOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GFKOHEPPBBN;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GFKOHEPPBBNOuterClass";
+
+message GFKOHEPPBBN {
+  uint32 open_time = 5;
+  bool is_open = 6;
+  uint32 LMLPJNHHHCG = 9;
+  uint32 ECFCFIOBOMA = 7;
+  uint32 progress = 11;
+}

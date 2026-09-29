@@ -1,0 +1,12 @@
+// Recovered from SkipPlayerGameTimeRspOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_SkipPlayerGameTimeRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "SkipPlayerGameTimeRspOuterClass";
+
+message SkipPlayerGameTimeRsp {
+  uint32 client_game_time = 2;
+  int32 retcode = 9;
+  uint32 game_time = 13;
+}

@@ -1,0 +1,10 @@
+// Recovered from RefreshNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_RefreshNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "RefreshNotifyOuterClass";
+
+message RefreshNotify {
+  uint32 refresh_num = 10;
+}

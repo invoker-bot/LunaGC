@@ -1,0 +1,12 @@
+// Recovered from IFCOJBIIADMOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_IFCOJBIIADM;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "IFCOJBIIADMOuterClass";
+
+enum IFCOJBIIADM {
+  IFCOJBIIADM_NONE = 0;
+  IFCOJBIIADM_SUCC = 1;
+  IFCOJBIIADM_FAIL = 2;
+}

@@ -1,0 +1,13 @@
+// Recovered from MOEDOHFPFKEOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MOEDOHFPFKE;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MOEDOHFPFKEOuterClass";
+
+message MOEDOHFPFKE {
+  uint32 level_id = 3;
+  bool is_finish = 11;
+  uint32 best_score = 12;
+  bool is_open = 2;
+}

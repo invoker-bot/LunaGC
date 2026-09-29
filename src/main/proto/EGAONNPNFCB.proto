@@ -1,0 +1,13 @@
+// Recovered from EGAONNPNFCBOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EGAONNPNFCB;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EGAONNPNFCBOuterClass";
+import "OFHAAKDHJJK.proto";
+import "HJCKJNOBMGD.proto";
+
+message EGAONNPNFCB {
+  repeated .recovered.p_OFHAAKDHJJK.OFHAAKDHJJK JPIDLOBGPDJ = 8;
+  repeated .recovered.p_HJCKJNOBMGD.HJCKJNOBMGD KBGJCPOKLFB = 15;
+}

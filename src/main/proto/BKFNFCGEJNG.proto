@@ -1,0 +1,20 @@
+// Recovered from BKFNFCGEJNGOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BKFNFCGEJNG;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BKFNFCGEJNGOuterClass";
+import "FNEFDOMCAJN.proto";
+
+message BKFNFCGEJNG {
+  repeated .recovered.p_FNEFDOMCAJN.FNEFDOMCAJN CEMAGGFILCH = 7;
+  .recovered.p_FNEFDOMCAJN.FNEFDOMCAJN pos = 2;
+  repeated int32 OGHHLMCDKAH = 9;
+  repeated uint32 CLIINAHKGCG = 6;
+  .recovered.p_FNEFDOMCAJN.FNEFDOMCAJN HBFDPEPLENA = 4;
+  uint32 config_id = 12;
+  int32 rotation = 3;
+  uint32 id = 1;
+  uint32 ECJNJIGOFHJ = 5;
+  uint32 OIGILJHHIBN = 11;
+}

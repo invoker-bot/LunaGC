@@ -1,0 +1,11 @@
+// Recovered from HNPHLPHHFLHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_HNPHLPHHFLH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "HNPHLPHHFLHOuterClass";
+import "PAMBBOKACLC.proto";
+
+message HNPHLPHHFLH {
+  repeated .recovered.p_PAMBBOKACLC.PAMBBOKACLC LPLPLBCGCAN = 9;
+}

@@ -1,0 +1,15 @@
+// Recovered from FLJBHAGNLOFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FLJBHAGNLOF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FLJBHAGNLOFOuterClass";
+import "NNOLNLHNOIO.proto";
+
+message FLJBHAGNLOF {
+  uint32 CMFBOGELCPE = 1;
+  repeated .NNOLNLHNOIO IJNNOEEKODG = 3;
+  repeated uint32 DFDEJLLNPJF = 6;
+  repeated uint32 FKCIFOHLLBM = 9;
+  uint32 ALAKKGOILIC = 10;
+}

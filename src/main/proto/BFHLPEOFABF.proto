@@ -1,0 +1,14 @@
+// Recovered from BFHLPEOFABFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BFHLPEOFABF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BFHLPEOFABFOuterClass";
+
+message BFHLPEOFABF {
+  repeated uint32 LDMEFLKHCBC = 4;
+  uint32 OMEBOHLACPH = 9;
+  uint32 group_id = 2;
+  uint32 start_time = 1;
+  bool IJJEPJJGOCI = 3;
+}

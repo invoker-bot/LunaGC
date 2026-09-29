@@ -1,0 +1,11 @@
+// Recovered from _QuickTimeCombatDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__QuickTimeCombatDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_QuickTimeCombatDetailInfoOuterClass";
+import "ANLGBIKALMF.proto";
+
+message _QuickTimeCombatDetailInfo {
+  repeated .ANLGBIKALMF stage_info_list = 5;
+}

@@ -1,0 +1,15 @@
+// Recovered from EBGOHJAAHLLOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EBGOHJAAHLL;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EBGOHJAAHLLOuterClass";
+import "CMLBIOICKKE.proto";
+
+message EBGOHJAAHLL {
+  repeated .recovered.p_CMLBIOICKKE.CMLBIOICKKE CFOEJNCOHPK = 14;
+  bool is_open = 3;
+  uint32 stage_id = 8;
+  uint32 open_time = 10;
+  uint32 ugc_guid = 13;
+}

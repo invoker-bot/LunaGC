@@ -1,0 +1,13 @@
+// Recovered from OHLHICJIAFOOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OHLHICJIAFO;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OHLHICJIAFOOuterClass";
+
+message OHLHICJIAFO {
+  repeated uint32 IMDKKLBENCJ = 7;
+  repeated uint32 PLGPBBEJPLN = 2;
+  uint32 MFBPCKEJMKA = 8;
+  uint32 HCCNHHOFBOO = 3;
+}

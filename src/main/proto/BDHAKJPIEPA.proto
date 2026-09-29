@@ -1,0 +1,13 @@
+// Recovered from BDHAKJPIEPAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BDHAKJPIEPA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BDHAKJPIEPAOuterClass";
+
+message BDHAKJPIEPA {
+  uint32 level_id = 1;
+  repeated uint32 NBPIEMDDNDB = 6;
+  bool is_open = 13;
+  bool is_finish = 15;
+}

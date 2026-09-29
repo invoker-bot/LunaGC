@@ -1,0 +1,13 @@
+// Recovered from OBIKHFFAIDLOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OBIKHFFAIDL;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OBIKHFFAIDLOuterClass";
+
+message OBIKHFFAIDL {
+  uint32 level_id = 12;
+  uint32 COLMPMJINGC = 6;
+  uint32 score = 13;
+  uint32 BMIOBNHGMHF = 9;
+}

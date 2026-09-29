@@ -1,0 +1,13 @@
+// Recovered from UgcV2InfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_UgcV2Info;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "UgcV2InfoOuterClass";
+import "IMBIPFIFFOJ.proto";
+
+message UgcV2Info {
+  bool NGKEOGMMHJD = 10;
+  bool LDNPJDPNPCI = 4;
+  repeated .recovered.p_IMBIPFIFFOJ.IMBIPFIFFOJ ILAHOOFBHKE = 1;
+}

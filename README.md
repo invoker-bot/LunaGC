@@ -15,6 +15,13 @@ accidentally consume an unrelated 7.1 packet. Their features need fresh captures
 before being enabled. `BlossomBriefInfoNotify` and `DelTeamEntityNotify` use the
 7.1 fan-out map in `data/proto-fanout.json`.
 
+The 819 additional `.proto` files marked `Recovered from ...` preserve schemas
+embedded in formerly checked-in generated Java classes. They use separate
+protobuf namespaces to avoid conflicting with the 7.1 definitions while keeping
+the Java API needed by existing handlers. These recovered schemas are historical
+compatibility data, not independently verified 7.1 messages. Gradle now generates
+Java into `build/generated/source/proto`; generated Java is not tracked in Git.
+
 Very WIP — expect broken things. What is implemented is listed below; everything
 else is not.
 
@@ -658,7 +665,8 @@ Setting the last three to `1`, `1` and `0` gives you plain, unweighted domain ro
 ```
 patch/          Rust cdylib -> ext.dll, the client patch (git submodule)
 src/            the server
-  src/generated/  generated protobuf sources; do not edit by hand
+  main/proto/    tracked protobuf definitions, including recovered legacy schemas
+build/generated/source/proto/  generated Java; ignored by Git
 tools/          every task command lives here as its own .ps1
 debug/          `task dev` session output (gitignored)
 resources/      LunaGC-Resources, extracted here (gitignored)

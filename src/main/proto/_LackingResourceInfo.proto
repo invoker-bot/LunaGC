@@ -1,0 +1,20 @@
+// Recovered from _LackingResourceInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__LackingResourceInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_LackingResourceInfoOuterClass";
+
+message _LackingResourceInfo {
+  repeated uint32 lacked_npc_list = 1;
+  map<uint32, uint32> lacked_npc_map = 2;
+  repeated uint32 lacked_place_list = 3;
+  map<uint32, uint32> lacked_place_map = 4;
+  repeated uint32 CDJKFNKOLPB = 5;
+  map<uint32, uint32> PMIOEBCNJFM = 6;
+  repeated uint32 BECCPHJPFIG = 7;
+  repeated uint32 BKGDGIMBLJM = 8;
+  repeated uint32 _focused_parent_quest_id_list = 9;
+  uint32 POMNBEBGIEM = 10;
+  map<uint32, uint32> LAMMLKHEHII = 11;
+}

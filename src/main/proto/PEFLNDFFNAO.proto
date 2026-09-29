@@ -1,0 +1,14 @@
+// Recovered from PEFLNDFFNAOOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PEFLNDFFNAO;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PEFLNDFFNAOOuterClass";
+
+message PEFLNDFFNAO {
+  uint64 ACKIIKLAPNL = 13;
+  uint32 OMEBOHLACPH = 10;
+  bool DALMDMCJNNK = 15;
+  bool is_finished = 8;
+  uint32 level_id = 12;
+}

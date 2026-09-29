@@ -1,0 +1,11 @@
+// Recovered from GLCFFFILFGKOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GLCFFFILFGK;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GLCFFFILFGKOuterClass";
+import "OPHMAHKJHJD.proto";
+
+message GLCFFFILFGK {
+  repeated .recovered.p_OPHMAHKJHJD.OPHMAHKJHJD stage_info_list = 3;
+}

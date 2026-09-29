@@ -1,0 +1,11 @@
+// Recovered from DNGLBFEKNCJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DNGLBFEKNCJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DNGLBFEKNCJOuterClass";
+import "OACFANPHJPK.proto";
+
+message DNGLBFEKNCJ {
+  repeated .recovered.p_OACFANPHJPK.OACFANPHJPK GGOKKDEKPJM = 4;
+}

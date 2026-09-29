@@ -1,0 +1,13 @@
+// Recovered from HLEDDDGEGNMOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_HLEDDDGEGNM;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "HLEDDDGEGNMOuterClass";
+
+message HLEDDDGEGNM {
+  map<uint32, uint32> IMHCPCBLPOI = 2;
+  uint32 FCECLMBPMPJ = 1;
+  uint32 BKNEAJCOIMJ = 8;
+  bool is_open = 12;
+}

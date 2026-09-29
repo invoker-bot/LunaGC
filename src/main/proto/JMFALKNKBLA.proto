@@ -1,0 +1,11 @@
+// Recovered from JMFALKNKBLAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JMFALKNKBLA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JMFALKNKBLAOuterClass";
+
+message JMFALKNKBLA {
+  uint32 avatar_id = 4;
+  bool FANBBDKAKNE = 9;
+}

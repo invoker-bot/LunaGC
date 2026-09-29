@@ -1,0 +1,14 @@
+// Recovered from GFBEALGFENJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GFBEALGFENJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GFBEALGFENJOuterClass";
+
+message GFBEALGFENJ {
+  uint32 KMKENGHIONF = 4;
+  uint32 total_progress = 5;
+  bool is_taken_reward = 10;
+  uint32 cur_progress = 11;
+  uint32 watcher_id = 13;
+}

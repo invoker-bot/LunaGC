@@ -1,0 +1,12 @@
+// Recovered from PolygonRegionSizeOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PolygonRegionSize;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PolygonRegionSizeOuterClass";
+import "VectorPlane.proto";
+
+message PolygonRegionSize {
+  repeated .recovered.p_VectorPlane.VectorPlane point_list = 3;
+  float height = 9;
+}

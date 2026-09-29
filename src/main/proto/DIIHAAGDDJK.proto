@@ -1,0 +1,13 @@
+// Recovered from DIIHAAGDDJKOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DIIHAAGDDJK;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DIIHAAGDDJKOuterClass";
+
+enum DIIHAAGDDJK {
+  DIIHAAGDDJK_WispCageStateNotExist = 0;
+  DIIHAAGDDJK_WispCageStateCreated = 1;
+  DIIHAAGDDJK_WispCageStateMaterialDelivered = 2;
+  DIIHAAGDDJK_WispCageStateNotTakeReward = 3;
+}

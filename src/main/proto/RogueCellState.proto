@@ -1,0 +1,14 @@
+// Recovered from RogueCellStateOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_RogueCellState;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "RogueCellStateOuterClass";
+
+enum RogueCellState {
+  RogueCellState_ROGUE_CELL_NONE = 0;
+  RogueCellState_ROGUE_CELL_BATTLE = 1;
+  RogueCellState_ROGUE_CELL_SUCCESS = 2;
+  RogueCellState_ROGUE_CELL_FINISH = 3;
+  RogueCellState_ROGUE_CELL_TAKEN_CHEST = 4;
+}

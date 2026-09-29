@@ -1,0 +1,17 @@
+// Recovered from KANIKHPMOOAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KANIKHPMOOA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KANIKHPMOOAOuterClass";
+import "FNEFDOMCAJN.proto";
+
+message KANIKHPMOOA {
+  .recovered.p_FNEFDOMCAJN.FNEFDOMCAJN pos = 2;
+  uint32 index = 4;
+  uint32 uid = 1;
+  uint32 BFDKENOOMNH = 6;
+  uint32 HMFCBJPFDCB = 5;
+  uint32 score = 3;
+  int32 rot = 8;
+}

@@ -1,0 +1,12 @@
+// Recovered from ChessMonsterInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ChessMonsterInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ChessMonsterInfoOuterClass";
+
+message ChessMonsterInfo {
+  uint32 monster_id = 11;
+  repeated uint32 affix_list = 9;
+  uint32 level = 10;
+}

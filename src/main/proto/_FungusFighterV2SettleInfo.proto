@@ -1,0 +1,15 @@
+// Recovered from _FungusFighterV2SettleInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__FungusFighterV2SettleInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_FungusFighterV2SettleInfoOuterClass";
+
+message _FungusFighterV2SettleInfo {
+  uint32 PEOBIBCPNAL = 2;
+  uint32 cost_time = 7;
+  uint32 level_id = 10;
+  uint32 HGAHIABILNJ = 11;
+  uint32 CODAHBOBNAC = 12;
+  bool is_new_record = 13;
+}

@@ -1,0 +1,11 @@
+// Recovered from PlayerQuitFromMpNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PlayerQuitFromMpNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PlayerQuitFromMpNotifyOuterClass";
+import "QuitReason.proto";
+
+message PlayerQuitFromMpNotify {
+  .recovered.p_QuitReason.QuitReason reason = 15;
+}

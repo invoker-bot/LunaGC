@@ -1,0 +1,11 @@
+// Recovered from HECIAPHEJNCOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_HECIAPHEJNC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "HECIAPHEJNCOuterClass";
+
+message HECIAPHEJNC {
+  bool FANBBDKAKNE = 15;
+  uint32 avatar_id = 1;
+}

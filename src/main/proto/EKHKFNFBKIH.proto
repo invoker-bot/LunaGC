@@ -1,0 +1,11 @@
+// Recovered from EKHKFNFBKIHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EKHKFNFBKIH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EKHKFNFBKIHOuterClass";
+import "MCJBLKIHPHI.proto";
+
+message EKHKFNFBKIH {
+  repeated .recovered.p_MCJBLKIHPHI.MCJBLKIHPHI avatar_list = 8;
+}

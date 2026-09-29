@@ -1,0 +1,11 @@
+// Recovered from INHIMOGADFMOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_INHIMOGADFM;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "INHIMOGADFMOuterClass";
+import "KMCIEKLJLMF.proto";
+
+message INHIMOGADFM {
+  repeated .recovered.p_KMCIEKLJLMF.KMCIEKLJLMF GGOKKDEKPJM = 14;
+}

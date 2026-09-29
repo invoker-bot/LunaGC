@@ -1,0 +1,11 @@
+// Recovered from IFONDMLOGFPOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_IFONDMLOGFP;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "IFONDMLOGFPOuterClass";
+import "JACEJALMFGC.proto";
+
+message IFONDMLOGFP {
+  repeated .recovered.p_JACEJALMFGC.JACEJALMFGC info_list = 6;
+}

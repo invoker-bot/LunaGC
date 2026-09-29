@@ -1,0 +1,11 @@
+// Recovered from BBGJODHDCNPOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BBGJODHDCNP;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BBGJODHDCNPOuterClass";
+
+message BBGJODHDCNP {
+  uint32 finish_time = 4;
+  uint32 CICBHCHOEPN = 5;
+}

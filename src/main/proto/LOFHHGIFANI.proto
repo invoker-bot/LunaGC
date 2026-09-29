@@ -1,0 +1,12 @@
+// Recovered from LOFHHGIFANIOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_LOFHHGIFANI;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "LOFHHGIFANIOuterClass";
+
+message LOFHHGIFANI {
+  uint32 PFKIOIBNOCC = 10;
+  uint32 uid = 13;
+  uint32 avatar_id = 8;
+}

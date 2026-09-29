@@ -1,0 +1,11 @@
+// Recovered from _EffigyChallengeV4DetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__EffigyChallengeV4DetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_EffigyChallengeV4DetailInfoOuterClass";
+import "CCALODNFHKJ.proto";
+
+message _EffigyChallengeV4DetailInfo {
+  repeated .recovered.p_CCALODNFHKJ.CCALODNFHKJ IDCFGHMLOAK = 1;
+}

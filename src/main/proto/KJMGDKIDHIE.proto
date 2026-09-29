@@ -1,0 +1,35 @@
+// Recovered from KJMGDKIDHIEOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KJMGDKIDHIE;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KJMGDKIDHIEOuterClass";
+import "DAPPJPEICGJ.proto";
+
+message KJMGDKIDHIE {
+  repeated uint32 KOCMDMMFGMI = 104;
+  repeated uint32 GGLKNKFFEEE = 1351;
+  repeated uint32 JJPMLJLDIHI = 102;
+  string MFGDEKKFLEF = 12;
+  .recovered.p_DAPPJPEICGJ.DAPPJPEICGJ CEKOLBFEPON = 489;
+  uint32 FPNJDMOOHDE = 2016;
+  uint64 AAHNFINJFAF = 11;
+  uint32 EIANDKIEEJP = 15;
+  uint32 CBNMDAGOMHA = 926;
+  uint32 JOLJHDCPGPN = 7;
+  uint32 GLBNECCHCOB = 5;
+  bool MBBJMGIIKKM = 2;
+  bool DADJBDLKDFO = 13;
+  bool CPAEGLGJACA = 10;
+  bool HEAFAHPKFDO = 14;
+  uint32 EHHGDAPAPLP = 1197;
+  uint32 version = 4;
+  uint32 IFADGMHEFHF = 1;
+  uint32 FDMGJAOKBPP = 3;
+  uint32 LLLFNBFGDBF = 1173;
+  uint64 LPCOPFPMHAK = 6;
+  uint32 HEBNGBGOAPM = 8;
+  uint32 CMEALNJIJNG = 967;
+  uint32 MPNBDALHDAC = 543;
+  uint32 JBGOFOMFAHF = 9;
+}

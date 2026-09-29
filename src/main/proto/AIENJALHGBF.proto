@@ -1,0 +1,21 @@
+// Recovered from AIENJALHGBFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AIENJALHGBF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AIENJALHGBFOuterClass";
+import "FNEFDOMCAJN.proto";
+import "BreakoutActionType.proto";
+
+message AIENJALHGBF {
+  .recovered.p_FNEFDOMCAJN.FNEFDOMCAJN pos = 5;
+  repeated uint32 entity_id_list = 10;
+  .recovered.p_FNEFDOMCAJN.FNEFDOMCAJN extra_ball_dir = 8;
+  uint64 client_game_time = 2;
+  uint32 peer_id = 6;
+  int32 rot = 9;
+  bool is_failed = 4;
+  .recovered.p_BreakoutActionType.BreakoutActionType action_type = 1;
+  uint64 execution_game_time = 7;
+  uint64 server_game_time = 3;
+}

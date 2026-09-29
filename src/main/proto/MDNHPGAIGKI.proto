@@ -1,0 +1,11 @@
+// Recovered from MDNHPGAIGKIOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MDNHPGAIGKI;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MDNHPGAIGKIOuterClass";
+import "INLACFDCBDF.proto";
+
+message MDNHPGAIGKI {
+  repeated .recovered.p_INLACFDCBDF.INLACFDCBDF FLJFCLBCKEA = 8;
+}

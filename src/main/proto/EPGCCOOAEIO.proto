@@ -1,0 +1,11 @@
+// Recovered from EPGCCOOAEIOOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EPGCCOOAEIO;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EPGCCOOAEIOOuterClass";
+
+message EPGCCOOAEIO {
+  uint32 IPKIHLJFPEB = 7;
+  uint32 POLJBHACKGB = 15;
+}

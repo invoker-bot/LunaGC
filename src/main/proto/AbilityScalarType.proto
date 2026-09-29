@@ -1,0 +1,16 @@
+// Recovered from AbilityScalarTypeOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AbilityScalarType;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AbilityScalarTypeOuterClass";
+
+enum AbilityScalarType {
+  ABILITY_SCALAR_TYPE_UNKNOW = 0;
+  ABILITY_SCALAR_TYPE_FLOAT = 1;
+  ABILITY_SCALAR_TYPE_INT = 2;
+  ABILITY_SCALAR_TYPE_BOOL = 3;
+  ABILITY_SCALAR_TYPE_TRIGGER = 4;
+  ABILITY_SCALAR_TYPE_STRING = 5;
+  ABILITY_SCALAR_TYPE_UINT = 6;
+}

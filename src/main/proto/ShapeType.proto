@@ -1,0 +1,11 @@
+// Recovered from ShapeTypeOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ShapeType;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ShapeTypeOuterClass";
+
+enum ShapeType {
+  ShapeType_OBSTACLE_SHAPE_CAPSULE = 0;
+  ShapeType_OBSTACLE_SHAPE_BOX = 1;
+}

@@ -1,0 +1,10 @@
+// Recovered from EPHJHKKCOIGOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EPHJHKKCOIG;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EPHJHKKCOIGOuterClass";
+
+message EPHJHKKCOIG {
+  bool is_need_destroy = 5;
+}

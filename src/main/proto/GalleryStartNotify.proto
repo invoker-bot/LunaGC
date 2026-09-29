@@ -1,0 +1,20 @@
+// Recovered from GalleryStartNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GalleryStartNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GalleryStartNotifyOuterClass";
+import "ElectroherculesStartParam.proto";
+import "GalleryFlowerStartParam.proto";
+
+message GalleryStartNotify {
+  uint32 start_time = 13;
+  uint32 player_count = 9;
+  uint32 owner_uid = 14;
+  uint32 end_time = 5;
+  uint32 gallery_id = 11;
+  oneof detail {
+    .recovered.p_ElectroherculesStartParam.ElectroherculesStartParam electrohercules_start_param = 8;
+    .recovered.p_GalleryFlowerStartParam.GalleryFlowerStartParam flower_start_param = 15;
+  }
+}

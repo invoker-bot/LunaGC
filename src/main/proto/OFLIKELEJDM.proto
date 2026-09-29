@@ -1,0 +1,11 @@
+// Recovered from OFLIKELEJDMOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OFLIKELEJDM;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OFLIKELEJDMOuterClass";
+
+message OFLIKELEJDM {
+  uint32 NPHENKBLGAC = 3;
+  uint32 FNMDONNMBLJ = 6;
+}

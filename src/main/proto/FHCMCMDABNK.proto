@@ -1,0 +1,33 @@
+// Recovered from FHCMCMDABNKOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FHCMCMDABNK;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FHCMCMDABNKOuterClass";
+import "NEBFBFHEIDC.proto";
+import "FGMLADHDMCP.proto";
+
+message FHCMCMDABNK {
+  repeated uint32 ICJEFMMOCOD = 10;
+  .recovered.p_NEBFBFHEIDC.NEBFBFHEIDC JBJHNKOBOFE = 13;
+  repeated uint32 BOJNOHMBLCL = 3;
+  repeated uint32 IHALJGONDJK = 2;
+  repeated uint32 HJLHJOBJMLE = 7;
+  map<uint32, bool> BMKLHNKPLCL = 9;
+  repeated uint32 KONFGLIHJOJ = 762;
+  repeated .recovered.p_FGMLADHDMCP.FGMLADHDMCP HADCLMCOGMJ = 11;
+  uint32 NJDKLFIOPLG = 1668;
+  uint32 LBJJMINLCLJ = 1808;
+  uint32 PDADKFNODAA = 1158;
+  uint32 GBFHJIGBDBE = 6;
+  bool OINGCJMOINC = 1327;
+  bool LHFOGHJBJAL = 15;
+  bool KOLHIFKEGOC = 12;
+  bool EIJBIDFOKMJ = 1414;
+  bool LNLGILCGJOJ = 566;
+  bool NPPNCMFAOCH = 8;
+  bool MLPDAENOKDC = 1;
+  bool EEFKHIOFOLD = 5;
+  uint32 CMNCFFAPDBH = 4;
+  uint32 LPDFOLDHOHI = 14;
+}

@@ -1,0 +1,13 @@
+// Recovered from JBFAEBGMJFAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JBFAEBGMJFA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JBFAEBGMJFAOuterClass";
+
+message JBFAEBGMJFA {
+  uint32 EEIGMFFIKJA = 13;
+  uint32 LOHAJIABHDJ = 5;
+  uint32 finish_time = 15;
+  bool is_finish = 6;
+}

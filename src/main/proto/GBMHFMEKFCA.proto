@@ -1,0 +1,22 @@
+// Recovered from GBMHFMEKFCAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GBMHFMEKFCA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GBMHFMEKFCAOuterClass";
+import "NFICKHNFNLN.proto";
+import "ECCLGIPMJCL.proto";
+import "DBGNJEEEOJP.proto";
+
+message GBMHFMEKFCA {
+  repeated .recovered.p_NFICKHNFNLN.NFICKHNFNLN DCLIPHJPDIH = 15;
+  repeated .recovered.p_ECCLGIPMJCL.ECCLGIPMJCL GCPKLMEILOE = 14;
+  .recovered.p_DBGNJEEEOJP.DBGNJEEEOJP JIJLKKPPACJ = 3;
+  repeated .recovered.p_NFICKHNFNLN.NFICKHNFNLN OHHDOMNJFMK = 8;
+  uint32 level_id = 4;
+  uint32 cost_time = 2;
+  bool MJHOOLKILGN = 6;
+  bool is_finish = 13;
+  bool is_open = 10;
+  uint32 HEFCOJNGFMG = 7;
+}

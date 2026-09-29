@@ -1,0 +1,13 @@
+// Recovered from LGDMICBNNDKOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_LGDMICBNNDK;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "LGDMICBNNDKOuterClass";
+
+message LGDMICBNNDK {
+  uint32 stage_id = 3;
+  bool is_open = 1;
+  bool is_finished = 4;
+  uint32 level_id = 11;
+}

@@ -1,0 +1,11 @@
+// Recovered from OPHMAHKJHJDOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OPHMAHKJHJD;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OPHMAHKJHJDOuterClass";
+
+message OPHMAHKJHJD {
+  uint32 stage_id = 1;
+  bool is_open = 14;
+}

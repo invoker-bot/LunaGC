@@ -1,0 +1,14 @@
+// Recovered from LFGHMHAJEACOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_LFGHMHAJEAC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "LFGHMHAJEACOuterClass";
+import "KMPOJIOKAEO.proto";
+
+message LFGHMHAJEAC {
+  repeated .recovered.p_KMPOJIOKAEO.KMPOJIOKAEO mark_list = 2;
+  repeated uint32 OEGAKDNMCJB = 8;
+  bool NDLHKNOIDEO = 15;
+  bool AFOLGBCPFGJ = 11;
+}

@@ -1,0 +1,14 @@
+// Recovered from DHLGBDFIDGNOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DHLGBDFIDGN;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DHLGBDFIDGNOuterClass";
+
+message DHLGBDFIDGN {
+  repeated uint32 LDMEFLKHCBC = 10;
+  uint32 group_id = 9;
+  uint32 start_time = 3;
+  bool IJJEPJJGOCI = 6;
+  uint32 OMEBOHLACPH = 1;
+}

@@ -1,0 +1,15 @@
+// Recovered from _PacmanSettleInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__PacmanSettleInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_PacmanSettleInfoOuterClass";
+import "_PacmanDungeonStopReason.proto";
+
+message _PacmanSettleInfo {
+  ._PacmanDungeonStopReason reason = 2;
+  uint32 coin_num = 9;
+  uint32 final_score = 10;
+  bool is_new_record = 11;
+  uint32 killed_monster_num = 15;
+}

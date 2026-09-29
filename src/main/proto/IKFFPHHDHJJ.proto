@@ -1,0 +1,13 @@
+// Recovered from IKFFPHHDHJJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_IKFFPHHDHJJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "IKFFPHHDHJJOuterClass";
+import "IEDPGJDEMAJ.proto";
+
+message IKFFPHHDHJJ {
+  repeated uint32 PAFKENILOMD = 3;
+  repeated .IEDPGJDEMAJ level_info_list = 7;
+  uint32 difficulty = 14;
+}

@@ -1,0 +1,13 @@
+// Recovered from TowerSkipFloorStateOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_TowerSkipFloorState;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "TowerSkipFloorStateOuterClass";
+
+enum TowerSkipFloorState {
+  TowerSkipFloorState_TOWER_SKIP_FLOOR_STATE_NONE = 0;
+  TowerSkipFloorState_TOWER_SKIP_FLOOR_STATE_CAN_NOT_SKIP = 1;
+  TowerSkipFloorState_TOWER_SKIP_FLOOR_STATE_HAS_REWARD = 2;
+  TowerSkipFloorState_TOWER_SKIP_FLOOR_STATE_TAKEN_REWARD = 3;
+}

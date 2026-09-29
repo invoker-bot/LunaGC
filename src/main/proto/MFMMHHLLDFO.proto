@@ -1,0 +1,16 @@
+// Recovered from MFMMHHLLDFOOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MFMMHHLLDFO;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MFMMHHLLDFOOuterClass";
+
+message MFMMHHLLDFO {
+  string IDMEPGKNPNM = 2;
+  string NAFPACJOABI = 1;
+  uint32 begin_time = 5;
+  uint32 MJHLHJNNLPG = 3;
+  uint32 end_time = 6;
+  uint32 EBENHBFBKCF = 4;
+  uint32 NMCJHOFMNDB = 7;
+}

@@ -1,0 +1,11 @@
+// Recovered from NGHDBPLHKBBOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NGHDBPLHKBB;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NGHDBPLHKBBOuterClass";
+import "CODGCKOENFC.proto";
+
+message NGHDBPLHKBB {
+  repeated .recovered.p_CODGCKOENFC.CODGCKOENFC level_info_list = 9;
+}

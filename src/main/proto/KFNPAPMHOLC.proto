@@ -1,0 +1,16 @@
+// Recovered from KFNPAPMHOLCOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KFNPAPMHOLC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KFNPAPMHOLCOuterClass";
+
+message KFNPAPMHOLC {
+  string IDMEPGKNPNM = 2;
+  string NAFPACJOABI = 1;
+  uint32 OELBCALLHGE = 3;
+  bool LJHCFCNMEFF = 7;
+  uint32 EOLIGDNLNHK = 6;
+  uint32 IPOJPAFAEPM = 5;
+  uint32 OLMNNBOLLJP = 4;
+}

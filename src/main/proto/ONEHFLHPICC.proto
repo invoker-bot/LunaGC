@@ -1,0 +1,13 @@
+// Recovered from ONEHFLHPICCOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ONEHFLHPICC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ONEHFLHPICCOuterClass";
+
+message ONEHFLHPICC {
+  bool is_finish = 1;
+  bool is_open = 2;
+  uint32 GNFLNFNPGAD = 10;
+  uint32 level_id = 5;
+}

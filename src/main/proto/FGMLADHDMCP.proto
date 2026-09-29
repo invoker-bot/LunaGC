@@ -1,0 +1,14 @@
+// Recovered from FGMLADHDMCPOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FGMLADHDMCP;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FGMLADHDMCPOuterClass";
+
+message FGMLADHDMCP {
+  repeated uint32 KJJCNOLAGHK = 2;
+  repeated uint32 LAFKNLKMJHC = 9;
+  repeated uint32 COKHLELCFOJ = 12;
+  uint32 CGIMBHEIPIC = 14;
+  uint32 JKLPHANGIOL = 10;
+}

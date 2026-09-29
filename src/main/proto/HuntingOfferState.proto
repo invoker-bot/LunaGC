@@ -1,0 +1,13 @@
+// Recovered from HuntingOfferStateOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_HuntingOfferState;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "HuntingOfferStateOuterClass";
+
+enum HuntingOfferState {
+  HuntingOfferState_NONE = 0;
+  HuntingOfferState_STARTED = 1;
+  HuntingOfferState_UNSTARTED = 2;
+  HuntingOfferState_SUCC = 3;
+}

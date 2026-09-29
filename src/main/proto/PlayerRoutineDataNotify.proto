@@ -1,0 +1,11 @@
+// Recovered from PlayerRoutineDataNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PlayerRoutineDataNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PlayerRoutineDataNotifyOuterClass";
+import "PlayerRoutineInfo.proto";
+
+message PlayerRoutineDataNotify {
+  repeated .recovered.p_PlayerRoutineInfo.PlayerRoutineInfo routine_info_list = 12;
+}

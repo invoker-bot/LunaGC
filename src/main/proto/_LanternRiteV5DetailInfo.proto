@@ -1,0 +1,19 @@
+// Recovered from _LanternRiteV5DetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__LanternRiteV5DetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_LanternRiteV5DetailInfoOuterClass";
+import "BCFOEMEOBNF.proto";
+import "HJFEGHPLBDI.proto";
+import "IKFFPHHDHJJ.proto";
+import "MCBCGPMDIFI.proto";
+import "OPOHILFOCHP.proto";
+
+message _LanternRiteV5DetailInfo {
+  .recovered.p_IKFFPHHDHJJ.IKFFPHHDHJJ IMJFLALPKCM = 2;
+  .BCFOEMEOBNF OJDCBKDNBHB = 3;
+  .MCBCGPMDIFI GLOHDCCHBIH = 6;
+  .HJFEGHPLBDI PENBJIKKHHJ = 11;
+  .OPOHILFOCHP AMKDIHKLMNC = 14;
+}

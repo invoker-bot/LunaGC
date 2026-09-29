@@ -1,0 +1,13 @@
+// Recovered from FPKOGAEFFKMOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FPKOGAEFFKM;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FPKOGAEFFKMOuterClass";
+
+enum FPKOGAEFFKM {
+  FPKOGAEFFKM_ASTER_LITTLE_STAGE_NONE = 0;
+  FPKOGAEFFKM_ASTER_LITTLE_STAGE_UNSTARTED = 1;
+  FPKOGAEFFKM_ASTER_LITTLE_STAGE_STARTED = 2;
+  FPKOGAEFFKM_ASTER_LITTLE_STAGE_FINISHED = 3;
+}

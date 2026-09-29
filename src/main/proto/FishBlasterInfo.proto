@@ -1,0 +1,11 @@
+// Recovered from FishBlasterInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FishBlasterInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FishBlasterInfoOuterClass";
+import "HLDGGIOAMLE.proto";
+
+message FishBlasterInfo {
+  repeated .recovered.p_HLDGGIOAMLE.HLDGGIOAMLE GGOKKDEKPJM = 13;
+}

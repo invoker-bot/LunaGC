@@ -1,0 +1,18 @@
+// Recovered from LDKCDGGLMAMOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_LDKCDGGLMAM;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "LDKCDGGLMAMOuterClass";
+import "EKDPOMCHOCE.proto";
+import "DDKPJONNBAI.proto";
+
+message LDKCDGGLMAM {
+  repeated .recovered.p_EKDPOMCHOCE.EKDPOMCHOCE ILCFCCKHJEH = 4;
+  repeated uint32 KHHKBPKMMFA = 9;
+  repeated uint32 GHBMIILJPNH = 5;
+  repeated .recovered.p_DDKPJONNBAI.DDKPJONNBAI AFOHMOAENJA = 3;
+  uint32 INHINBFMAME = 2;
+  uint32 DAFGIIMGDPL = 13;
+  uint32 dungeon_id = 15;
+}

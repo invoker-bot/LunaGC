@@ -1,0 +1,16 @@
+// Recovered from BlessingV2InfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BlessingV2Info;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BlessingV2InfoOuterClass";
+import "JFJNFHMNJEH.proto";
+
+message BlessingV2Info {
+  repeated .recovered.p_JFJNFHMNJEH.JFJNFHMNJEH BOLHIMFGDDH = 8;
+  uint32 PPBCHANJKNF = 15;
+  uint32 FNKMPAKCHDA = 5;
+  bool DHEGCNBIKIO = 7;
+  fixed32 next_refresh_time = 3;
+  fixed32 content_close_time = 6;
+}

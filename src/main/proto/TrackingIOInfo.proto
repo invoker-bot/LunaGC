@@ -1,0 +1,16 @@
+// Recovered from TrackingIOInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_TrackingIOInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "TrackingIOInfoOuterClass";
+
+message TrackingIOInfo {
+  string FIBELEGDNHM = 11;
+  string IAKFAAJDCEA = 7;
+  string CIKFNNBIGCJ = 4;
+  string MKDEOHBHNKL = 14;
+  string KIANCMBCCJJ = 2;
+  string BBKOBOKEBFG = 6;
+  string BODIBEEOGOK = 3;
+}

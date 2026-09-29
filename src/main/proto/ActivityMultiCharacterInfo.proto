@@ -1,0 +1,11 @@
+// Recovered from ActivityMultiCharacterInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ActivityMultiCharacterInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ActivityMultiCharacterInfoOuterClass";
+import "DJKIJHJIJPE.proto";
+
+message ActivityMultiCharacterInfo {
+  repeated .recovered.p_DJKIJHJIJPE.DJKIJHJIJPE stage_info_list = 9;
+}

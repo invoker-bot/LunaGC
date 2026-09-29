@@ -1,0 +1,13 @@
+// Recovered from BAOGBLEELCFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BAOGBLEELCF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BAOGBLEELCFOuterClass";
+import "BADKBLBFAFF.proto";
+
+message BAOGBLEELCF {
+  uint32 costume_id = 10;
+  uint32 avatar_id = 1;
+  .recovered.p_BADKBLBFAFF.BADKBLBFAFF avatar_type = 4;
+}

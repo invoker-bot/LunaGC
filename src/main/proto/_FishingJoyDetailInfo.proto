@@ -1,0 +1,12 @@
+// Recovered from _FishingJoyDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__FishingJoyDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_FishingJoyDetailInfoOuterClass";
+
+message _FishingJoyDetailInfo {
+  uint32 PLEDFNKONLB = 2;
+  bool FPKBKGBKGEG = 5;
+  bool LBCGNOOJDIC = 13;
+}

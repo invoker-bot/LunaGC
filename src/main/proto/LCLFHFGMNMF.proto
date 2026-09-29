@@ -1,0 +1,15 @@
+// Recovered from LCLFHFGMNMFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_LCLFHFGMNMF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "LCLFHFGMNMFOuterClass";
+import "Vector.proto";
+
+message LCLFHFGMNMF {
+  .Vector pos = 14;
+  uint32 type = 15;
+  uint32 config_id = 12;
+  uint32 group_id = 10;
+  uint32 gadget_id = 3;
+}

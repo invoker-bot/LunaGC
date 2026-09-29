@@ -1,0 +1,14 @@
+// Recovered from INLACFDCBDFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_INLACFDCBDF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "INLACFDCBDFOuterClass";
+
+message INLACFDCBDF {
+  bool is_finish = 10;
+  uint32 max_score = 2;
+  uint32 level_id = 14;
+  bool is_open = 4;
+  uint32 INHKDNJEOAP = 15;
+}

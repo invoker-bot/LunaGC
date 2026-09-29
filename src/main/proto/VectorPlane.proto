@@ -1,0 +1,11 @@
+// Recovered from VectorPlaneOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_VectorPlane;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "VectorPlaneOuterClass";
+
+message VectorPlane {
+  float y = 2;
+  float x = 1;
+}

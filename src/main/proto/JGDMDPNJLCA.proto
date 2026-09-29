@@ -1,0 +1,12 @@
+// Recovered from JGDMDPNJLCAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JGDMDPNJLCA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JGDMDPNJLCAOuterClass";
+import "NIEIDCBLDML.proto";
+
+message JGDMDPNJLCA {
+  .recovered.p_NIEIDCBLDML.NIEIDCBLDML EOPLJIALGCP = 2;
+  uint32 level_id = 1;
+}

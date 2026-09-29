@@ -1,0 +1,13 @@
+// Recovered from HLDGGIOAMLEOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_HLDGGIOAMLE;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "HLDGGIOAMLEOuterClass";
+
+message HLDGGIOAMLE {
+  uint32 level_id = 10;
+  bool is_finished = 6;
+  bool DALMDMCJNNK = 11;
+  uint32 ugc_guid = 8;
+}

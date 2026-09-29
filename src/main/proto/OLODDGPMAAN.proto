@@ -1,0 +1,13 @@
+// Recovered from OLODDGPMAANOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OLODDGPMAAN;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OLODDGPMAANOuterClass";
+import "OBLBEEKABIN.proto";
+
+message OLODDGPMAAN {
+  repeated .recovered.p_OBLBEEKABIN.OBLBEEKABIN DGKLLKJDKMP = 14;
+  bool is_open = 4;
+  uint32 POLJBHACKGB = 8;
+}

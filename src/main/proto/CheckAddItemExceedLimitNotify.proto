@@ -1,0 +1,14 @@
+// Recovered from CheckAddItemExceedLimitNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_CheckAddItemExceedLimitNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "CheckAddItemExceedLimitNotifyOuterClass";
+import "ItemExceedLimitMsgType.proto";
+
+message CheckAddItemExceedLimitNotify {
+  repeated uint32 JHKIIFBAHMC = 11;
+  bool is_drop = 9;
+  uint32 reason = 14;
+  .recovered.p_ItemExceedLimitMsgType.ItemExceedLimitMsgType msg_type = 4;
+}

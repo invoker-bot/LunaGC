@@ -1,0 +1,13 @@
+// Recovered from ExpeditionStartReqOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ExpeditionStartReq;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ExpeditionStartReqOuterClass";
+
+message ExpeditionStartReq {
+  repeated uint32 avatar_id_list = 3;
+  uint32 DDCIILLJCLH = 13;
+  uint32 EPLFCNHCJOD = 11;
+  uint32 path_id = 9;
+}

@@ -1,0 +1,14 @@
+// Recovered from IOGDMNIJIOKOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_IOGDMNIJIOK;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "IOGDMNIJIOKOuterClass";
+import "HIIOKICKAOC.proto";
+
+message IOGDMNIJIOK {
+  repeated .recovered.p_HIIOKICKAOC.HIIOKICKAOC BMDDEOFBNPJ = 3;
+  string name = 5;
+  uint32 NCAALKHGPDC = 1;
+  uint32 OHHGAELBJMG = 4;
+}

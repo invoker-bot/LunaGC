@@ -1,0 +1,21 @@
+// Recovered from _AkaFesDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__AkaFesDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_AkaFesDetailInfoOuterClass";
+import "ANKDJAOILKB.proto";
+import "DOAKNFOOGMH.proto";
+import "EPNAGILGGHB.proto";
+import "GHEKEDLIEDP.proto";
+import "ILHCGIIMHBM.proto";
+import "MENHFPBEHLL.proto";
+
+message _AkaFesDetailInfo {
+  .ILHCGIIMHBM ACOACLMAJNM = 1;
+  .MENHFPBEHLL GFIMJAILAFF = 3;
+  .DOAKNFOOGMH NJACKJJLCHN = 5;
+  .recovered.p_GHEKEDLIEDP.GHEKEDLIEDP NNADFEPJILG = 9;
+  .ANKDJAOILKB EGNIINEIJGB = 10;
+  .recovered.p_EPNAGILGGHB.EPNAGILGGHB FPCNHHHBHPF = 14;
+}

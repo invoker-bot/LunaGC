@@ -1,0 +1,23 @@
+// Recovered from HJOOFJJMEMJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_HJOOFJJMEMJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "HJOOFJJMEMJOuterClass";
+import "NPGMLKKPNGO.proto";
+import "FCELOHIHEJN.proto";
+
+message HJOOFJJMEMJ {
+  repeated .recovered.p_NPGMLKKPNGO.NPGMLKKPNGO DEOENAJBLDH = 3;
+  .recovered.p_NPGMLKKPNGO.NPGMLKKPNGO NOCBOMLGOAE = 8;
+  .recovered.p_FCELOHIHEJN.FCELOHIHEJN PJIAIMEBOIA = 2;
+  uint32 DIOPPBGAOJO = 5;
+  uint32 EINEGLNDJAA = 12;
+  uint32 MJLAGJDLMPB = 1;
+  bool AOGIIAFFBLH = 15;
+  uint32 NACLDKDNCCK = 11;
+  uint32 HBFGNELEDKE = 14;
+  uint32 DCAHJMICMAM = 13;
+  uint32 FDHBOACIBAN = 9;
+  uint32 LENCKLAMHGH = 6;
+}

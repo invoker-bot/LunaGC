@@ -1,0 +1,14 @@
+// Recovered from KGLLNIDAKPOOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KGLLNIDAKPO;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KGLLNIDAKPOOuterClass";
+import "EICMIHDEILO.proto";
+
+message KGLLNIDAKPO {
+  repeated .recovered.p_EICMIHDEILO.EICMIHDEILO IDJCOMPEJKM = 14;
+  bool is_finish = 12;
+  bool is_open = 8;
+  uint32 level_id = 11;
+}

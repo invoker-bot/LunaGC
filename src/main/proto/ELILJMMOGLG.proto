@@ -1,0 +1,13 @@
+// Recovered from ELILJMMOGLGOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ELILJMMOGLG;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ELILJMMOGLGOuterClass";
+import "Uint32Pair.proto";
+
+message ELILJMMOGLG {
+  repeated .Uint32Pair AIOAAPOOOHE = 9;
+  bool OBPKPDKNJLD = 7;
+  uint32 finish_time = 4;
+}

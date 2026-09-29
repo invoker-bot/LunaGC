@@ -1,0 +1,17 @@
+// Recovered from GcgAutoBattleCardDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GcgAutoBattleCardDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GcgAutoBattleCardDetailInfoOuterClass";
+import "FFNFPHCLNGJ.proto";
+import "DNDJFCFPEMK.proto";
+import "OHLHICJIAFO.proto";
+
+message GcgAutoBattleCardDetailInfo {
+  .recovered.p_FFNFPHCLNGJ.FFNFPHCLNGJ JABFIDNAMFE = 1;
+  repeated uint32 JDPMGEDJPBJ = 11;
+  .recovered.p_DNDJFCFPEMK.DNDJFCFPEMK MBPIMEEHNGB = 6;
+  .recovered.p_OHLHICJIAFO.OHLHICJIAFO JMAHHPFMNPC = 13;
+  bool FHDJCEAAKNN = 14;
+}

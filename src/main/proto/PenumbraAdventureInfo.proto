@@ -1,0 +1,19 @@
+// Recovered from PenumbraAdventureInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PenumbraAdventureInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PenumbraAdventureInfoOuterClass";
+import "LCMINEGOHCC.proto";
+import "BHKIIEFGFFL.proto";
+import "FGEEOGDFHAB.proto";
+import "POIBHEEKGPH.proto";
+import "MDNHPGAIGKI.proto";
+
+message PenumbraAdventureInfo {
+  .recovered.p_LCMINEGOHCC.LCMINEGOHCC FGFFEKEDIMC = 5;
+  .recovered.p_BHKIIEFGFFL.BHKIIEFGFFL CMCADCHCOPA = 12;
+  .recovered.p_FGEEOGDFHAB.FGEEOGDFHAB PBMDNLMPPBL = 11;
+  .recovered.p_POIBHEEKGPH.POIBHEEKGPH ANGGAFECGNG = 3;
+  .recovered.p_MDNHPGAIGKI.MDNHPGAIGKI MNOIAHNMLBC = 2;
+}

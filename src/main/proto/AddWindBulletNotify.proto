@@ -1,0 +1,13 @@
+// Recovered from AddWindBulletNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AddWindBulletNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AddWindBulletNotifyOuterClass";
+import "Vector.proto";
+
+message AddWindBulletNotify {
+  .Vector seed_pos = 10;
+  uint32 EGJKBDLBGIK = 15;
+  uint32 AJBPDBIMHIP = 12;
+}

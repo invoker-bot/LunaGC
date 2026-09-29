@@ -1,0 +1,15 @@
+// Recovered from ICJPCENFCKPOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ICJPCENFCKP;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ICJPCENFCKPOuterClass";
+import "MIKCNEOJJKE.proto";
+
+message ICJPCENFCKP {
+  repeated .recovered.p_MIKCNEOJJKE.MIKCNEOJJKE ELPMGGELCJC = 15;
+  repeated uint32 NKANPKPPFKL = 14;
+  repeated uint32 MKFGJCEPOOF = 1;
+  uint32 JPOHOJELPGO = 5;
+  uint32 IJEHGNHEKND = 4;
+}

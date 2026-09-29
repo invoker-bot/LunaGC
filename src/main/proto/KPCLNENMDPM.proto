@@ -1,0 +1,11 @@
+// Recovered from KPCLNENMDPMOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KPCLNENMDPM;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KPCLNENMDPMOuterClass";
+import "CILCHAGMCBL.proto";
+
+message KPCLNENMDPM {
+  repeated .recovered.p_CILCHAGMCBL.CILCHAGMCBL ABOMJJKGODK = 2;
+}

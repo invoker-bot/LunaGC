@@ -1,0 +1,15 @@
+// Recovered from JJNLNIMPOMHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JJNLNIMPOMH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JJNLNIMPOMHOuterClass";
+import "BNEKECPKEHG.proto";
+import "LOFHHGIFANI.proto";
+
+message JJNLNIMPOMH {
+  .recovered.p_BNEKECPKEHG.BNEKECPKEHG LHNBFKKBGOJ = 9;
+  .recovered.p_BNEKECPKEHG.BNEKECPKEHG NFGBKCACNOL = 8;
+  repeated uint32 buff_id_list = 5;
+  repeated .recovered.p_LOFHHGIFANI.LOFHHGIFANI KFNIFDANGOF = 10;
+}

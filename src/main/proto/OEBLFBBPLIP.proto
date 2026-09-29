@@ -1,0 +1,11 @@
+// Recovered from OEBLFBBPLIPOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OEBLFBBPLIP;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OEBLFBBPLIPOuterClass";
+import "LABNGGHPGBP.proto";
+
+message OEBLFBBPLIP {
+  repeated .recovered.p_LABNGGHPGBP.LABNGGHPGBP GGOKKDEKPJM = 7;
+}

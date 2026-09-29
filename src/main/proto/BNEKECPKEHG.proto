@@ -1,0 +1,12 @@
+// Recovered from BNEKECPKEHGOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BNEKECPKEHG;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BNEKECPKEHGOuterClass";
+
+message BNEKECPKEHG {
+  map<uint32, uint32> GDKOJADJKEP = 11;
+  uint32 DLNEKAHMGEC = 4;
+  uint32 IMHOIJAGGDD = 10;
+}

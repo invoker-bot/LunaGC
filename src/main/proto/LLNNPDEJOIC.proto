@@ -1,0 +1,13 @@
+// Recovered from LLNNPDEJOICOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_LLNNPDEJOIC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "LLNNPDEJOICOuterClass";
+
+message LLNNPDEJOIC {
+  repeated uint32 affix_list = 3;
+  uint32 monster_id = 11;
+  uint32 OMGHGCHPJEH = 13;
+  uint32 level = 12;
+}

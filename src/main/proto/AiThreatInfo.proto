@@ -1,0 +1,10 @@
+// Recovered from AiThreatInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AiThreatInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AiThreatInfoOuterClass";
+
+message AiThreatInfo {
+  map<uint32, uint32> ai_threat_map = 3;
+}

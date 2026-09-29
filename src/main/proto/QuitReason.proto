@@ -1,0 +1,22 @@
+// Recovered from QuitReasonOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_QuitReason;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "QuitReasonOuterClass";
+
+enum QuitReason {
+  QuitReason_INVALID = 0;
+  QuitReason_HOST_NO_OTHER_PLAYER = 1;
+  QuitReason_KICK_BY_HOST = 2;
+  QuitReason_BACK_TO_MY_WORLD = 3;
+  QuitReason_KICK_BY_HOST_LOGOUT = 4;
+  QuitReason_KICK_BY_HOST_BLOCK = 5;
+  QuitReason_BE_BLOCKED = 6;
+  QuitReason_KICK_BY_HOST_ENTER_HOME = 7;
+  QuitReason_HOST_SCENE_INVALID = 8;
+  QuitReason_KICK_BY_PLAY = 9;
+  QuitReason_KICK_BY_ISLAND_PARTY_GALLERY_START_FAILED = 10;
+  QuitReason_KICK_BY_HOST_ADS_BLOCK = 11;
+  QuitReason_BE_ADS_BLOCKED = 12;
+}

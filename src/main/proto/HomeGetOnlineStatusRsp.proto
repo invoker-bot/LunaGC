@@ -1,0 +1,12 @@
+// Recovered from HomeGetOnlineStatusRspOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_HomeGetOnlineStatusRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "HomeGetOnlineStatusRspOuterClass";
+import "OnlinePlayerInfo.proto";
+
+message HomeGetOnlineStatusRsp {
+  int32 retcode = 10;
+  repeated .OnlinePlayerInfo player_info_list = 6;
+}

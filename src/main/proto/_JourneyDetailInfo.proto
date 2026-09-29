@@ -1,0 +1,17 @@
+// Recovered from _JourneyDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__JourneyDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_JourneyDetailInfoOuterClass";
+import "BFOFMBLMHBA.proto";
+import "DJLFJPLJKAH.proto";
+import "HBBCGELHFHE.proto";
+import "JPCAOAHBLHB.proto";
+
+message _JourneyDetailInfo {
+  .JPCAOAHBLHB BJMFNOPMJEL = 1;
+  .BFOFMBLMHBA AGKNFNOJMOE = 5;
+  .HBBCGELHFHE MDEKHOGJKCF = 10;
+  .recovered.p_DJLFJPLJKAH.DJLFJPLJKAH AADGHNLLNEC = 12;
+}

@@ -1,0 +1,10 @@
+// Recovered from FireworkSetRsp.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FireworkSetRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FireworkSetRsp";
+
+message NBFJOJPCCEK_Rsp {
+  int32 retcode = 7;
+}

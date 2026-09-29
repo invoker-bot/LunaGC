@@ -1,0 +1,14 @@
+// Recovered from FLLPPLCPKBAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FLLPPLCPKBA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FLLPPLCPKBAOuterClass";
+import "Vector.proto";
+
+message FLLPPLCPKBA {
+  .Vector pos = 2;
+  uint32 open_time = 12;
+  uint32 PCFKHMFDNPI = 4;
+  bool is_open = 6;
+}

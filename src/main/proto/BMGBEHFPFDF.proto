@@ -1,0 +1,12 @@
+// Recovered from BMGBEHFPFDFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BMGBEHFPFDF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BMGBEHFPFDFOuterClass";
+
+message BMGBEHFPFDF {
+  repeated uint32 CEFGIMINOOB = 10;
+  fixed32 begin_time = 4;
+  fixed32 end_time = 1;
+}

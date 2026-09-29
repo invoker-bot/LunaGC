@@ -1,0 +1,12 @@
+// Recovered from EOCJFCIOEBPOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EOCJFCIOEBP;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EOCJFCIOEBPOuterClass";
+
+message EOCJFCIOEBP {
+  repeated uint32 IJLOKKHIHOL = 14;
+  repeated uint32 DAKDNMCKOCP = 2;
+  repeated uint32 PCLBMODDCDK = 1;
+}

@@ -1,0 +1,14 @@
+// Recovered from BubbleDramaLevelInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BubbleDramaLevelInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BubbleDramaLevelInfoOuterClass";
+import "BubbleDramaLevelDetailInfo.proto";
+
+message BubbleDramaLevelInfo {
+  .recovered.p_BubbleDramaLevelDetailInfo.BubbleDramaLevelDetailInfo detail_info = 1;
+  uint32 best_record = 13;
+  uint32 level_id = 9;
+  bool is_open = 2;
+}

@@ -1,0 +1,12 @@
+// Recovered from UpdateTypeOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_UpdateType;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "UpdateTypeOuterClass";
+
+enum UpdateType {
+  UpdateType_INVALUE = 0;
+  UpdateType_ADD = 1;
+  UpdateType_SET = 2;
+}

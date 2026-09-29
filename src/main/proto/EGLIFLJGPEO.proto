@@ -1,0 +1,14 @@
+// Recovered from EGLIFLJGPEOOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EGLIFLJGPEO;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EGLIFLJGPEOOuterClass";
+import "JMFALKNKBLA.proto";
+
+message EGLIFLJGPEO {
+  repeated .recovered.p_JMFALKNKBLA.JMFALKNKBLA avatar_list = 10;
+  uint32 PDPHEIDOHAL = 15;
+  uint32 LPFOKDCDGAC = 4;
+  uint32 MMNEBDPOJCN = 8;
+}

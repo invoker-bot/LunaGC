@@ -1,0 +1,13 @@
+// Recovered from ILOLNEALMDNOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ILOLNEALMDN;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ILOLNEALMDNOuterClass";
+
+enum ILOLNEALMDN {
+  ILOLNEALMDN_CLIENT_INPUT_NONE = 0;
+  ILOLNEALMDN_CLIENT_INPUT_KEYBORD_MOUSE = 1;
+  ILOLNEALMDN_CLIENT_INPUT_GAMEPAD = 2;
+  ILOLNEALMDN_CLIENT_INPUT_TOUCH_PANEL = 3;
+}

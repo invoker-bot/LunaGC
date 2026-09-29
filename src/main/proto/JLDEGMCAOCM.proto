@@ -1,0 +1,12 @@
+// Recovered from JLDEGMCAOCMOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JLDEGMCAOCM;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JLDEGMCAOCMOuterClass";
+
+message JLDEGMCAOCM {
+  uint32 ugc_guid = 7;
+  bool is_open = 2;
+  uint32 level_id = 8;
+}

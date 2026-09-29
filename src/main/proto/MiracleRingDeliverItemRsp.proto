@@ -1,0 +1,16 @@
+// Recovered from MiracleRingDeliverItemRspOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MiracleRingDeliverItemRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MiracleRingDeliverItemRspOuterClass";
+import "InterOpType.proto";
+import "InteractType.proto";
+
+message MiracleRingDeliverItemRsp {
+  uint32 gadget_entity_id = 2;
+  uint32 gadget_id = 10;
+  .InterOpType op_type = 3;
+  .InteractType interact_type = 1;
+  int32 retcode = 15;
+}

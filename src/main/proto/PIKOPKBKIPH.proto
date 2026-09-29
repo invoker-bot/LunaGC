@@ -1,0 +1,22 @@
+// Recovered from PIKOPKBKIPHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PIKOPKBKIPH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PIKOPKBKIPHOuterClass";
+import "JGHLHIGMLCJ.proto";
+
+message PIKOPKBKIPH {
+  repeated .recovered.p_JGHLHIGMLCJ.JGHLHIGMLCJ PAFCCMBKMKM = 13;
+  .recovered.p_JGHLHIGMLCJ.JGHLHIGMLCJ FJENNLIACPD = 2;
+  uint32 level_id = 9;
+  uint32 DPLLEMFLFND = 15;
+  uint32 BGDHLMOENMG = 3;
+  uint32 DNKDELPNOBK = 6;
+  uint32 CELKMIEGJIF = 4;
+  uint32 DEIDJJBEFOD = 7;
+  bool DALMDMCJNNK = 14;
+  bool MFGNHIMCJEJ = 12;
+  bool FJBELBEGPHJ = 1;
+  bool LMNIJHIDKFF = 10;
+}

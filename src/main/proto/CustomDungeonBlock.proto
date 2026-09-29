@@ -1,0 +1,14 @@
+// Recovered from CustomDungeonBlockOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_CustomDungeonBlock;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "CustomDungeonBlockOuterClass";
+import "Vector.proto";
+
+message CustomDungeonBlock {
+  uint32 guid = 15;
+  .Vector rot = 9;
+  .Vector pos = 5;
+  uint32 block_id = 10;
+}

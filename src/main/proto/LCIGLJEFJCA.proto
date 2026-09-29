@@ -1,0 +1,15 @@
+// Recovered from LCIGLJEFJCAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_LCIGLJEFJCA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "LCIGLJEFJCAOuterClass";
+
+message LCIGLJEFJCA {
+  repeated uint32 BDLGKNCNFKC = 14;
+  repeated uint32 EPHMPNPHFPE = 13;
+  bool FLALDNALPJN = 11;
+  bool FDDKJDOMCBM = 10;
+  uint32 level_id = 12;
+  uint32 OMEBOHLACPH = 5;
+}

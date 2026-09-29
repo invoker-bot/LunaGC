@@ -1,0 +1,12 @@
+// Recovered from AntiAddictNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AntiAddictNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AntiAddictNotifyOuterClass";
+
+message AntiAddictNotify {
+  string level = 3;
+  string msg = 11;
+  int32 msg_type = 8;
+}

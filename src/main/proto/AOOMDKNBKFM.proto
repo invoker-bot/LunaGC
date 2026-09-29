@@ -1,0 +1,16 @@
+// Recovered from AOOMDKNBKFMOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AOOMDKNBKFM;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AOOMDKNBKFMOuterClass";
+
+message AOOMDKNBKFM {
+  uint32 begin_time = 6;
+  uint32 FKNJFHNEBJN = 13;
+  uint32 BMLIGIIELDE = 9;
+  uint32 ODJLLLPLBHE = 12;
+  uint32 BOEEJKFFKEA = 15;
+  uint32 DDGJHIALHOA = 4;
+  bool OOCHMBFLABG = 10;
+}

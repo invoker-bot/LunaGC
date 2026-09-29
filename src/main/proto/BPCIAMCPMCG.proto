@@ -1,0 +1,12 @@
+// Recovered from BPCIAMCPMCGOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BPCIAMCPMCG;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BPCIAMCPMCGOuterClass";
+import "GHNIPGHEPFC.proto";
+
+message BPCIAMCPMCG {
+  repeated .recovered.p_GHNIPGHEPFC.GHNIPGHEPFC GGOKKDEKPJM = 12;
+  uint32 play_type = 14;
+}

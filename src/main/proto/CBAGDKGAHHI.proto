@@ -1,0 +1,11 @@
+// Recovered from CBAGDKGAHHIOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_CBAGDKGAHHI;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "CBAGDKGAHHIOuterClass";
+
+message CBAGDKGAHHI {
+  repeated uint32 EMKCGKHEDBL = 1;
+  uint32 NHHGINMJLCK = 13;
+}

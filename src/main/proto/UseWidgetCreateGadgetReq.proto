@@ -1,0 +1,13 @@
+// Recovered from UseWidgetCreateGadgetReqOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_UseWidgetCreateGadgetReq;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "UseWidgetCreateGadgetReqOuterClass";
+import "Vector.proto";
+
+message UseWidgetCreateGadgetReq {
+  .Vector pos = 13;
+  .Vector rot = 3;
+  uint32 material_id = 11;
+}

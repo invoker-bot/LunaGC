@@ -1,0 +1,11 @@
+// Recovered from DPICLKABIDCOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DPICLKABIDC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DPICLKABIDCOuterClass";
+import "_DetailAbilityInfo.proto";
+
+message DPICLKABIDC {
+  optional .recovered.p__DetailAbilityInfo._DetailAbilityInfo detail_ability_info = 11;
+}

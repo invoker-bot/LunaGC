@@ -1,0 +1,12 @@
+// Recovered from TrifleGadgetOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_TrifleGadget;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "TrifleGadgetOuterClass";
+import "Item.proto";
+
+message TrifleGadget {
+  .Item item = 1;
+  uint32 JBFBKKKGLIE = 2;
+}

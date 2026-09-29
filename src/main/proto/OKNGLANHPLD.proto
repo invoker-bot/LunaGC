@@ -1,0 +1,12 @@
+// Recovered from OKNGLANHPLDOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OKNGLANHPLD;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OKNGLANHPLDOuterClass";
+
+message OKNGLANHPLD {
+  uint32 id = 6;
+  bool is_finished = 2;
+  uint32 open_time = 1;
+}

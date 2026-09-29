@@ -1,0 +1,12 @@
+// Recovered from GCGSkillHpChangeTypeOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GCGSkillHpChangeType;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GCGSkillHpChangeTypeOuterClass";
+
+enum GCGSkillHpChangeType {
+  GCGSkillHpChangeType_GCG_SKILL_HP_CHANGE_NONE = 0;
+  GCGSkillHpChangeType_GCG_SKILL_HP_CHANGE_DAMAGE = 1;
+  GCGSkillHpChangeType_GCG_SKILL_HP_CHANGE_HEAL = 2;
+}

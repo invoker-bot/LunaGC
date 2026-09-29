@@ -1,0 +1,21 @@
+// Recovered from KNNEPNCKFFFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KNNEPNCKFFF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KNNEPNCKFFFOuterClass";
+import "OEOHEENALFK.proto";
+import "FKOCKFBCIHO.proto";
+
+message KNNEPNCKFFF {
+  repeated .recovered.p_OEOHEENALFK.OEOHEENALFK NMHAJDJIFNF = 2;
+  .recovered.p_OEOHEENALFK.OEOHEENALFK JIGNPKOJGML = 3;
+  uint32 id = 11;
+  uint32 OCAMPGKNIEK = 4;
+  uint32 npc_id = 6;
+  uint32 LOAGHIKOFNI = 7;
+  .recovered.p_FKOCKFBCIHO.FKOCKFBCIHO EJENKACEGJL = 13;
+  bool FMMKCGAIHCH = 14;
+  bool LKHIEAMOBCO = 12;
+  uint32 POMIDHEHBNM = 8;
+}

@@ -1,0 +1,14 @@
+// Recovered from SceneEntityUpdateNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_SceneEntityUpdateNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "SceneEntityUpdateNotifyOuterClass";
+import "SceneEntityInfo.proto";
+import "VisionType.proto";
+
+message SceneEntityUpdateNotify {
+  uint32 param = 14;
+  repeated .SceneEntityInfo entity_list = 10;
+  .VisionType appear_type = 13;
+}

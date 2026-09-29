@@ -1,0 +1,18 @@
+// Recovered from OLEECNGDJAJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OLEECNGDJAJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OLEECNGDJAJOuterClass";
+import "IFCOJBIIADM.proto";
+
+message OLEECNGDJAJ {
+  repeated uint32 AOIINLGFCDE = 10;
+  repeated uint32 OKHHCHLABNF = 6;
+  uint32 PGFCHCFNMOL = 9;
+  uint32 KHJOGDOHFPJ = 7;
+  uint32 id = 8;
+  .recovered.p_IFCOJBIIADM.IFCOJBIIADM OFJEHFIAOFH = 4;
+  bool FMMKCGAIHCH = 1;
+  bool HFBLBLAALMN = 2;
+}

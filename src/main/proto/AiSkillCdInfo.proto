@@ -1,0 +1,11 @@
+// Recovered from AiSkillCdInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AiSkillCdInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AiSkillCdInfoOuterClass";
+
+message AiSkillCdInfo {
+  map<uint32, uint32> skill_group_cd_map = 13;
+  map<uint32, uint32> skill_cd_map = 7;
+}

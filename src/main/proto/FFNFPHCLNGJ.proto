@@ -1,0 +1,11 @@
+// Recovered from FFNFPHCLNGJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FFNFPHCLNGJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FFNFPHCLNGJOuterClass";
+import "OHLHICJIAFO.proto";
+
+message FFNFPHCLNGJ {
+  repeated .recovered.p_OHLHICJIAFO.OHLHICJIAFO CFPHFIEDDFI = 2;
+}

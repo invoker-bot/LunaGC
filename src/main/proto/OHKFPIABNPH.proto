@@ -1,0 +1,14 @@
+// Recovered from OHKFPIABNPHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OHKFPIABNPH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OHKFPIABNPHOuterClass";
+
+message OHKFPIABNPH {
+  bool is_open = 15;
+  bool is_finish = 2;
+  uint32 ugc_guid = 1;
+  uint32 EJOJHAKNCCB = 9;
+  uint32 level_id = 14;
+}

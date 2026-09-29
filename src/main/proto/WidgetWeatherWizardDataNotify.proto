@@ -1,0 +1,10 @@
+// Recovered from WidgetWeatherWizardDataNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_WidgetWeatherWizardDataNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "WidgetWeatherWizardDataNotifyOuterClass";
+
+message WidgetWeatherWizardDataNotify {
+  uint32 shield_value = 3;
+}

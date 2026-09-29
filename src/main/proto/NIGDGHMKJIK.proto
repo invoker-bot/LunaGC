@@ -1,0 +1,13 @@
+// Recovered from NIGDGHMKJIKOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NIGDGHMKJIK;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NIGDGHMKJIKOuterClass";
+
+enum NIGDGHMKJIK {
+  NIGDGHMKJIK_SANDWORM_LEVEL_NOT_OPEN = 0;
+  NIGDGHMKJIK_SANDWORM_LEVEL_PRE_QUEST = 1;
+  NIGDGHMKJIK_SANDWORM_LEVEL_START = 2;
+  NIGDGHMKJIK_SANDWORM_LEVEL_SEQUEL_QUEST = 3;
+}

@@ -1,0 +1,12 @@
+// Recovered from HMAEHECDMMFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_HMAEHECDMMF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "HMAEHECDMMFOuterClass";
+
+message HMAEHECDMMF {
+  bool JNBMFABFHGP = 14;
+  uint32 dungeon_id = 5;
+  uint32 reward_id = 13;
+}

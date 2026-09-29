@@ -1,0 +1,14 @@
+// Recovered from IMBIPFIFFOJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_IMBIPFIFFOJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "IMBIPFIFFOJOuterClass";
+
+message IMBIPFIFFOJ {
+  uint64 GDIJCNIGFHF = 2;
+  bool is_level_open = 9;
+  bool is_finished = 15;
+  uint32 best_score = 3;
+  uint32 level_id = 10;
+}

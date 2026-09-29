@@ -1,0 +1,11 @@
+// Recovered from DJNPJICIOHEOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DJNPJICIOHE;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DJNPJICIOHEOuterClass";
+import "OHKFPIABNPH.proto";
+
+message DJNPJICIOHE {
+  repeated .recovered.p_OHKFPIABNPH.OHKFPIABNPH DLFOENKFOAI = 8;
+}

@@ -1,0 +1,18 @@
+// Recovered from ACKHIGGGDJHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ACKHIGGGDJH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ACKHIGGGDJHOuterClass";
+import "LFEENJGNFLK.proto";
+import "CAHBJDIMOEG.proto";
+
+message ACKHIGGGDJH {
+  uint32 KBICANLBEOI = 1;
+  bool HDIKBBEMGGA = 9;
+  oneof LOFOAFAPGDC {
+    uint32 boss_challenge_id = 2;
+    .recovered.p_LFEENJGNFLK.LFEENJGNFLK bundle_info = 10;
+    .recovered.p_CAHBJDIMOEG.CAHBJDIMOEG score_challenge_info = 11;
+  }
+}

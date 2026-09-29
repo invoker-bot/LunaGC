@@ -1,0 +1,12 @@
+// Recovered from _UgcSpecialGadgetInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__UgcSpecialGadgetInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_UgcSpecialGadgetInfoOuterClass";
+
+message _UgcSpecialGadgetInfo {
+  uint32 group_id = 1;
+  uint32 guid = 2;
+  uint32 FNGEGKJLGJH = 3;
+}

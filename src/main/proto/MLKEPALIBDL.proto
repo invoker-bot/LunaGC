@@ -1,0 +1,16 @@
+// Recovered from MLKEPALIBDLOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MLKEPALIBDL;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MLKEPALIBDLOuterClass";
+import "NODKKPOIFAB.proto";
+
+message MLKEPALIBDL {
+  repeated uint32 buff_id_list = 1;
+  repeated .recovered.p_NODKKPOIFAB.NODKKPOIFAB OGDCFMHPMOA = 5;
+  uint32 GEADDCLGIEG = 12;
+  bool EGCKMPLDFNE = 9;
+  bool EPGCCPAAKJJ = 10;
+  uint32 DELMJNOKJMF = 14;
+}

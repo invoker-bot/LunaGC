@@ -1,0 +1,12 @@
+// Recovered from BubbleDramaActivityAvatarStateOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BubbleDramaActivityAvatarState;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BubbleDramaActivityAvatarStateOuterClass";
+
+enum BubbleDramaActivityAvatarState {
+  BubbleDramaActivityAvatarState_NONE = 0;
+  BubbleDramaActivityAvatarState_HINT = 1;
+  BubbleDramaActivityAvatarState_FINISH = 2;
+}

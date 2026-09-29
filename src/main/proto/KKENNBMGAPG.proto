@@ -1,0 +1,14 @@
+// Recovered from KKENNBMGAPGOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KKENNBMGAPG;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KKENNBMGAPGOuterClass";
+import "PAMGLMICDCJ.proto";
+
+message KKENNBMGAPG {
+  repeated .recovered.p_PAMGLMICDCJ.PAMGLMICDCJ AGHJJHCGFCE = 13;
+  uint32 OCHOMFGOBOK = 15;
+  uint32 AGHBGAEAPNB = 6;
+  uint32 level_id = 12;
+}

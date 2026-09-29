@@ -1,0 +1,10 @@
+// Recovered from DeleteFriendNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DeleteFriendNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DeleteFriendNotifyOuterClass";
+
+message DeleteFriendNotify {
+  uint32 target_uid = 15;
+}

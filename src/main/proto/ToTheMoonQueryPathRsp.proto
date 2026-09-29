@@ -1,0 +1,17 @@
+// Recovered from ToTheMoonQueryPathRspOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ToTheMoonQueryPathRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ToTheMoonQueryPathRspOuterClass";
+import "Vector.proto";
+import "PathStatusType.proto";
+
+message ToTheMoonQueryPathRsp {
+  repeated .Vector corners = 4;
+  repeated int32 level = 8;
+  repeated int64 index = 13;
+  .recovered.p_PathStatusType.PathStatusType query_status = 12;
+  int32 query_id = 5;
+  int32 retcode = 10;
+}

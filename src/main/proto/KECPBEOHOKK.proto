@@ -1,0 +1,11 @@
+// Recovered from KECPBEOHOKKOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KECPBEOHOKK;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KECPBEOHOKKOuterClass";
+
+message KECPBEOHOKK {
+  uint32 OCHOMFGOBOK = 5;
+  uint32 KABONKNFOPO = 6;
+}

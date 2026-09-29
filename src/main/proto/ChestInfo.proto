@@ -1,0 +1,11 @@
+// Recovered from ChestInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ChestInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ChestInfoOuterClass";
+import "NEHEKBBFPIE.proto";
+
+message ChestInfo {
+  repeated .recovered.p_NEHEKBBFPIE.NEHEKBBFPIE IHNCLFAHPFH = 15;
+}

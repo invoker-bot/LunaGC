@@ -1,0 +1,16 @@
+// Recovered from JMGBKLMOLLGOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JMGBKLMOLLG;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JMGBKLMOLLGOuterClass";
+import "KAOKKGOFLPC.proto";
+import "HMAEHECDMMF.proto";
+
+message JMGBKLMOLLG {
+  repeated .recovered.p_KAOKKGOFLPC.KAOKKGOFLPC INPIDDBJDML = 10;
+  .recovered.p_HMAEHECDMMF.HMAEHECDMMF KEPODKCOLLJ = 11;
+  uint32 open_time = 4;
+  uint32 stage_id = 3;
+  bool is_open = 15;
+}

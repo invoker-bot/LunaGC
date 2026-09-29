@@ -1,0 +1,16 @@
+// Recovered from CustomDungeonSettingOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_CustomDungeonSetting;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "CustomDungeonSettingOuterClass";
+
+message CustomDungeonSetting {
+  bool is_forbid_skill = 8;
+  uint32 KADOPMBDBPG = 5;
+  uint32 KHCGPFHNHMP = 4;
+  uint32 ACMIGHKKLKJ = 1;
+  uint32 HPFNIKCNFEE = 7;
+  repeated uint32 open_room_list = 6;
+  bool is_arrive_finish = 10;
+}

@@ -1,0 +1,11 @@
+// Recovered from MBHNKJBJNPDOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MBHNKJBJNPD;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MBHNKJBJNPDOuterClass";
+import "MusicGameRecord.proto";
+
+message MBHNKJBJNPD {
+  map<uint32, .MusicGameRecord> music_game_record_map = 3;
+}

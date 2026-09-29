@@ -1,0 +1,11 @@
+// Recovered from AnimalViewInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AnimalViewInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AnimalViewInfoOuterClass";
+import "GNAAAEGCDOB.proto";
+
+message AnimalViewInfo {
+  repeated .recovered.p_GNAAAEGCDOB.GNAAAEGCDOB FHBALCDOGFI = 12;
+}

@@ -1,0 +1,15 @@
+// Recovered from GHDMGIDGAAJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GHDMGIDGAAJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GHDMGIDGAAJOuterClass";
+import "Vector.proto";
+import "GCBGNOCGPFA.proto";
+
+message GHDMGIDGAAJ {
+  .Vector pos = 14;
+  .recovered.p_GCBGNOCGPFA.GCBGNOCGPFA type = 4;
+  uint32 index = 3;
+  uint32 area_id = 9;
+}

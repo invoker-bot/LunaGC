@@ -1,0 +1,11 @@
+// Recovered from GcgPveInfiniteInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GcgPveInfiniteInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GcgPveInfiniteInfoOuterClass";
+
+message GcgPveInfiniteInfo {
+  map<uint32, uint32> MEBDFIIEPBM = 14;
+  bool HOGJFCLMMPC = 12;
+}

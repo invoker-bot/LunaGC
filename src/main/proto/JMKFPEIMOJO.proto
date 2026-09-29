@@ -1,0 +1,12 @@
+// Recovered from JMKFPEIMOJOOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JMKFPEIMOJO;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JMKFPEIMOJOOuterClass";
+
+message JMKFPEIMOJO {
+  uint32 LOHAJIABHDJ = 6;
+  uint32 cost_time = 1;
+  bool is_open = 5;
+}

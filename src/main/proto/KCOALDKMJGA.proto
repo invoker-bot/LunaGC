@@ -1,0 +1,13 @@
+// Recovered from KCOALDKMJGAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KCOALDKMJGA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KCOALDKMJGAOuterClass";
+
+message KCOALDKMJGA {
+  uint32 level_id = 5;
+  uint32 HBILFAMJDKG = 4;
+  bool is_open = 3;
+  uint32 AIELAJBPDOH = 2;
+}

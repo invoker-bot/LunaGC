@@ -1,0 +1,10 @@
+// Recovered from ALPEGHJNNONOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ALPEGHJNNON;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ALPEGHJNNONOuterClass";
+
+message ALPEGHJNNON {
+  bool DCDALOGFFDH = 9;
+}

@@ -1,0 +1,11 @@
+// Recovered from PushTipsDataOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PushTipsData;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PushTipsDataOuterClass";
+
+message PushTipsData {
+  uint32 state = 2;
+  uint32 push_tips_id = 4;
+}

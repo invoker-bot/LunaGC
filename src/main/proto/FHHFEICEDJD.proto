@@ -1,0 +1,11 @@
+// Recovered from FHHFEICEDJDOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FHHFEICEDJD;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FHHFEICEDJDOuterClass";
+import "KFIFCHPJHPI.proto";
+
+message FHHFEICEDJD {
+  repeated .recovered.p_KFIFCHPJHPI.KFIFCHPJHPI avatar_list = 5;
+}

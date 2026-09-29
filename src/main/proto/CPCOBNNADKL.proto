@@ -1,0 +1,15 @@
+// Recovered from CPCOBNNADKLOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_CPCOBNNADKL;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "CPCOBNNADKLOuterClass";
+
+message CPCOBNNADKL {
+  uint32 LOKMHIKMKCJ = 12;
+  uint32 CKOCCKMBGJN = 6;
+  bool DALMDMCJNNK = 10;
+  uint32 level_id = 14;
+  uint32 HCALDBJPNDN = 15;
+  uint32 COBALEPPMGN = 8;
+}

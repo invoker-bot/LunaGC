@@ -1,0 +1,16 @@
+// Recovered from DAHCKBDIPNAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DAHCKBDIPNA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DAHCKBDIPNAOuterClass";
+import "BAOGBLEELCF.proto";
+
+message DAHCKBDIPNA {
+  .recovered.p_BAOGBLEELCF.BAOGBLEELCF HDIJILGDFMO = 1;
+  repeated .recovered.p_BAOGBLEELCF.BAOGBLEELCF IOAAPNACCBA = 7;
+  uint32 open_time = 13;
+  bool is_open = 12;
+  uint32 level_id = 5;
+  uint32 ALNBJEPDPPN = 8;
+}

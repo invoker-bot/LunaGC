@@ -1,0 +1,12 @@
+// Recovered from JFPNONKHGAAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JFPNONKHGAA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JFPNONKHGAAOuterClass";
+
+message JFPNONKHGAA {
+  uint32 ECFCFIOBOMA = 4;
+  uint32 OMEBOHLACPH = 2;
+  uint32 open_time = 5;
+}

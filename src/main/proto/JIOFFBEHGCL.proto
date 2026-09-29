@@ -1,0 +1,11 @@
+// Recovered from JIOFFBEHGCLOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JIOFFBEHGCL;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JIOFFBEHGCLOuterClass";
+
+message JIOFFBEHGCL {
+  uint32 level_id = 14;
+  uint32 ugc_guid = 2;
+}

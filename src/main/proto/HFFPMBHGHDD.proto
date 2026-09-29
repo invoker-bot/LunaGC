@@ -1,0 +1,12 @@
+// Recovered from HFFPMBHGHDDOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_HFFPMBHGHDD;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "HFFPMBHGHDDOuterClass";
+import "Vector.proto";
+
+message HFFPMBHGHDD {
+  .Vector pos = 6;
+  uint32 camp_id = 5;
+}

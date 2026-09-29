@@ -1,0 +1,11 @@
+// Recovered from ActivityBannerNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ActivityBannerNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ActivityBannerNotifyOuterClass";
+
+message ActivityBannerNotify {
+  uint32 activity_id = 4;
+  uint32 schedule_id = 9;
+}

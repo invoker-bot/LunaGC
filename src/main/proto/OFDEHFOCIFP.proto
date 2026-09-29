@@ -1,0 +1,14 @@
+// Recovered from OFDEHFOCIFPOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OFDEHFOCIFP;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OFDEHFOCIFPOuterClass";
+
+enum OFDEHFOCIFP {
+  OFDEHFOCIFP_ChangeHpDebtsNone = 0;
+  OFDEHFOCIFP_ChangeHpDebtsPay = 1;
+  OFDEHFOCIFP_ChangeHpDebtsPayFinish = 2;
+  OFDEHFOCIFP_ChangeHpDebtsClear = 21;
+  OFDEHFOCIFP_ChangeHpDebtsAddAbility = 51;
+}

@@ -1,0 +1,11 @@
+// Recovered from _WatergunDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__WatergunDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_WatergunDetailInfoOuterClass";
+import "NBBPKNJHPDK.proto";
+
+message _WatergunDetailInfo {
+  repeated .NBBPKNJHPDK level_info_list = 9;
+}

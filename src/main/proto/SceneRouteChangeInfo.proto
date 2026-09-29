@@ -1,0 +1,14 @@
+// Recovered from SceneRouteChangeInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_SceneRouteChangeInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "SceneRouteChangeInfoOuterClass";
+import "RoutePointChangeInfo.proto";
+
+message SceneRouteChangeInfo {
+  repeated .recovered.p_RoutePointChangeInfo.RoutePointChangeInfo point_list = 1;
+  uint32 route_id = 6;
+  bool is_forward = 9;
+  uint32 type = 13;
+}

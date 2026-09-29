@@ -1,0 +1,12 @@
+// Recovered from OptionTypeOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OptionType;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OptionTypeOuterClass";
+
+enum OptionType {
+  OptionType_OPTION_NONE = 0;
+  OptionType_OPTION_NORMAL = 1;
+  OptionType_OPTION_FIRST_CAN_GO = 2;
+}

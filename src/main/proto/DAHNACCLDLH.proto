@@ -1,0 +1,14 @@
+// Recovered from DAHNACCLDLHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DAHNACCLDLH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DAHNACCLDLHOuterClass";
+import "Vector.proto";
+
+message DAHNACCLDLH {
+  .Vector pos = 7;
+  uint32 group_id = 12;
+  uint32 reward_id = 4;
+  uint32 LPILPIBJOAC = 9;
+}

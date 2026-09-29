@@ -1,0 +1,18 @@
+// Recovered from NBPGPDNMCPGOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NBPGPDNMCPG;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NBPGPDNMCPGOuterClass";
+import "Vector.proto";
+
+message NBPGPDNMCPG {
+  repeated uint32 KLGIKGDJEFM = 7;
+  .Vector AFFAELMAHHG = 1;
+  uint32 scene_id = 11;
+  uint32 open_time = 6;
+  float DGDCJNEEGAN = 9;
+  bool is_open = 3;
+  bool is_finish = 10;
+  uint32 level_id = 12;
+}

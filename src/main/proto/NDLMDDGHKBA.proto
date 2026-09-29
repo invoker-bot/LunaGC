@@ -1,0 +1,14 @@
+// Recovered from NDLMDDGHKBAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NDLMDDGHKBA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NDLMDDGHKBAOuterClass";
+
+message NDLMDDGHKBA {
+  uint32 FAFHBMGHMIP = 14;
+  bool is_finished = 6;
+  bool is_open = 10;
+  uint32 stage_id = 2;
+  uint32 LOHAJIABHDJ = 7;
+}

@@ -1,0 +1,13 @@
+// Recovered from PEDOKCODPNBOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PEDOKCODPNB;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PEDOKCODPNBOuterClass";
+
+message PEDOKCODPNB {
+  uint32 FFHGPGIHBOO = 9;
+  uint32 HBILFAMJDKG = 11;
+  bool JPLOABGPFCA = 10;
+  bool is_finish = 3;
+}

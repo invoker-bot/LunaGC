@@ -1,0 +1,20 @@
+// Recovered from KALNNKEHBJGOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KALNNKEHBJG;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KALNNKEHBJGOuterClass";
+import "JGHBHDIFECI.proto";
+
+message KALNNKEHBJG {
+  repeated uint32 CEFGIMINOOB = 8;
+  uint32 FJLENEIENLG = 13;
+  uint32 OJGCINHPHPI = 9;
+  uint32 IGPJOABNCGB = 5;
+  uint32 ODJLLLPLBHE = 7;
+  .recovered.p_JGHBHDIFECI.JGHBHDIFECI state = 12;
+  uint32 start_time = 4;
+  float FACFOHGOPIK = 14;
+  uint32 AIGHPBBDDBJ = 3;
+  uint32 FILJNMEPIJC = 2;
+}

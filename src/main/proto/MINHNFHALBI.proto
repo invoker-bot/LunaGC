@@ -1,0 +1,12 @@
+// Recovered from MINHNFHALBIOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MINHNFHALBI;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MINHNFHALBIOuterClass";
+
+message MINHNFHALBI {
+  repeated uint32 affix_list = 4;
+  uint32 monster_id = 15;
+  uint32 level = 12;
+}

@@ -1,0 +1,13 @@
+// Recovered from PFJAGHMKJJMOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PFJAGHMKJJM;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PFJAGHMKJJMOuterClass";
+
+message PFJAGHMKJJM {
+  bool is_open = 5;
+  uint32 camp_id = 4;
+  uint32 level_id = 11;
+  bool is_finish = 8;
+}

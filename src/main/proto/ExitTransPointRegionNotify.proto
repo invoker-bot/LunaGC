@@ -1,0 +1,11 @@
+// Recovered from ExitTransPointRegionNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ExitTransPointRegionNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ExitTransPointRegionNotifyOuterClass";
+
+message ExitTransPointRegionNotify {
+  uint32 point_id = 8;
+  uint32 scene_id = 6;
+}

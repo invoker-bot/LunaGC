@@ -1,0 +1,12 @@
+// Recovered from KFHACECFGGFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KFHACECFGGF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KFHACECFGGFOuterClass";
+import "ItemParam.proto";
+
+message KFHACECFGGF {
+  repeated .ItemParam DHIMBKOEJCG = 7;
+  repeated uint32 NJGOHBAMGPE = 15;
+}

@@ -1,0 +1,12 @@
+// Recovered from GcgPveDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GcgPveDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GcgPveDetailInfoOuterClass";
+import "PLAEAJEHGCE.proto";
+
+message GcgPveDetailInfo {
+  repeated .recovered.p_PLAEAJEHGCE.PLAEAJEHGCE CIAOIGFGPMJ = 14;
+  bool OFLIIGMLKDI = 8;
+}

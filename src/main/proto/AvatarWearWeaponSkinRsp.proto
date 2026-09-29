@@ -1,0 +1,12 @@
+// Recovered from AvatarWearWeaponSkinRspOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AvatarWearWeaponSkinRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AvatarWearWeaponSkinRspOuterClass";
+
+message AvatarWearWeaponSkinRsp {
+  repeated uint64 avatar_guid_list = 9;
+  int32 retcode = 11;
+  uint32 weapon_skin_id = 1;
+}

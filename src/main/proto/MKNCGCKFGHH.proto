@@ -1,0 +1,15 @@
+// Recovered from MKNCGCKFGHHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MKNCGCKFGHH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MKNCGCKFGHHOuterClass";
+import "CHMIAMPOAIE.proto";
+
+message MKNCGCKFGHH {
+  repeated .recovered.p_CHMIAMPOAIE.CHMIAMPOAIE GGOKKDEKPJM = 14;
+  repeated uint32 MMOGFEJPFAP = 12;
+  uint32 CCAMPLJLAOD = 5;
+  uint32 GOIAOOLPILK = 3;
+  uint32 KBMHAALNDHI = 9;
+}

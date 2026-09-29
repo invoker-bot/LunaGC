@@ -1,0 +1,12 @@
+// Recovered from MusicGameStartReqOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MusicGameStartReq;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MusicGameStartReqOuterClass";
+
+message MusicGameStartReq {
+  uint64 ugc_guid = 12;
+  uint32 music_basic_id = 8;
+  bool is_save_score = 13;
+}

@@ -1,0 +1,11 @@
+// Recovered from FGEEOGDFHABOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FGEEOGDFHAB;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FGEEOGDFHABOuterClass";
+import "KBHOLONGCBF.proto";
+
+message FGEEOGDFHAB {
+  repeated .recovered.p_KBHOLONGCBF.KBHOLONGCBF FHJBOMAPANA = 4;
+}

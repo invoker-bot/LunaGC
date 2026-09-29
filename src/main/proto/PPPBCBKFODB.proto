@@ -1,0 +1,11 @@
+// Recovered from PPPBCBKFODBOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PPPBCBKFODB;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PPPBCBKFODBOuterClass";
+import "EKNJNBENAPF.proto";
+
+message PPPBCBKFODB {
+  repeated .recovered.p_EKNJNBENAPF.EKNJNBENAPF GGOKKDEKPJM = 12;
+}

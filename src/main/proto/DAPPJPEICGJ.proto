@@ -1,0 +1,14 @@
+// Recovered from DAPPJPEICGJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DAPPJPEICGJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DAPPJPEICGJOuterClass";
+
+message DAPPJPEICGJ {
+  uint32 MAKJOHCLHNC = 13;
+  uint32 IJFPPCAJDLO = 1;
+  uint32 BGEHBELCPIH = 12;
+  uint32 PJADKLEOOFL = 15;
+  uint32 JLOKLBDEMEC = 11;
+}

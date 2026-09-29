@@ -1,0 +1,12 @@
+// Recovered from AnchorPointDataNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AnchorPointDataNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AnchorPointDataNotifyOuterClass";
+import "AnchorPointData.proto";
+
+message AnchorPointDataNotify {
+  repeated .AnchorPointData anchor_point_list = 7;
+  uint32 next_usable_time = 16;
+}

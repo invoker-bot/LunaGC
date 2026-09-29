@@ -1,0 +1,11 @@
+// Recovered from KCMPFHEFJKDOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KCMPFHEFJKD;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KCMPFHEFJKDOuterClass";
+import "FHLICFFDFCK.proto";
+
+message KCMPFHEFJKD {
+  repeated .recovered.p_FHLICFFDFCK.FHLICFFDFCK GGOKKDEKPJM = 9;
+}

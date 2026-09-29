@@ -1,0 +1,11 @@
+// Recovered from GPPIOLIGLFPOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GPPIOLIGLFP;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GPPIOLIGLFPOuterClass";
+import "DFONILLNEDK.proto";
+
+message GPPIOLIGLFP {
+  repeated .recovered.p_DFONILLNEDK.DFONILLNEDK NGMHFHPAAMF = 4;
+}

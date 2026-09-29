@@ -1,0 +1,13 @@
+// Recovered from SceneRouteChangeNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_SceneRouteChangeNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "SceneRouteChangeNotifyOuterClass";
+import "SceneRouteChangeInfo.proto";
+
+message SceneRouteChangeNotify {
+  repeated .recovered.p_SceneRouteChangeInfo.SceneRouteChangeInfo NGGMELMIJFK = 5124;
+  uint32 scene_id = 4;
+  uint32 scene_time = 5;
+}

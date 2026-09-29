@@ -1,0 +1,13 @@
+// Recovered from GEGHKDDPOHCOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GEGHKDDPOHC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GEGHKDDPOHCOuterClass";
+
+message GEGHKDDPOHC {
+  int32 start_time = 1;
+  int32 end_time = 2;
+  uint32 challenge_id = 3;
+  int32 cur_value = 4;
+}

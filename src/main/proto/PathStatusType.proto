@@ -1,0 +1,12 @@
+// Recovered from PathStatusTypeOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PathStatusType;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PathStatusTypeOuterClass";
+
+enum PathStatusType {
+  PathStatusType_STATUS_FAIL = 0;
+  PathStatusType_STATUS_SUCC = 1;
+  PathStatusType_STATUS_PARTIAL = 2;
+}

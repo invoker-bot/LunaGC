@@ -1,0 +1,10 @@
+// Recovered from BLFDGJBMBMAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BLFDGJBMBMA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BLFDGJBMBMAOuterClass";
+
+message BLFDGJBMBMA {
+  repeated uint32 OOGMODJIJOL = 1;
+}

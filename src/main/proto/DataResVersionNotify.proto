@@ -1,0 +1,18 @@
+// Recovered from DataResVersionNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DataResVersionNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DataResVersionNotifyOuterClass";
+import "ResVersionConfig.proto";
+import "DataResVersionOpType.proto";
+
+message DataResVersionNotify {
+  string client_silence_version_suffix = 2;
+  .ResVersionConfig res_version_config = 14;
+  string client_version_suffix = 5;
+  uint32 client_data_version = 9;
+  uint32 client_silence_data_version = 12;
+  .recovered.p_DataResVersionOpType.DataResVersionOpType op_type = 8;
+  bool is_data_need_relogin = 11;
+}

@@ -1,0 +1,11 @@
+// Recovered from KeepRotTypeOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KeepRotType;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KeepRotTypeOuterClass";
+
+enum KeepRotType {
+  KeepRotType_KEEP_ROT_X = 0;
+  KeepRotType_KEEP_ROT_XY = 1;
+}

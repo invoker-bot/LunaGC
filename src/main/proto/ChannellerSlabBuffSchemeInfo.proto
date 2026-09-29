@@ -1,0 +1,12 @@
+// Recovered from ChannellerSlabBuffSchemeInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ChannellerSlabBuffSchemeInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ChannellerSlabBuffSchemeInfoOuterClass";
+
+message ChannellerSlabBuffSchemeInfo {
+  uint32 OGCHFGCANIP = 2;
+  uint32 JBJAFBCPAGD = 11;
+  map<uint32, uint32> slot_map = 9;
+}

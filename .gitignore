@@ -29,6 +29,8 @@ hs_err_pid*
 # Ignore Gradle build output directory
 build/
 out/
+# Protobuf Java is regenerated from src/main/proto into build/.
+/src/generated/
 
 # Ignore Gradle properties
 gradle.properties

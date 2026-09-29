@@ -1,0 +1,12 @@
+// Recovered from FCBIHBGMMPAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FCBIHBGMMPA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FCBIHBGMMPAOuterClass";
+
+message FCBIHBGMMPA {
+  uint32 ugc_guid = 15;
+  bool is_open = 3;
+  uint32 level_id = 9;
+}

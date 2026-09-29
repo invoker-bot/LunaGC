@@ -1,0 +1,12 @@
+// Recovered from NEAJGFDJMLNOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NEAJGFDJMLN;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NEAJGFDJMLNOuterClass";
+
+message NEAJGFDJMLN {
+  uint32 stage_id = 4;
+  bool FLDCDKPFHOJ = 13;
+  bool BBLIGCOBMEC = 2;
+}

@@ -1,0 +1,12 @@
+// Recovered from GCAFHBHMAMDOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GCAFHBHMAMD;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GCAFHBHMAMDOuterClass";
+
+message GCAFHBHMAMD {
+  bool is_finish = 3;
+  bool is_open = 11;
+  uint32 level_id = 4;
+}

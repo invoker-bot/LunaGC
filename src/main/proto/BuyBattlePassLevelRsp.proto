@@ -1,0 +1,11 @@
+// Recovered from BuyBattlePassLevelRspOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BuyBattlePassLevelRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BuyBattlePassLevelRspOuterClass";
+
+message BuyBattlePassLevelRsp {
+  uint32 buy_level = 7;
+  int32 retcode = 11;
+}

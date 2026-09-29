@@ -1,0 +1,12 @@
+// Recovered from OIAFPOMHENOOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OIAFPOMHENO;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OIAFPOMHENOOuterClass";
+import "ClientPlayType.proto";
+
+message OIAFPOMHENO {
+  .ClientPlayType PBGJEDMMGIO = 4;
+  uint32 level_id = 14;
+}

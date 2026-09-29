@@ -1,0 +1,15 @@
+// Recovered from JLPKMGNCNGEOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JLPKMGNCNGE;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JLPKMGNCNGEOuterClass";
+import "HECIAPHEJNC.proto";
+
+message JLPKMGNCNGE {
+  repeated .recovered.p_HECIAPHEJNC.HECIAPHEJNC KBGJCPOKLFB = 5;
+  uint32 CKOCCKMBGJN = 10;
+  uint32 stage_id = 7;
+  bool is_open = 8;
+  uint32 DDHKLPIHBJE = 14;
+}

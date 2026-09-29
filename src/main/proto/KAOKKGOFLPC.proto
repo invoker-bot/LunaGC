@@ -1,0 +1,12 @@
+// Recovered from KAOKKGOFLPCOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KAOKKGOFLPC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KAOKKGOFLPCOuterClass";
+import "DAHNACCLDLH.proto";
+
+message KAOKKGOFLPC {
+  repeated .recovered.p_DAHNACCLDLH.DAHNACCLDLH camp_list = 6;
+  uint32 PGJIIHHNGIP = 3;
+}

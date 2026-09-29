@@ -1,0 +1,15 @@
+// Recovered from PIOMCMDPDHDOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PIOMCMDPDHD;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PIOMCMDPDHDOuterClass";
+import "FHHFEICEDJD.proto";
+
+message PIOMCMDPDHD {
+  repeated .recovered.p_FHHFEICEDJD.FHHFEICEDJD GIFBEDJMGOL = 7;
+  uint32 stage_id = 9;
+  uint32 OMEBOHLACPH = 14;
+  bool is_open = 5;
+  bool is_finish = 13;
+}

@@ -1,0 +1,11 @@
+// Recovered from CHOEOGNELGNOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_CHOEOGNELGN;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "CHOEOGNELGNOuterClass";
+
+enum CHOEOGNELGN {
+  CHOEOGNELGN_OTHERS = 0;
+  CHOEOGNELGN_LOCK_OR_STAR = 1;
+}

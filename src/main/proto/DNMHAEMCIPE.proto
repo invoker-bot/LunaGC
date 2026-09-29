@@ -1,0 +1,12 @@
+// Recovered from DNMHAEMCIPEOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DNMHAEMCIPE;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DNMHAEMCIPEOuterClass";
+
+message DNMHAEMCIPE {
+  bool BAJOAJBLADK = 15;
+  uint32 OMEPJOHGDFA = 11;
+  uint32 reward_type = 1;
+}

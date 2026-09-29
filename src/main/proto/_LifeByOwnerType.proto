@@ -1,0 +1,12 @@
+// Recovered from _LifeByOwnerTypeOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__LifeByOwnerType;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_LifeByOwnerTypeOuterClass";
+
+enum _LifeByOwnerType {
+  LIFE_BY_OWNER_NONE = 0;
+  LIFE_BY_OWNER_V2 = 1;
+  LIFE_BY_OWNER_V3 = 2;
+}

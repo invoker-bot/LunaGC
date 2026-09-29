@@ -1,0 +1,13 @@
+// Recovered from FAPHDALIAAHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FAPHDALIAAH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FAPHDALIAAHOuterClass";
+
+message FAPHDALIAAH {
+  uint32 level_id = 3;
+  uint32 ugc_guid = 1;
+  bool is_finish = 8;
+  bool is_open = 6;
+}

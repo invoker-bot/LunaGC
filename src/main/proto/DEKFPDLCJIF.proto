@@ -1,0 +1,13 @@
+// Recovered from DEKFPDLCJIFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DEKFPDLCJIF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DEKFPDLCJIFOuterClass";
+
+message DEKFPDLCJIF {
+  bool is_finished = 9;
+  bool DALMDMCJNNK = 13;
+  uint32 level_id = 10;
+  uint32 CKOCCKMBGJN = 11;
+}

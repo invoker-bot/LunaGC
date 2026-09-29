@@ -1,0 +1,11 @@
+// Recovered from JKKBIKPIANFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JKKBIKPIANF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JKKBIKPIANFOuterClass";
+
+message JKKBIKPIANF {
+  bool is_open = 5;
+  uint32 level_id = 3;
+}

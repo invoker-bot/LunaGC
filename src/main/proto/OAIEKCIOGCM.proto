@@ -1,0 +1,12 @@
+// Recovered from OAIEKCIOGCMOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OAIEKCIOGCM;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OAIEKCIOGCMOuterClass";
+
+message OAIEKCIOGCM {
+  uint32 OMEBOHLACPH = 14;
+  bool NFANJGELIIG = 7;
+  uint32 ODJLLLPLBHE = 1;
+}

@@ -1,0 +1,14 @@
+// Recovered from LHAGNAJBOEHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_LHAGNAJBOEH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "LHAGNAJBOEHOuterClass";
+import "JMKFPEIMOJO.proto";
+
+message LHAGNAJBOEH {
+  repeated .recovered.p_JMKFPEIMOJO.JMKFPEIMOJO KMBLDHOEOEL = 2;
+  uint32 level_id = 3;
+  bool is_open = 10;
+  bool NLAEPBLMKDO = 15;
+}

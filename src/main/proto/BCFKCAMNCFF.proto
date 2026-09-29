@@ -1,0 +1,13 @@
+// Recovered from BCFKCAMNCFFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BCFKCAMNCFF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BCFKCAMNCFFOuterClass";
+
+enum BCFKCAMNCFF {
+  BCFKCAMNCFF_NONE = 0;
+  BCFKCAMNCFF_INIT = 1;
+  BCFKCAMNCFF_BUILDING = 2;
+  BCFKCAMNCFF_BUILT = 3;
+}

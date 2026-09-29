@@ -1,0 +1,16 @@
+// Recovered from _DetailAbilityInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__DetailAbilityInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_DetailAbilityInfoOuterClass";
+import "AbilityString.proto";
+
+message _DetailAbilityInfo {
+  uint32 instanced_modifier_id = 2;
+  int32 modifier_local_id = 7;
+  int32 local_id = 10;
+  uint32 instanced_ability_id = 11;
+  .AbilityString parent_ability_name = 13;
+  uint32 caster_id = 15;
+}

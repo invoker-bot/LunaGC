@@ -1,0 +1,12 @@
+// Recovered from EIMPFJPIBCGOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EIMPFJPIBCG;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EIMPFJPIBCGOuterClass";
+
+message EIMPFJPIBCG {
+  repeated uint32 KKJKMCGKPJJ = 12;
+  repeated uint32 BPBAAFAGAFN = 7;
+  repeated uint32 HIOODFAJLAI = 14;
+}

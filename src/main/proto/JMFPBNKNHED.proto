@@ -1,0 +1,15 @@
+// Recovered from JMFPBNKNHEDOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JMFPBNKNHED;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JMFPBNKNHEDOuterClass";
+
+message JMFPBNKNHED {
+  uint64 start_time = 1;
+  uint32 IFFAGNNKDOB = 2;
+  uint32 KHBBKMCEBKA = 3;
+  float JLLNGEKIHMN = 4;
+  float speed = 5;
+  bool is_started = 6;
+}

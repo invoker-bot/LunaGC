@@ -1,0 +1,14 @@
+// Recovered from GEOOJHCOHCPOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GEOOJHCOHCP;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GEOOJHCOHCPOuterClass";
+
+message GEOOJHCOHCP {
+  bool is_open = 5;
+  bool is_finish = 11;
+  float FJCIPFBOBKC = 8;
+  uint32 OBILLHGCFII = 13;
+  uint32 level_id = 14;
+}

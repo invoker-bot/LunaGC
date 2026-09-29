@@ -1,0 +1,13 @@
+// Recovered from FishNoRewardReasonOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FishNoRewardReason;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FishNoRewardReasonOuterClass";
+
+enum FishNoRewardReason {
+  FishNoRewardReason_FISH_NO_REWARD_NONE = 0;
+  FishNoRewardReason_FISH_NO_REWARD_ACTIVITY_LIMIT = 1;
+  FishNoRewardReason_FISH_NO_REWARD_BAG_LIMIT = 2;
+  FishNoRewardReason_FISH_NO_REWARD_POOL_LIMIT = 3;
+}

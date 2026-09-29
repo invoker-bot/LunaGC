@@ -1,0 +1,14 @@
+// Recovered from BreakoutActionTypeOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BreakoutActionType;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BreakoutActionTypeOuterClass";
+
+enum BreakoutActionType {
+  BreakoutActionType_ACTION_TYPE_NONE = 0;
+  BreakoutActionType_ACTION_TYPE_LAUNCH_BALL = 1;
+  BreakoutActionType_ACTION_TYPE_DESTROY_BALL = 2;
+  BreakoutActionType_ACTION_TYPE_FALLING_OBJECT = 3;
+  BreakoutActionType_ACTION_TYPE_MISSILE = 4;
+}

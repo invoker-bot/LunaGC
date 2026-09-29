@@ -1,0 +1,13 @@
+// Recovered from LCCIKPCKGHBOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_LCCIKPCKGHB;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "LCCIKPCKGHBOuterClass";
+
+message LCCIKPCKGHB {
+  uint32 cost_time = 3;
+  bool is_open = 1;
+  uint32 max_score = 14;
+  uint32 level_id = 7;
+}

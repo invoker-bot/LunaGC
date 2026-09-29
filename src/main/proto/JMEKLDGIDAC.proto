@@ -1,0 +1,17 @@
+// Recovered from JMEKLDGIDACOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JMEKLDGIDAC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JMEKLDGIDACOuterClass";
+import "Vector.proto";
+import "NKJFLMLNHDP.proto";
+
+message JMEKLDGIDAC {
+  .Vector rot = 15;
+  .Vector pos = 9;
+  .recovered.p_NKJFLMLNHDP.NKJFLMLNHDP state = 8;
+  uint32 scene_id = 2;
+  uint32 gadget_entity_id = 4;
+  uint32 BCICFCNAFNP = 7;
+}

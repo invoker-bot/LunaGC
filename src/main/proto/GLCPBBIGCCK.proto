@@ -1,0 +1,13 @@
+// Recovered from GLCPBBIGCCKOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GLCPBBIGCCK;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GLCPBBIGCCKOuterClass";
+import "CIHDNIJOBOG.proto";
+import "OFNIHPAJGIE.proto";
+
+message GLCPBBIGCCK {
+  repeated .recovered.p_CIHDNIJOBOG.CIHDNIJOBOG HEKBEICEEBK = 12;
+  repeated .recovered.p_OFNIHPAJGIE.OFNIHPAJGIE NGMHFHPAAMF = 10;
+}

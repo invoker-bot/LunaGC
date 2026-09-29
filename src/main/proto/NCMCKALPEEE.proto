@@ -1,0 +1,16 @@
+// Recovered from NCMCKALPEEEOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NCMCKALPEEE;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NCMCKALPEEEOuterClass";
+import "Vector.proto";
+
+message NCMCKALPEEE {
+  repeated uint32 HLPOFCOODJL = 12;
+  .Vector center = 15;
+  uint32 open_time = 13;
+  uint32 LNCDLHAFFKE = 8;
+  bool is_open = 6;
+  bool JAMNIKAJCCI = 9;
+}

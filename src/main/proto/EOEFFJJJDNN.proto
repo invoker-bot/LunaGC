@@ -1,0 +1,12 @@
+// Recovered from EOEFFJJJDNNOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EOEFFJJJDNN;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EOEFFJJJDNNOuterClass";
+
+message EOEFFJJJDNN {
+  repeated uint32 DKFAIPDJKCH = 10;
+  repeated uint32 NAOEAPBHJJJ = 7;
+  uint32 NANFNLBIMMN = 15;
+}

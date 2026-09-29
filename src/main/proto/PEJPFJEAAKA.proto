@@ -1,0 +1,15 @@
+// Recovered from PEJPFJEAAKAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PEJPFJEAAKA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PEJPFJEAAKAOuterClass";
+import "LBLCBLNMOFM.proto";
+
+message PEJPFJEAAKA {
+  .recovered.p_LBLCBLNMOFM.LBLCBLNMOFM GDNDBGJNCMO = 8;
+  bool is_finish = 10;
+  bool is_open = 1;
+  uint32 level_id = 3;
+  uint32 score = 2;
+}

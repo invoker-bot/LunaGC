@@ -1,0 +1,17 @@
+// Recovered from HIIOKICKAOCOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_HIIOKICKAOC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "HIIOKICKAOCOuterClass";
+
+message HIIOKICKAOC {
+  float LKEJBDILKEF = 9;
+  bool KEMHNIEDEBD = 12;
+  float PKPNMEMFNPN = 15;
+  float KIPELBKDIAN = 10;
+  uint32 value = 14;
+  uint32 IILLFBIKDNC = 13;
+  uint32 id = 4;
+  float rot = 2;
+}

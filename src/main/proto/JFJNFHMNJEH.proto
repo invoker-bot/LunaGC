@@ -1,0 +1,14 @@
+// Recovered from JFJNFHMNJEHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JFJNFHMNJEH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JFJNFHMNJEHOuterClass";
+
+message JFJNFHMNJEH {
+  uint32 group_id = 1;
+  uint32 MLDDFANOCCG = 14;
+  uint32 EAMFLHEIJIO = 7;
+  uint32 config_id = 4;
+  uint32 IKANKDLPKLB = 10;
+}

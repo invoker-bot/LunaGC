@@ -1,0 +1,10 @@
+// Recovered from GJOLEHJOAHAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GJOLEHJOAHA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GJOLEHJOAHAOuterClass";
+
+message GJOLEHJOAHA {
+  repeated uint32 LAEKCDJFPFE = 1;
+}

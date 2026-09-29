@@ -1,0 +1,15 @@
+// Recovered from _NatlanTourDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__NatlanTourDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_NatlanTourDetailInfoOuterClass";
+import "HPKLMGOJCBG.proto";
+import "MJDAGPDBODL.proto";
+import "OOHHKGLNCIN.proto";
+
+message _NatlanTourDetailInfo {
+  .MJDAGPDBODL DJIOGHINDGP = 3;
+  .OOHHKGLNCIN JKJHPFMHOGJ = 10;
+  .HPKLMGOJCBG explore_info = 13;
+}

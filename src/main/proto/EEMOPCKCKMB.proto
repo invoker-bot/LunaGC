@@ -1,0 +1,13 @@
+// Recovered from EEMOPCKCKMBOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EEMOPCKCKMB;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EEMOPCKCKMBOuterClass";
+
+message EEMOPCKCKMB {
+  bool is_open = 11;
+  uint32 OLJMLPBFGLD = 3;
+  uint32 level_id = 14;
+  uint32 BGLKPPKJCNF = 1;
+}

@@ -1,0 +1,12 @@
+// Recovered from EFELMLAAEKEOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EFELMLAAEKE;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EFELMLAAEKEOuterClass";
+
+message EFELMLAAEKE {
+  uint32 HBILFAMJDKG = 14;
+  uint32 level_id = 10;
+  bool is_open = 7;
+}

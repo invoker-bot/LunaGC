@@ -1,0 +1,12 @@
+// Recovered from CPGHFEEMEANOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_CPGHFEEMEAN;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "CPGHFEEMEANOuterClass";
+
+message CPGHFEEMEAN {
+  repeated uint32 EHLFGLGOPAJ = 6;
+  uint32 level_id = 9;
+  bool is_open = 3;
+}

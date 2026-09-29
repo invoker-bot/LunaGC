@@ -1,0 +1,10 @@
+// Recovered from AskAddFriendReqOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AskAddFriendReq;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AskAddFriendReqOuterClass";
+
+message AskAddFriendReq {
+  uint32 target_uid = 14;
+}

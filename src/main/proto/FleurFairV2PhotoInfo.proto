@@ -1,0 +1,11 @@
+// Recovered from FleurFairV2PhotoInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FleurFairV2PhotoInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FleurFairV2PhotoInfoOuterClass";
+import "FleurFairV2PhotoPosData.proto";
+
+message FleurFairV2PhotoInfo {
+  repeated .recovered.p_FleurFairV2PhotoPosData.FleurFairV2PhotoPosData photo_pos_data_list = 12;
+}

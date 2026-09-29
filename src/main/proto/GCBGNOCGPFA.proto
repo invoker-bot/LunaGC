@@ -1,0 +1,12 @@
+// Recovered from GCBGNOCGPFAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GCBGNOCGPFA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GCBGNOCGPFAOuterClass";
+
+enum GCBGNOCGPFA {
+  GCBGNOCGPFA_LUNA_RITE_HINT_TYPE_NONE = 0;
+  GCBGNOCGPFA_LUNA_RITE_HINT_TYPE_RUNE = 1;
+  GCBGNOCGPFA_LUNA_RITE_HINT_TYPE_CHEST = 2;
+}

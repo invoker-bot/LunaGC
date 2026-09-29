@@ -1,0 +1,14 @@
+// Recovered from DGAJHBBIDNMOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DGAJHBBIDNM;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DGAJHBBIDNMOuterClass";
+import "KANFGENDGJN.proto";
+import "PKLACFGBAFA.proto";
+
+message DGAJHBBIDNM {
+  repeated .PKLACFGBAFA CLBFJPDNHCG = 1;
+  repeated .KANFGENDGJN IHPFBPKHHNO = 3;
+  uint32 CDFGMOEHFDP = 15;
+}

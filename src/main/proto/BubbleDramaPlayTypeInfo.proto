@@ -1,0 +1,12 @@
+// Recovered from BubbleDramaPlayTypeInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BubbleDramaPlayTypeInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BubbleDramaPlayTypeInfoOuterClass";
+import "BubbleDramaLevelInfo.proto";
+
+message BubbleDramaPlayTypeInfo {
+  repeated .recovered.p_BubbleDramaLevelInfo.BubbleDramaLevelInfo level_info_list = 9;
+  uint32 play_type = 7;
+}

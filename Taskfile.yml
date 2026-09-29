@@ -70,12 +70,12 @@ tasks:
 
   build:jar:
     desc: Build the LunaGC server jar
-    # timestamp, not checksum: the proto sources are tens of thousands of
-    # generated files and hashing them all takes longer than the incremental
-    # gradle build would.
+    # timestamp, not checksum: generated Java lives in build/ and is rebuilt
+    # from the checked-in proto sources.
     method: timestamp
     sources:
-      - src/**/*.java
+      - src/main/**/*.java
+      - src/main/proto/**/*.proto
       - src/main/resources/**
       - build.gradle
       - settings.gradle

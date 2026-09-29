@@ -1,0 +1,11 @@
+// Recovered from PullRecentChatReqOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PullRecentChatReq;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PullRecentChatReqOuterClass";
+
+message PullRecentChatReq {
+  uint32 begin_sequence = 11;
+  uint32 pull_num = 8;
+}

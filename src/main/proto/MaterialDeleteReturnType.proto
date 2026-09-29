@@ -1,0 +1,11 @@
+// Recovered from MaterialDeleteReturnTypeOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MaterialDeleteReturnType;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MaterialDeleteReturnTypeOuterClass";
+
+enum MaterialDeleteReturnType {
+  MaterialDeleteReturnType_MATERIAL_DELETE_RETURN_BAG = 0;
+  MaterialDeleteReturnType_MATERIAL_DELETE_RETURN_SEED = 1;
+}

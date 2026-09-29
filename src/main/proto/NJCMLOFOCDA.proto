@@ -1,0 +1,19 @@
+// Recovered from NJCMLOFOCDAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NJCMLOFOCDA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NJCMLOFOCDAOuterClass";
+import "JGAJEMMPJMD.proto";
+
+message NJCMLOFOCDA {
+  repeated .recovered.p_JGAJEMMPJMD.JGAJEMMPJMD HEHBHPHBDFP = 2;
+  uint32 CCBKNFBMAMK = 4;
+  uint32 KBJHMNDKKPF = 12;
+  uint32 OAEADHAKELH = 3;
+  uint32 FGBFGGGMNJC = 10;
+  uint32 level_id = 8;
+  uint32 GDIFJEAGFJM = 11;
+  bool is_finish = 5;
+  bool is_open = 1;
+}

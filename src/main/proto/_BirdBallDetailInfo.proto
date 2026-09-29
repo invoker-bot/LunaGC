@@ -1,0 +1,13 @@
+// Recovered from _BirdBallDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__BirdBallDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_BirdBallDetailInfoOuterClass";
+import "KOCMFKMIOLG.proto";
+
+message _BirdBallDetailInfo {
+  repeated .recovered.p_KOCMFKMIOLG.KOCMFKMIOLG HBAJAHIMHEA = 2;
+  uint32 GAKBBPPDPEG = 12;
+  repeated .recovered.p_KOCMFKMIOLG.KOCMFKMIOLG KCOEGOOMHFF = 14;
+}

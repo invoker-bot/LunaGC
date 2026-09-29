@@ -1,0 +1,13 @@
+// Recovered from FishBattleEndReqOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FishBattleEndReq;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FishBattleEndReqOuterClass";
+import "FishBattleResult.proto";
+
+message FishBattleEndReq {
+  bool is_always_bonus = 7;
+  uint32 max_bonus_time = 3;
+  .recovered.p_FishBattleResult.FishBattleResult battle_result = 4;
+}

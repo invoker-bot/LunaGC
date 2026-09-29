@@ -1,0 +1,15 @@
+// Recovered from AvatarPropChangeReasonNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AvatarPropChangeReasonNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AvatarPropChangeReasonNotifyOuterClass";
+import "PropChangeReason.proto";
+
+message AvatarPropChangeReasonNotify {
+  float cur_value = 3;
+  float old_value = 11;
+  uint32 prop_type = 4;
+  .PropChangeReason reason = 5;
+  uint64 avatar_guid = 2;
+}

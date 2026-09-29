@@ -1,0 +1,12 @@
+// Recovered from ShopInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ShopInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ShopInfoOuterClass";
+import "NEHEKBBFPIE.proto";
+
+message ShopInfo {
+  repeated .recovered.p_NEHEKBBFPIE.NEHEKBBFPIE CNNOGBKOAFF = 3;
+  uint32 NPFNHADIONO = 7;
+}

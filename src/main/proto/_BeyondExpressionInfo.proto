@@ -1,0 +1,19 @@
+// Recovered from _BeyondExpressionInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__BeyondExpressionInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_BeyondExpressionInfoOuterClass";
+
+message _BeyondExpressionInfo {
+  uint32 index = 1;
+  .recovered.p__BeyondExpressionInfo._BeyondExpressionInfo.LPGEIAEOHPI JIIOBGLHIHH = 2;
+  uint32 id = 3;
+  enum LPGEIAEOHPI {
+    LPGEIAEOHPI_NONE = 0;
+    LPGEIAEOHPI_EMOJI = 1;
+    LPGEIAEOHPI_POSE = 2;
+    LPGEIAEOHPI_SUIT_POSE = 3;
+    LPGEIAEOHPI_GOLDEN_POSE = 4;
+  }
+}

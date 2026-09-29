@@ -1,0 +1,11 @@
+// Recovered from OCOLPEOAHPPOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OCOLPEOAHPP;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OCOLPEOAHPPOuterClass";
+
+message OCOLPEOAHPP {
+  uint32 id = 9;
+  uint32 level = 3;
+}

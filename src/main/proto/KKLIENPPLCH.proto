@@ -1,0 +1,11 @@
+// Recovered from KKLIENPPLCHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KKLIENPPLCH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KKLIENPPLCHOuterClass";
+import "KCOALDKMJGA.proto";
+
+message KKLIENPPLCH {
+  repeated .recovered.p_KCOALDKMJGA.KCOALDKMJGA GGOKKDEKPJM = 9;
+}

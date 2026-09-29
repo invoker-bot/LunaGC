@@ -1,0 +1,16 @@
+// Recovered from ActivityCondStateChangeNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ActivityCondStateChangeNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ActivityCondStateChangeNotifyOuterClass";
+import "Uint32Pair.proto";
+
+message ActivityCondStateChangeNotify {
+  repeated uint32 meet_cond_list = 8;
+  repeated uint32 activated_sale_id_list = 11;
+  repeated uint32 expire_cond_list = 6;
+  repeated .Uint32Pair disable_transfer_point_interaction_list = 13;
+  uint32 schedule_id = 7;
+  uint32 activity_id = 3;
+}

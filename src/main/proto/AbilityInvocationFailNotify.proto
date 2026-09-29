@@ -1,0 +1,13 @@
+// Recovered from AbilityInvocationFailNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AbilityInvocationFailNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AbilityInvocationFailNotifyOuterClass";
+import "AbilityInvokeEntry.proto";
+
+message AbilityInvocationFailNotify {
+  .AbilityInvokeEntry invoke = 1;
+  string reason = 8;
+  uint32 entity_id = 10;
+}

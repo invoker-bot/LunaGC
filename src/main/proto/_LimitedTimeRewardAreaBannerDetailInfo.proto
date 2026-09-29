@@ -1,0 +1,11 @@
+// Recovered from _LimitedTimeRewardAreaBannerDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__LimitedTimeRewardAreaBannerDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_LimitedTimeRewardAreaBannerDetailInfoOuterClass";
+import "Uint32Pair.proto";
+
+message _LimitedTimeRewardAreaBannerDetailInfo {
+  repeated .Uint32Pair JPMAHMHMAHN = 8;
+}

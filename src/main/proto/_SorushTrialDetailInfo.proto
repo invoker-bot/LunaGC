@@ -1,0 +1,13 @@
+// Recovered from _SorushTrialDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__SorushTrialDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_SorushTrialDetailInfoOuterClass";
+
+message _SorushTrialDetailInfo {
+  repeated uint32 BBFEAFFLOBA = 3;
+  repeated uint32 HOPCJHIJDDK = 6;
+  map<uint32, uint32> KCGIACHFPOC = 8;
+  repeated uint32 IIDDBDAEPKC = 11;
+}

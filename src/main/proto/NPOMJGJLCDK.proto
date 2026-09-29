@@ -1,0 +1,13 @@
+// Recovered from NPOMJGJLCDKOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NPOMJGJLCDK;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NPOMJGJLCDKOuterClass";
+
+message NPOMJGJLCDK {
+  bool is_finished = 7;
+  bool is_open = 9;
+  uint32 ugc_guid = 13;
+  uint32 level_id = 6;
+}

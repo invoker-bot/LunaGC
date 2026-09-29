@@ -1,0 +1,15 @@
+// Recovered from HideAndSeekV4DetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_HideAndSeekV4DetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "HideAndSeekV4DetailInfoOuterClass";
+import "GFOJCPKCACM.proto";
+
+message HideAndSeekV4DetailInfo {
+  repeated .recovered.p_GFOJCPKCACM.GFOJCPKCACM OIBJNIHHEHL = 14;
+  repeated uint32 MMDNFGBECCH = 12;
+  repeated uint32 FPMKDIBMDDD = 10;
+  repeated .recovered.p_GFOJCPKCACM.GFOJCPKCACM MOJEHDPHCLD = 13;
+  bool FHDJCEAAKNN = 2;
+}

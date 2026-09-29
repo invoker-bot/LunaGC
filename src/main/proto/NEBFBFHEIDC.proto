@@ -1,0 +1,11 @@
+// Recovered from NEBFBFHEIDCOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NEBFBFHEIDC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NEBFBFHEIDCOuterClass";
+import "APCMJCOKPNC.proto";
+
+message NEBFBFHEIDC {
+  map<uint32, .recovered.p_APCMJCOKPNC.APCMJCOKPNC> PIPMBBMCJMC = 8;
+}

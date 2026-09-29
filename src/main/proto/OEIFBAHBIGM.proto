@@ -1,0 +1,10 @@
+// Recovered from OEIFBAHBIGMOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OEIFBAHBIGM;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OEIFBAHBIGMOuterClass";
+
+message OEIFBAHBIGM {
+  uint32 HIGMOFMFNJM = 6;
+}

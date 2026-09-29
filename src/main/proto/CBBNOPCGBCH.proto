@@ -1,0 +1,13 @@
+// Recovered from CBBNOPCGBCHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_CBBNOPCGBCH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "CBBNOPCGBCHOuterClass";
+import "MNOCNPEKOKP.proto";
+
+message CBBNOPCGBCH {
+  repeated uint32 JLDBOPECJGK = 6;
+  repeated .recovered.p_MNOCNPEKOKP.MNOCNPEKOKP GGOKKDEKPJM = 9;
+  uint32 LOHAJIABHDJ = 7;
+}

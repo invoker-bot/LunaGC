@@ -1,0 +1,10 @@
+// Recovered from GetHomeLevelUpRewardReqOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GetHomeLevelUpRewardReq;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GetHomeLevelUpRewardReqOuterClass";
+
+message GetHomeLevelUpRewardReq {
+  uint32 level = 12;
+}

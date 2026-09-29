@@ -1,0 +1,11 @@
+// Recovered from ONHAEGPCOGLOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ONHAEGPCOGL;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ONHAEGPCOGLOuterClass";
+
+message ONHAEGPCOGL {
+  uint32 HBILFAMJDKG = 8;
+  uint32 level_id = 14;
+}

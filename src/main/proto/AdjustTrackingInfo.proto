@@ -1,0 +1,15 @@
+// Recovered from AdjustTrackingInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AdjustTrackingInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AdjustTrackingInfoOuterClass";
+
+message AdjustTrackingInfo {
+  string JKBECEMPCIO = 10;
+  string GFDDIOCIOJP = 4;
+  string LLMLEOJOABI = 8;
+  string HLLPGNPNHGK = 1;
+  string KLBFAGOMIMN = 14;
+  string CMFGKOLKGGO = 13;
+}

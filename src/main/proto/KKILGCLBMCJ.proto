@@ -1,0 +1,16 @@
+// Recovered from KKILGCLBMCJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_KKILGCLBMCJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "KKILGCLBMCJOuterClass";
+import "_ExamInfo.proto";
+import "_OrderInfo.proto";
+
+message KKILGCLBMCJ {
+  repeated uint32 BJPDBEKODPL = 8;
+  oneof detail {
+    ._ExamInfo exam_info = 9;
+    ._OrderInfo order_info = 12;
+  }
+}

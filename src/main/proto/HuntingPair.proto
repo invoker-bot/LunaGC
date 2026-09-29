@@ -1,0 +1,11 @@
+// Recovered from HuntingPairOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_HuntingPair;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "HuntingPairOuterClass";
+
+message HuntingPair {
+  uint32 monster_config_id = 15;
+  uint32 APNHIONPPGB = 10;
+}

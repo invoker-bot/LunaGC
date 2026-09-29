@@ -1,0 +1,11 @@
+// Recovered from ClientCollectorDataNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ClientCollectorDataNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ClientCollectorDataNotifyOuterClass";
+import "ClientCollectorData.proto";
+
+message ClientCollectorDataNotify {
+  repeated .ClientCollectorData client_collector_data_list = 11;
+}

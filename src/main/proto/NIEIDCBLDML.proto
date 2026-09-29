@@ -1,0 +1,13 @@
+// Recovered from NIEIDCBLDMLOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NIEIDCBLDML;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NIEIDCBLDMLOuterClass";
+
+enum NIEIDCBLDML {
+  NIEIDCBLDML_SandwormLevelNotOpen = 0;
+  NIEIDCBLDML_SandwormLevelPreQuest = 1;
+  NIEIDCBLDML_SandwormLevelStart = 2;
+  NIEIDCBLDML_SandwormLevelSequelQuest = 3;
+}

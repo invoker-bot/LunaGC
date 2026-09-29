@@ -1,0 +1,16 @@
+// Recovered from GHNIPGHEPFCOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GHNIPGHEPFC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GHNIPGHEPFCOuterClass";
+import "BEHMNJDHOBM.proto";
+
+message GHNIPGHEPFC {
+  .recovered.p_BEHMNJDHOBM.BEHMNJDHOBM detail_info = 4;
+  bool is_open = 12;
+  uint32 ACJFNLCELDN = 6;
+  uint32 level_id = 7;
+  uint32 DPEKCEIHCAJ = 15;
+  uint32 PCFKHMFDNPI = 2;
+}

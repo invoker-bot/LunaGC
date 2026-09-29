@@ -1,0 +1,11 @@
+// Recovered from OEBEHAKIPCGOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OEBEHAKIPCG;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OEBEHAKIPCGOuterClass";
+import "JLDEGMCAOCM.proto";
+
+message OEBEHAKIPCG {
+  repeated .recovered.p_JLDEGMCAOCM.JLDEGMCAOCM GGOKKDEKPJM = 2;
+}

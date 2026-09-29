@@ -1,0 +1,10 @@
+// Recovered from BOMFPFEPDPJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BOMFPFEPDPJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BOMFPFEPDPJOuterClass";
+
+message BOMFPFEPDPJ {
+  repeated uint32 ECNOPBCOGEG = 1;
+}

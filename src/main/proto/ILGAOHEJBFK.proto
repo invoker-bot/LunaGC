@@ -1,0 +1,12 @@
+// Recovered from ILGAOHEJBFKOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ILGAOHEJBFK;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ILGAOHEJBFKOuterClass";
+
+message ILGAOHEJBFK {
+  uint32 level_id = 14;
+  bool is_finish = 4;
+  bool is_open = 12;
+}

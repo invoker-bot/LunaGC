@@ -1,0 +1,14 @@
+// Recovered from IMPMPMNGLAGOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_IMPMPMNGLAG;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "IMPMPMNGLAGOuterClass";
+
+message IMPMPMNGLAG {
+  uint32 open_time = 4;
+  bool is_open = 14;
+  bool is_finish = 10;
+  uint32 PGPFDBDBJCO = 15;
+  uint32 stage_id = 2;
+}

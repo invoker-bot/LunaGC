@@ -1,0 +1,19 @@
+// Recovered from CAHBFLMLDMHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_CAHBFLMLDMH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "CAHBFLMLDMHOuterClass";
+import "Uint32Pair.proto";
+import "GFBEALGFENJ.proto";
+
+message CAHBFLMLDMH {
+  repeated .Uint32Pair FJONDHEKJIF = 13;
+  repeated .Uint32Pair IFBNCAHOLFK = 2;
+  repeated .recovered.p_GFBEALGFENJ.GFBEALGFENJ LDDLFIMHEHK = 4;
+  repeated uint32 HAHBOEHDBMF = 6;
+  bool DHEGCNBIKIO = 5;
+  uint32 HNMMGEABDMD = 11;
+  uint32 JGKJPMFKJAK = 9;
+  uint32 EIIOMPAFINI = 12;
+}

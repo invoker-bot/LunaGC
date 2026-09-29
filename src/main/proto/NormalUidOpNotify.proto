@@ -1,0 +1,13 @@
+// Recovered from NormalUidOpNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NormalUidOpNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NormalUidOpNotifyOuterClass";
+
+message NormalUidOpNotify {
+  repeated uint32 param_uid_list = 7;
+  repeated uint32 param_list = 5;
+  uint32 param_index = 9;
+  uint32 duration = 1;
+}

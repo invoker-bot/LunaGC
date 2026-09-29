@@ -1,0 +1,13 @@
+// Recovered from WorldRoutineInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_WorldRoutineInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "WorldRoutineInfoOuterClass";
+
+message WorldRoutineInfo {
+  uint32 finish_progress = 2;
+  uint32 progress = 4;
+  uint32 routine_id = 9;
+  bool is_finished = 5;
+}

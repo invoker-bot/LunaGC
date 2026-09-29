@@ -1,0 +1,14 @@
+// Recovered from PFDPCOLLPFAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_PFDPCOLLPFA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PFDPCOLLPFAOuterClass";
+
+message PFDPCOLLPFA {
+  uint32 AMPKJHBGEJN = 13;
+  uint32 GMDBFFDMOBD = 6;
+  uint32 LLFDPICDDKN = 9;
+  uint32 dungeon_id = 4;
+  uint32 EPGJOMPLFPP = 15;
+}

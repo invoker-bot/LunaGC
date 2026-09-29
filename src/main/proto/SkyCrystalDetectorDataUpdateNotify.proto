@@ -1,0 +1,11 @@
+// Recovered from SkyCrystalDetectorDataUpdateNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_SkyCrystalDetectorDataUpdateNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "SkyCrystalDetectorDataUpdateNotifyOuterClass";
+import "SkyCrystalDetectorData.proto";
+
+message SkyCrystalDetectorDataUpdateNotify {
+  .SkyCrystalDetectorData sky_crystal_detector_data = 2;
+}

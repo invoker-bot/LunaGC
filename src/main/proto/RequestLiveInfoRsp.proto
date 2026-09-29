@@ -1,0 +1,13 @@
+// Recovered from RequestLiveInfoRspOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_RequestLiveInfoRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "RequestLiveInfoRspOuterClass";
+
+message RequestLiveInfoRsp {
+  string live_url = 8;
+  string spare_live_url = 10;
+  int32 retcode = 3;
+  uint32 live_id = 15;
+}

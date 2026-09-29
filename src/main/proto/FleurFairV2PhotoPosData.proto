@@ -1,0 +1,15 @@
+// Recovered from FleurFairV2PhotoPosDataOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FleurFairV2PhotoPosData;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FleurFairV2PhotoPosDataOuterClass";
+import "Vector.proto";
+
+message FleurFairV2PhotoPosData {
+  uint32 open_time = 10;
+  uint32 pos_id = 12;
+  bool is_view = 8;
+  bool is_open = 11;
+  .Vector center = 1;
+}

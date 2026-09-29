@@ -1,0 +1,17 @@
+// Recovered from FACLMOLGFBEOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FACLMOLGFBE;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FACLMOLGFBEOuterClass";
+
+message FACLMOLGFBE {
+  repeated uint32 CEFFEOBPIEP = 5;
+  repeated uint32 BPCGDJKEGDH = 9;
+  repeated uint64 avatar_guid_list = 13;
+  uint32 ugc_guid = 12;
+  uint32 level_id = 11;
+  uint32 IOEGCDKFHGN = 15;
+  bool is_open = 6;
+  bool is_finish = 4;
+}

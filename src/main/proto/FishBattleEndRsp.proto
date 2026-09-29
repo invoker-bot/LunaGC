@@ -1,0 +1,19 @@
+// Recovered from FishBattleEndRspOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FishBattleEndRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FishBattleEndRspOuterClass";
+import "ItemParam.proto";
+import "FishNoRewardReason.proto";
+import "FishBattleResult.proto";
+
+message FishBattleEndRsp {
+  repeated .ItemParam ONANGNJBFLN = 12;
+  repeated .ItemParam PPIONMHHHBK = 4;
+  repeated .ItemParam OAFHFLJPOOA = 7;
+  .recovered.p_FishNoRewardReason.FishNoRewardReason no_reward_reason = 13;
+  .recovered.p_FishBattleResult.FishBattleResult battle_result = 10;
+  int32 retcode = 6;
+  bool is_got_reward = 11;
+}

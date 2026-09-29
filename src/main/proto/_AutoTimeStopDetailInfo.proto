@@ -1,0 +1,11 @@
+// Recovered from _AutoTimeStopDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__AutoTimeStopDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_AutoTimeStopDetailInfoOuterClass";
+import "AJKHPLDCLEO.proto";
+
+message _AutoTimeStopDetailInfo {
+  repeated .AJKHPLDCLEO level_info_list = 13;
+}

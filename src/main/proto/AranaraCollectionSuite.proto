@@ -1,0 +1,12 @@
+// Recovered from AranaraCollectionSuiteOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AranaraCollectionSuite;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AranaraCollectionSuiteOuterClass";
+import "AranaraCollectionState.proto";
+
+message AranaraCollectionSuite {
+  map<uint32, .recovered.p_AranaraCollectionState.AranaraCollectionState> collection_id_state_map = 10;
+  uint32 collection_type = 7;
+}

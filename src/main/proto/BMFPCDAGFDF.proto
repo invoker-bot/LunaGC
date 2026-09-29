@@ -1,0 +1,15 @@
+// Recovered from BMFPCDAGFDFOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BMFPCDAGFDF;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BMFPCDAGFDFOuterClass";
+
+message BMFPCDAGFDF {
+  repeated uint32 DMLFLBGGPOG = 9;
+  bool OOCHMBFLABG = 11;
+  bool is_open = 12;
+  uint32 MFGDBBKLDGB = 6;
+  uint32 open_time = 8;
+  uint32 score = 3;
+}

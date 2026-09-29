@@ -1,0 +1,14 @@
+// Recovered from JGHBHDIFECIOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_JGHBHDIFECI;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "JGHBHDIFECIOuterClass";
+
+enum JGHBHDIFECI {
+  JGHBHDIFECI_EXPEDITION_NONE = 0;
+  JGHBHDIFECI_EXPEDITION_STARTED = 1;
+  JGHBHDIFECI_EXPEDITION_FINISHED = 2;
+  JGHBHDIFECI_EXPEDITION_REWARDED = 3;
+  JGHBHDIFECI_EXPEDITION_LOCKED = 4;
+}

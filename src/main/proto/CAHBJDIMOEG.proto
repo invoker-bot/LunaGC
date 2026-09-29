@@ -1,0 +1,11 @@
+// Recovered from CAHBJDIMOEGOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_CAHBJDIMOEG;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "CAHBJDIMOEGOuterClass";
+
+message CAHBJDIMOEG {
+  uint32 ugc_guid = 2;
+  uint32 AFHFEKMFIIL = 9;
+}

@@ -1,0 +1,13 @@
+// Recovered from CatCafeDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_CatCafeDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "CatCafeDetailInfoOuterClass";
+import "KKENNBMGAPG.proto";
+import "KECPBEOHOKK.proto";
+
+message CatCafeDetailInfo {
+  repeated .recovered.p_KKENNBMGAPG.KKENNBMGAPG KGNIIAEELKP = 14;
+  repeated .recovered.p_KECPBEOHOKK.KECPBEOHOKK KGMOMLFDJMM = 4;
+}

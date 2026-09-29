@@ -1,0 +1,14 @@
+// Recovered from ViewCodexRspOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ViewCodexRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ViewCodexRspOuterClass";
+import "CodexTypeData.proto";
+
+message ViewCodexRsp {
+  repeated uint32 recent_viewed_pushtips_list = 12;
+  repeated uint32 OKJJHEFMALJ = 8;
+  repeated .CodexTypeData type_data_list = 10;
+  int32 retcode = 11;
+}

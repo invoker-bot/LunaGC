@@ -1,0 +1,13 @@
+// Recovered from MDPMJOECKBCOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MDPMJOECKBC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MDPMJOECKBCOuterClass";
+
+message MDPMJOECKBC {
+  bool is_open = 7;
+  uint32 level_id = 6;
+  uint32 FMHAPOLMKGI = 8;
+  bool is_finish = 1;
+}

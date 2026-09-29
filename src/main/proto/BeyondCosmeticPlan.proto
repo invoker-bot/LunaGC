@@ -1,0 +1,13 @@
+// Recovered from BeyondCosmeticPlanOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BeyondCosmeticPlan;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BeyondCosmeticPlanOuterClass";
+import "BeyondCosmeticSet.proto";
+
+message BeyondCosmeticPlan {
+  uint32 plan_index = 1;
+  .recovered.p_BeyondCosmeticSet.BeyondCosmeticSet costume_set = 2;
+  .recovered.p_BeyondCosmeticSet.BeyondCosmeticSet makeup_set = 3;
+}

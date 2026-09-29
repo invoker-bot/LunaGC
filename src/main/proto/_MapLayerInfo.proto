@@ -1,0 +1,12 @@
+// Recovered from _MapLayerInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__MapLayerInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_MapLayerInfoOuterClass";
+
+message _MapLayerInfo {
+  repeated uint32 _unlock_map_layer_list = 10;
+  repeated uint32 CGAHBCDBIGF = 11;
+  repeated uint32 _unlock_map_layer_group_list = 15;
+}

@@ -1,0 +1,14 @@
+// Recovered from EJPPDNPHJEHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_EJPPDNPHJEH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "EJPPDNPHJEHOuterClass";
+
+message EJPPDNPHJEH {
+  uint32 DAFFDKLNONJ = 13;
+  uint32 MFEBILGOLJE = 1;
+  uint32 ECBAKOMOILD = 4;
+  uint32 guid = 2;
+  uint32 card_id = 15;
+}

@@ -1,0 +1,13 @@
+// Recovered from OGHIAGCBLJGOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_OGHIAGCBLJG;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "OGHIAGCBLJGOuterClass";
+
+message OGHIAGCBLJG {
+  uint32 level_id = 2;
+  bool is_open = 5;
+  bool is_finish = 6;
+  uint32 NHEFNKONPEI = 10;
+}

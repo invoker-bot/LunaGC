@@ -1,0 +1,12 @@
+// Recovered from BCGDHDFEJPLOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_BCGDHDFEJPL;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BCGDHDFEJPLOuterClass";
+
+message BCGDHDFEJPL {
+  uint32 max_combo = 8;
+  bool HDIKBBEMGGA = 6;
+  uint32 ugc_guid = 7;
+}

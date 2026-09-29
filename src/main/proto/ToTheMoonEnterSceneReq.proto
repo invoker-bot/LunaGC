@@ -1,0 +1,13 @@
+// Recovered from ToTheMoonEnterSceneReqOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_ToTheMoonEnterSceneReq;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ToTheMoonEnterSceneReqOuterClass";
+
+message ToTheMoonEnterSceneReq {
+  uint32 scene_id = 11;
+  uint32 NCBKKEAFGKL = 38670;
+  uint32 JJDKCJNCKEK = 58570;
+  uint32 version = 12;
+}

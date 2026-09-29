@@ -1,0 +1,14 @@
+// Recovered from NPFFFFNBABNOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NPFFFFNBABN;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NPFFFFNBABNOuterClass";
+import "GALEFHAGNCD.proto";
+import "Uint32Pair.proto";
+
+message NPFFFFNBABN {
+  repeated .recovered.p_GALEFHAGNCD.GALEFHAGNCD GGOKKDEKPJM = 14;
+  repeated uint32 JCEJPHDIMCC = 10;
+  repeated .Uint32Pair NMEBLEAKFPD = 5;
+}

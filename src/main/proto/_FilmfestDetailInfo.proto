@@ -1,0 +1,16 @@
+// Recovered from _FilmfestDetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__FilmfestDetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_FilmfestDetailInfoOuterClass";
+import "FMNPNEKAICI.proto";
+import "NEHIBHKFNEG.proto";
+import "NPLDPCGLKMK.proto";
+
+message _FilmfestDetailInfo {
+  repeated .recovered.p_NEHIBHKFNEG.NEHIBHKFNEG JLMEBPAKPNE = 5;
+  bool JLNGANGGJLH = 9;
+  repeated .NPLDPCGLKMK OFIOKIABKNN = 11;
+  repeated .FMNPNEKAICI HGNLKDCGLBO = 12;
+}

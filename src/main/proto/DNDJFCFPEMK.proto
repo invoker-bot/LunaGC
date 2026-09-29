@@ -1,0 +1,11 @@
+// Recovered from DNDJFCFPEMKOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DNDJFCFPEMK;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DNDJFCFPEMKOuterClass";
+import "OHLHICJIAFO.proto";
+
+message DNDJFCFPEMK {
+  .recovered.p_OHLHICJIAFO.OHLHICJIAFO NJDKKBAHHBD = 6;
+}

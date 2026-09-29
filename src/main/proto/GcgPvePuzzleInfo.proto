@@ -1,0 +1,11 @@
+// Recovered from GcgPvePuzzleInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GcgPvePuzzleInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GcgPvePuzzleInfoOuterClass";
+
+message GcgPvePuzzleInfo {
+  bool HOGJFCLMMPC = 9;
+  repeated uint32 CPJEMFGLLKE = 11;
+}

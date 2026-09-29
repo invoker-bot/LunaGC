@@ -1,0 +1,11 @@
+// Recovered from FreeCharReqOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FreeCharReq;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FreeCharReqOuterClass";
+
+message FreeCharReq {
+  uint32 activity_id = 8;
+  uint32 reward_id = 14;
+}

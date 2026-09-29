@@ -1,0 +1,12 @@
+// Recovered from CKOKFBGOHPHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_CKOKFBGOHPH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "CKOKFBGOHPHOuterClass";
+import "PEDOKCODPNB.proto";
+
+message CKOKFBGOHPH {
+  repeated .recovered.p_PEDOKCODPNB.PEDOKCODPNB detail_info = 6;
+  uint32 level_id = 11;
+}

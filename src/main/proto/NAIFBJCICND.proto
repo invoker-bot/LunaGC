@@ -1,0 +1,12 @@
+// Recovered from NAIFBJCICNDOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_NAIFBJCICND;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "NAIFBJCICNDOuterClass";
+
+message NAIFBJCICND {
+  uint32 PDDNMMICEML = 7;
+  uint32 CKEAKJPHHBC = 2;
+  uint32 KFGGOJMLNOP = 5;
+}

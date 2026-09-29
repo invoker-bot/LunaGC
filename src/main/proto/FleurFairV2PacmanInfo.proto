@@ -1,0 +1,12 @@
+// Recovered from FleurFairV2PacmanInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FleurFairV2PacmanInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FleurFairV2PacmanInfoOuterClass";
+import "FleurFairV2StageData.proto";
+
+message FleurFairV2PacmanInfo {
+  uint32 AIAIFMJPEBO = 5;
+  repeated .recovered.p_FleurFairV2StageData.FleurFairV2StageData stage_data_list = 13;
+}

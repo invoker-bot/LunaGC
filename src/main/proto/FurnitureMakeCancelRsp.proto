@@ -1,0 +1,13 @@
+// Recovered from FurnitureMakeCancelRspOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_FurnitureMakeCancelRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "FurnitureMakeCancelRspOuterClass";
+import "FurnitureMakeSlot.proto";
+
+message FurnitureMakeCancelRsp {
+  .FurnitureMakeSlot furniture_make_slot = 14;
+  int32 retcode = 10;
+  uint32 make_id = 2;
+}

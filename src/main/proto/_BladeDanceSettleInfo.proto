@@ -1,0 +1,13 @@
+// Recovered from _BladeDanceSettleInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__BladeDanceSettleInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_BladeDanceSettleInfoOuterClass";
+
+message _BladeDanceSettleInfo {
+  bool is_new_record = 1;
+  uint32 cost_time = 9;
+  uint32 level_id = 13;
+  uint32 kill_monster_num = 14;
+}

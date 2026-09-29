@@ -1,0 +1,20 @@
+// Recovered from IHMEPOBHBNDOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_IHMEPOBHBND;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "IHMEPOBHBNDOuterClass";
+import "Vector.proto";
+
+message IHMEPOBHBND {
+  .Vector AFFAELMAHHG = 14;
+  uint32 CHPGKCMHGAO = 15;
+  bool JNBMFABFHGP = 12;
+  bool is_open = 7;
+  uint32 region_id = 3;
+  uint32 ICHFEHAGGOM = 9;
+  uint32 open_time = 13;
+  uint32 scene_id = 5;
+  uint32 GFKDIIJGAJM = 10;
+  float DGDCJNEEGAN = 4;
+}

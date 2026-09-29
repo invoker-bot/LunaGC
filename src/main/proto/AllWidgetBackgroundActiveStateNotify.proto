@@ -1,0 +1,10 @@
+// Recovered from AllWidgetBackgroundActiveStateNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_AllWidgetBackgroundActiveStateNotify;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AllWidgetBackgroundActiveStateNotifyOuterClass";
+
+message AllWidgetBackgroundActiveStateNotify {
+  repeated uint32 background_active_widget_list = 4;
+}

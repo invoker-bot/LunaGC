@@ -1,0 +1,14 @@
+// Recovered from GCGStartChallengeByCheckRewardRspOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_GCGStartChallengeByCheckRewardRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GCGStartChallengeByCheckRewardRspOuterClass";
+import "JFEBHPOHIBE.proto";
+
+message GCGStartChallengeByCheckRewardRsp {
+  repeated uint32 JHKIIFBAHMC = 1;
+  uint32 level_id = 7;
+  int32 retcode = 13;
+  uint32 config_id = 10;
+}

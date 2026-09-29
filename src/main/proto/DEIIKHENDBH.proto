@@ -1,0 +1,16 @@
+// Recovered from DEIIKHENDBHOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_DEIIKHENDBH;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "DEIIKHENDBHOuterClass";
+import "Vector.proto";
+
+message DEIIKHENDBH {
+  .Vector pos = 15;
+  uint32 id = 12;
+  uint32 cur_progress = 9;
+  uint32 open_time = 7;
+  bool is_finished = 2;
+  uint32 total_progress = 11;
+}

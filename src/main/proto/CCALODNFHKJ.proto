@@ -1,0 +1,13 @@
+// Recovered from CCALODNFHKJOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_CCALODNFHKJ;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "CCALODNFHKJOuterClass";
+
+message CCALODNFHKJ {
+  uint32 max_score = 5;
+  uint32 level_id = 7;
+  bool is_open = 9;
+  uint32 cost_time = 13;
+}

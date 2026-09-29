@@ -1,0 +1,15 @@
+// Recovered from MEHNIHGMLKCOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MEHNIHGMLKC;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MEHNIHGMLKCOuterClass";
+import "KAJIHEDPBND.proto";
+
+message MEHNIHGMLKC {
+  repeated uint32 LOEACILCNMP = 9;
+  repeated uint32 GGNMMBJCADO = 6;
+  .recovered.p_KAJIHEDPBND.KAJIHEDPBND IDKPEMLABKK = 10;
+  uint32 BLMLKOLOILB = 13;
+  uint32 area_id = 5;
+}

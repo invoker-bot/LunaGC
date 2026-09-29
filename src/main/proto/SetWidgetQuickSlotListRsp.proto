@@ -1,0 +1,12 @@
+// Recovered from SetWidgetQuickSlotListRspOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_SetWidgetQuickSlotListRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "SetWidgetQuickSlotListRspOuterClass";
+
+message SetWidgetQuickSlotListRsp {
+  repeated uint32 material_id_list = 6;
+  int32 retcode = 14;
+  uint32 Unk3700_EHHHNEBOJIL = 5;
+}

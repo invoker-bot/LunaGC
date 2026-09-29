@@ -1,0 +1,17 @@
+// Recovered from _GreatFestivalV2DetailInfoOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p__GreatFestivalV2DetailInfo;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "_GreatFestivalV2DetailInfoOuterClass";
+import "IJNAPHNIHJH.proto";
+import "IPPDBOLOOIB.proto";
+import "OAKCNCLBBMI.proto";
+import "PIEANKFJENC.proto";
+
+message _GreatFestivalV2DetailInfo {
+  .IPPDBOLOOIB GOFMMGFEDBI = 2;
+  .OAKCNCLBBMI CLHOGMFANFJ = 12;
+  .IJNAPHNIHJH HNHIEBFPFIM = 13;
+  .recovered.p_PIEANKFJENC.PIEANKFJENC FPNIAMHNDON = 14;
+}

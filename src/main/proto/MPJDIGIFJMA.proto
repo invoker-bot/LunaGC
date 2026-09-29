@@ -1,0 +1,11 @@
+// Recovered from MPJDIGIFJMAOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+syntax = "proto3";
+
+package recovered.p_MPJDIGIFJMA;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MPJDIGIFJMAOuterClass";
+
+message MPJDIGIFJMA {
+  repeated uint32 PJABINOBEJL = 1;
+  map<uint32, uint32> EBCJOCPDGID = 11;
+}
