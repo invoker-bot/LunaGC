@@ -80,8 +80,10 @@ public final class Grasscutter {
         // Attempt to update configuration.
         ConfigContainer.updateConfig();
 
-        // Apply the local checkout after config migration, which may reload config.json.
+        // Apply environment overrides after config migration, which may reload config.json.
         config.applyResourceDirectoryOverride(System.getenv("LUNAGC_RESOURCES_DIR"));
+        config.applyDatabaseUriOverride(System.getenv("LUNAGC_MONGO_URI"));
+        config.applyPublicAddressOverride(System.getenv("LUNAGC_PUBLIC_ADDRESS"));
 
         Grasscutter.getLogger().info("Loading Grasscutter...");
 

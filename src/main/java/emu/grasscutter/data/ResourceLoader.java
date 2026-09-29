@@ -36,7 +36,11 @@ import lombok.*;
 public final class ResourceLoader {
 
     private static final Set<String> loadedResources = new CopyOnWriteArraySet<>();
-    private static boolean loadedAll = false;
+    private static volatile boolean loadedAll = false;
+
+    public static boolean isLoadedAll() {
+        return loadedAll;
+    }
 
     public static List<Class<?>> getResourceDefClasses() {
         Set<?> classes = Grasscutter.reflector.getSubTypesOf(GameResource.class);

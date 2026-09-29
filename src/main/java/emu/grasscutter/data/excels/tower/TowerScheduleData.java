@@ -3,6 +3,7 @@ package emu.grasscutter.data.excels.tower;
 import com.google.gson.annotations.SerializedName;
 import emu.grasscutter.data.*;
 import java.util.List;
+import java.util.Objects;
 
 @ResourceType(name = "TowerScheduleExcelConfigData.json")
 public class TowerScheduleData extends GameResource {
@@ -21,7 +22,10 @@ public class TowerScheduleData extends GameResource {
     public void onLoad() {
         super.onLoad();
         this.schedules =
-                this.schedules.stream().filter(item -> item.getFloorList().size() > 0).toList();
+                this.schedules.stream()
+                        .filter(Objects::nonNull)
+                        .filter(item -> item.getFloorList() != null && !item.getFloorList().isEmpty())
+                        .toList();
     }
 
     public int getScheduleId() {

@@ -1,0 +1,11 @@
+*
+!build.gradle
+!settings.gradle
+!lib/
+!lib/**
+!src/
+!src/**
+!resources/
+!resources/**
+src/generated/
+resources/.git

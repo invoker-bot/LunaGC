@@ -1,6 +1,6 @@
 # LunaGC 7.1.0
 
-A private server being migrated to the **CN Genshin Impact 7.1.0** client. A fork of girluh's
+A community server being migrated to the **CN Genshin Impact 7.1.0** client. A fork of girluh's
 [LunaGC](https://github.com/girluh/LunaGC), itself a fork of Grasscutter, reworked
 for the 7.1 protocol while retaining the CN launcher's login chain.
 
@@ -25,6 +25,31 @@ Java into `build/generated/source/proto`; generated Java is not tracked in Git.
 Very WIP — expect broken things. What is implemented is listed below; everything
 else is not.
 
+## Choose how to run it
+
+| Mode | Command | Resources | State |
+| --- | --- | --- | --- |
+| Windows development | `task dev` | A separate checkout selected by `.env.local`, or the `resources/` submodule | Local MongoDB and working directory |
+| Docker Compose runtime | `docker compose up --build -d` | Pinned `resources/` submodule copied into the image | Named MongoDB and server volumes |
+
+For a fresh checkout, install Git LFS, clone with submodules, and fetch the
+resource files:
+
+```sh
+git lfs install
+git clone --recurse-submodules https://github.com/invoker-bot/LunaGC.git
+cd LunaGC
+git -C resources lfs pull
+```
+
+Then follow [Windows development](#first-time-setup) or
+[Docker Compose runtime](#docker-compose-runtime). The runtime build needs
+Docker Compose and enough disk space for the resource checkout and image.
+The client protocol is still being migrated; a successful server start does
+not establish compatibility with every 7.1 client feature.
+The signing and client-compatibility keys committed in this repository are
+public test material; do not reuse them for unrelated accounts or services.
+
 ## Note from the maintainer
 
 This is a fork from girluh's [LunaGC](https://github.com/girluh/LunaGC). VERY WIP, so expect many bugs.
@@ -34,7 +59,7 @@ This is possibly the only public PS with updated mob and gadget spawns! (Up to V
 
 Contribute if you want/can...
 
-# 7.0 validation history
+## 7.0 validation history
 
 - **The CN 7.0 login chain end to end**: the dispatch server serves the CN 7.0
   SDK's session routes and a `RegionInfo` with the right `game_biz`, so the
@@ -179,7 +204,7 @@ Contribute if you want/can...
 - Updated mob and gadget spawns up to version 5.4, drops, the inbox, widgets, and
   the weekly boss.
 
-# What does not work (yet)
+## What does not work (yet)
 
 The honest list, because "WIP" in the header is doing real work here. These are
 known-broken, not unknown:
@@ -211,7 +236,7 @@ known-broken, not unknown:
   `UnhandledCombatType: COMBAT_SPECIAL_MOTION_INFO typeVal=19` appear in the
   client log at a low rate. Not crash-grade, and not yet investigated.
 
-# Requirements
+## Requirements
 
 - **[Java 17](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)**
   or newer, on `PATH`.
@@ -231,15 +256,16 @@ known-broken, not unknown:
 - **[Go Task](https://taskfile.dev/)** — the runner every command below goes
   through. On Windows, `winget install Task.Task` or `scoop install task`.
 
-# First-time setup
+## First-time setup
 
-```
-git lfs install
-git clone --recurse-submodules <LunaGC-repository-url>
+Use the clone commands above. An existing checkout can instead run:
+
+```sh
+git submodule update --init patch resources
+git -C resources lfs pull
 ```
 
-For an existing checkout, run `git submodule update --init patch resources` and
-`git -C resources lfs pull`. The resources submodule is pinned to a commit
+The resources submodule is pinned to a commit
 of [LunaGC-Resources](https://github.com/invoker-bot/LunaGC-Resources).
 
 Then:
@@ -272,7 +298,38 @@ git commit -m "Update resources submodule"
 A deployment then uses that same pinned commit via
 `git submodule update --init resources`.
 
-# Building
+### Docker Compose runtime
+
+The Compose runtime builds the server jar and copies the checked-out resources
+submodule into the image. Initialize Git LFS before building; the Dockerfile
+rejects resource pointer files. The runtime does not read `.env.local`.
+
+```
+git lfs install
+git submodule update --init resources
+git -C resources lfs pull
+docker compose up --build -d
+docker compose logs -f server
+```
+
+Check container health with `docker compose ps`. The HTTP service should
+respond on `http://127.0.0.1:8088/` once startup finishes. Use
+`docker compose down` to stop the stack without deleting its data volumes.
+
+Set `LUNAGC_PUBLIC_ADDRESS` in `.env` (or in the shell) to the IP address or DNS
+name clients use to reach the machine. The default `127.0.0.1` is for testing
+on the same machine. Compose publishes HTTP on TCP 8088 and the game server on
+UDP 22101. MongoDB is reachable only by the server container. MongoDB data and
+server-generated config/data live in separate named volumes and survive
+`docker compose down`; `docker compose down -v` deletes them.
+
+After changing the resource submodule commit or its files, run
+`git -C resources lfs pull` and `docker compose up --build -d` again. The image
+holds its own copy of the resources, so an existing container does not see later
+checkout changes. This Compose MongoDB has its own data volume; it does not use the
+`luna-mongo` container started by the local `task serve` workflow.
+
+## Building
 
 ```
 task build
@@ -300,7 +357,7 @@ To skip handbook generation, build the jar by hand:
 The handbook is generated as `GM Handbook.txt` / `handbook.html` in the repo
 root; both are gitignored.
 
-# Running the server
+## Running the server
 
 ```
 task serve          # start MongoDB's container check + the server, detached
@@ -334,7 +391,7 @@ account create <name> <uid>
 There is no web panel by default. If you closed that window, the same command
 works from any shell that has the server's stdin; the console is the easy option.
 
-# Patching the client
+## Patching the client
 
 ```
 task patch          # build the DLL if stale, then install it into the client
@@ -385,7 +442,7 @@ unpatched without anyone telling you.
 below). From the command line, just run `task patch` again — it detects the
 stranded copy and re-deploys.
 
-# Developer debug sessions — `task dev`
+## Developer debug sessions — `task dev`
 
 ```
 task dev            # server in -dev mode + patch check + client + the monitor
@@ -404,7 +461,7 @@ the task; it stops when the game does.
 Pass `-SkipPatchCheck` to launch with the client as-is (`task dev -SkipPatchCheck`),
 useful after a manual `task patch`.
 
-## Developer mode — `-dev`
+### Developer mode — `-dev`
 
 `-dev` is `-debug` plus instrumentation. Beyond DEBUG logging it arms the
 **unimplemented-request check**: every packet the server decides it probably does
@@ -440,7 +497,7 @@ registrar. A plugin that implements the packet itself can cancel the event to st
 the report — `HandlerPriority.LOW` means a plugin that claims the request runs
 first.
 
-## What the monitor records
+### What the monitor records
 
 The monitor watches the game process and the server log until the game exits,
 then writes a report. Everything lands in `debug/` (gitignored):
@@ -473,7 +530,7 @@ The report also carries the game's **exit code as an eight-digit hex**
 session started** — so a machine with a long history of old crashes does not
 report a false `CRASHED` — and the number of new crash dumps.
 
-## Crash and error detection, and how it triggers a fix
+### Crash and error detection, and how it triggers a fix
 
 The monitor is built around one observation: a private server's most common
 silent failure is a packet the server does not handle. So the monitor separates
@@ -523,7 +580,7 @@ stranded in a slot (the "client is damaged next launch" condition), the monitor
 re-runs the patch deploy itself and logs it to `autofix.log`. Everything else is
 reported as evidence for you, not guessed at.
 
-## Reading a session
+### Reading a session
 
 ```
 task dev:stop       # closes the game; the monitor writes the report and exits
@@ -558,7 +615,7 @@ game is still up reads as zero bytes. That is buffering, not a capture failure �
 `all.log` has the same lines, since every bucket is classified out of the same
 ingested stream. Wait for the report.
 
-## Bucket reset warnings
+### Bucket reset warnings
 
 Each session starts by erasing the buckets from the previous one, so `error.log`
 is *this* session's errors and not a rerun of the last session's stack traces.
@@ -597,7 +654,7 @@ The moved-aside files are gitignored alongside the rest of `debug/`. Delete them
 once you have read them; keeping them is only useful when two sessions need
 comparing.
 
-## Questing must stay enabled
+### Questing must stay enabled
 
 `server.game.gameOptions.questing.enabled` defaults to **`true`** and should stay
 that way. With it off, `PacketQuestListNotify` and `PacketFinishedParentQuestNotify`
@@ -613,7 +670,7 @@ cutscenes.
 `useEncryption` and `useInRouting` should both be `false`; they already are by
 default.
 
-# Artifact shop
+## Artifact shop
 
 Every official 5-star artifact piece - 290 of them, the five slots of all 62 released sets - is on
 sale in the general goods store (Blanche's *Second Life*, next to the fountain in Mondstadt).
@@ -641,7 +698,7 @@ Tune it under `server.game.gameOptions.artifactShop` in `config.json`:
 
 Setting the last three to `1`, `1` and `0` gives you plain, unweighted domain rolls.
 
-# Troubleshooting
+## Troubleshooting
 
 - **"the client is damaged"** — the client's integrity check saw a patched file it
   does not expect. Run `task patch:status`. If the passport slot or the
@@ -679,7 +736,7 @@ Setting the last three to `1`, `1` and `0` gives you plain, unweighted domain ro
   read `UNKNOWN (<number>)` rather than a name — the 7.0 dump has no name for
   them, and the number is what you search `PacketOpcodes` for.
 
-# Repository layout
+## Repository layout
 
 ```
 patch/          Rust cdylib -> ext.dll, the client patch (git submodule)
@@ -697,7 +754,7 @@ Taskfile.yml    the task definitions
 Everything in `tools/` that the Taskfile invokes is named without a leading
 underscore; the `_`-prefixed files are ad-hoc analysis scratch and are gitignored.
 
-# Credit
+## Credit
 
 girluh's [LunaGC](https://github.com/girluh/LunaGC)
 

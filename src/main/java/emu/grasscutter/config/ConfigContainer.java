@@ -94,6 +94,24 @@ public class ConfigContainer {
         }
     }
 
+    /** Points both datastores at the MongoDB service used by the runtime. */
+    public void applyDatabaseUriOverride(String databaseUri) {
+        if (databaseUri != null && !databaseUri.isBlank()) {
+            var uri = databaseUri.trim();
+            databaseInfo.server.connectionUri = uri;
+            databaseInfo.game.connectionUri = uri;
+        }
+    }
+
+    /** Advertises an address reachable by clients outside the container. */
+    public void applyPublicAddressOverride(String publicAddress) {
+        if (publicAddress != null && !publicAddress.isBlank()) {
+            var address = publicAddress.trim();
+            server.http.accessAddress = address;
+            server.game.accessAddress = address;
+        }
+    }
+
     /* Option containers. */
 
     public static class Database {

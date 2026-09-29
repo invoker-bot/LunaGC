@@ -3,6 +3,7 @@ package emu.grasscutter.data.binout;
 import dev.morphia.annotations.Entity;
 import emu.grasscutter.data.GameData;
 import emu.grasscutter.game.quest.enums.QuestType;
+import java.math.BigInteger;
 import java.util.*;
 import lombok.Data;
 
@@ -18,7 +19,8 @@ public class MainQuestData {
 
     private SubQuestData[] subQuests;
     private List<TalkData> talks;
-    private long[] preloadLuaList;
+    // Resource hashes are unsigned 64-bit values and can exceed Long.MAX_VALUE.
+    private BigInteger[] preloadLuaList;
 
     public int getId() {
         return id;
@@ -50,6 +52,10 @@ public class MainQuestData {
 
     public List<TalkData> getTalks() {
         return talks;
+    }
+
+    public BigInteger[] getPreloadLuaList() {
+        return preloadLuaList;
     }
 
     public void onLoad() {
