@@ -1,5 +1,6 @@
 package emu.grasscutter.game.props.ItemUseAction;
 
+import emu.grasscutter.Grasscutter;
 import emu.grasscutter.data.GameData;
 import emu.grasscutter.data.common.ItemParamData;
 import emu.grasscutter.game.inventory.GameItem;
@@ -23,18 +24,28 @@ public class ItemUseOpenRandomChest extends ItemUseInt {
     @Override
     public boolean useItem(UseItemParams params) { // cash shop material bundles
         var data = params.player.getServer().getShopSystem().getShopChestData(this.i);
-        if (data == null) return false;
+        if (data == null) {
+            // ShopChest.v2.json has no entry for this chest id, so the item has no rewards to
+            // hand out. Name the id -- otherwise this only surfaces as a generic "item use
+            // failed" and the missing data key is impossible to find.
+            Grasscutter.getLogger().warn(
+                    "Item {} use failed: chest id {} has no ShopChest.v2.json entry.",
+                    params.usedItemId, this.i);
+            return false;
+        }
         var rewardItems = new ArrayList<GameItem>();
         var reliquaryItems = new ArrayList<ItemParamData>();
 
         for (var itemParamData : data) {
             var itemData = GameData.getItemDataMap().getOrDefault(itemParamData.getItemId(), null);
-            if (itemData != null) {
-                if (Objects.requireNonNull(itemData.getItemType()) == ItemType.ITEM_RELIQUARY) {
-                    reliquaryItems.add(itemParamData);
-                } else {
-                    rewardItems.add(new GameItem(itemParamData));
-                }
+            if (itemData == null) {
+                Grasscutter.getLogger().warn(
+                        "Chest {} rewards item {} which is not in the item data map; skipping.",
+                        this.i, itemParamData.getItemId());
+            } else if (Objects.requireNonNull(itemData.getItemType()) == ItemType.ITEM_RELIQUARY) {
+                reliquaryItems.add(itemParamData);
+            } else {
+                rewardItems.add(new GameItem(itemParamData));
             }
         }
 

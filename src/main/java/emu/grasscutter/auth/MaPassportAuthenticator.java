@@ -90,6 +90,70 @@ public class MaPassportAuthenticator {
     }
 }
     
+    public static LoginByPasswordResponseJson appLoginByMobileCaptcha(
+            LoginByMobileCaptchaRequestJson request) {
+        Grasscutter.getLogger().debug("ma-passport mobile-captcha login req detected");
+
+        if (request == null) {
+            Grasscutter.getLogger().error("Request is null");
+            return createLoginErrorResponse(-1, "Invalid request");
+        }
+
+        // 客户端字段名不固定，按优先级取第一个非空手机号
+        String encryptedMobile = null;
+        if (request.account != null && !request.account.isEmpty()) {
+            encryptedMobile = request.account;
+        } else if (request.mobile != null && !request.mobile.isEmpty()) {
+            encryptedMobile = request.mobile;
+        } else if (request.phone != null && !request.phone.isEmpty()) {
+            encryptedMobile = request.phone;
+        }
+        if (encryptedMobile == null) {
+            Grasscutter.getLogger().error("Missing mobile number");
+            return createLoginErrorResponse(-1, "Missing mobile number");
+        }
+
+        // 私服没有真实短信通道，一律放行，不校验验证码
+        try {
+            String mobile;
+            try {
+                mobile = RSADecryptionUtil.decrypt(encryptedMobile);
+            } catch (Exception e) {
+                Grasscutter.getLogger().error("Unable to decrypt mobile", e);
+                return createLoginErrorResponse(-10, "Unable to decrypt mobile");
+            }
+            Grasscutter.getLogger().info("Mobile-captcha login for: " + mobile);
+
+            Account account = DatabaseHelper.getAccountByName(mobile);
+
+            if (account == null && emu.grasscutter.config.Configuration.ACCOUNT.autoCreate) {
+                account = DatabaseHelper.createAccountWithUid(mobile, 0);
+                Grasscutter.getLogger().info("Auto-created account for: " + mobile);
+            }
+
+            if (account == null) {
+                Grasscutter.getLogger().info("Account not found: " + mobile);
+                return createLoginErrorResponse(-101, "Account or password error");
+            }
+
+            // 同 appLoginByPassword：每次登录都发一个全新的 session key 并同步落库
+            String sessionKey = account.generateV2SessionKey();
+            emu.grasscutter.database.DatabaseManager.getGameDatastore().save(account);
+
+            Grasscutter.getLogger().info("User " + mobile + " has successfully logged in (mobile captcha)");
+            LoginByPasswordResponseJson response = createLoginSuccessResponse(account);
+            response.data.user_info.mobile = mobile;
+            response.data.user_info.area_code = "+86";
+            return response;
+
+        } catch (Exception e) {
+            Grasscutter.getLogger().error("Exception: " + e.getClass().getName());
+            Grasscutter.getLogger().error("Message: " + e.getMessage());
+            e.printStackTrace();
+            return createLoginErrorResponse(-1, "Internal server error: " + e.getMessage());
+        }
+    }
+
     public static VerifySTokenResponseJson verifySToken(VerifySTokenRequestJson request) {
         try {
             Grasscutter.getLogger().debug("Ma-passport token verification for mid: " + request.mid);
@@ -101,18 +165,26 @@ public class MaPassportAuthenticator {
                 return createTokenErrorResponse(-101, "For account safety, please log in again");
             }
             
-            // Check if the session key matches the provided stoken.
+            // Check if the session key matches the provided token.
             // Lenient mode for private servers: if the stored key differs (e.g. the client
-            // cached a token from another server), adopt the client's stoken so the session
+            // cached a token from another server), adopt the client's token so the session
             // resume succeeds instead of failing with a "session key error".
+            String requestToken = request.getToken();
             String accountSessionKey = account.getSessionKey();
-            if (accountSessionKey == null || !accountSessionKey.equals(request.stoken)) {
+            if (requestToken == null) {
+                // The client sent neither a flat stoken nor a nested token. Adopting null would
+                // wipe the stored key and break every later resume, so keep the stored key and
+                // let the lenient path below accept the request.
+                Grasscutter.getLogger().warn(
+                        "verifySToken for account " + account.getUsername()
+                                + " carried no token; keeping stored session key");
+            } else if (accountSessionKey == null || !accountSessionKey.equals(requestToken)) {
                 Grasscutter.getLogger().info(
                         "Adopting stoken for account: " + account.getUsername()
                                 + " (old=" + (accountSessionKey == null ? "null" : accountSessionKey.substring(0, Math.min(12, accountSessionKey.length())))
-                                + " new=" + (request.stoken == null ? "null" : request.stoken.substring(0, Math.min(12, request.stoken.length())))
+                                + " new=" + requestToken.substring(0, Math.min(12, requestToken.length()))
                                 + ")");
-                account.setSessionKey(request.stoken);
+                account.setSessionKey(requestToken);
                 account.save();
             }
             

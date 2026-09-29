@@ -155,6 +155,38 @@ public final class AuthenticationHandler implements Router {
     }
 
     /**
+     * Handles the CN SDK's phone-number + SMS-captcha login.
+     *
+     * <p>The official endpoint accepts an RSA-encrypted mobile number and an SMS code,
+     * then issues a login token identical in shape to {@code loginByPassword}. The real
+     * server sends an SMS first; this private server never validates the captcha (there
+     * is no SMS channel), so the phone number alone identifies the account.
+     *
+     * <p>The client's exact field names are unobserved, so the raw body is logged at
+     * debug level and the request POJO accepts every plausible variant.
+     *
+     * @route /account/ma-cn-passport/app/loginByMobileCaptcha
+     */
+    private static void maPassportMobileCaptchaLogin(Context ctx) {
+        Grasscutter.getLogger().info("Ma-passport mobile-captcha login request from: " + Utils.address(ctx));
+        try {
+            String rawBodyData = ctx.body();
+            Grasscutter.getLogger().debug("Ma-passport mobile-captcha request body: " + rawBodyData);
+            var request = JsonUtils.decode(rawBodyData, LoginByMobileCaptchaRequestJson.class);
+            if (request == null) {
+                ctx.status(400).result("{\"retcode\":-1,\"message\":\"Invalid Request\",\"data\":null}");
+                return;
+            }
+            var response = MaPassportAuthenticator.appLoginByMobileCaptcha(request);
+            ctx.json(response);
+        } catch (Exception e) {
+            Grasscutter.getLogger().error("Error in Ma-Passport mobile-captcha login", e);
+            e.printStackTrace();
+            ctx.status(500).result("{\"retcode\":-1,\"message\":\"Internal server error\",\"data\":null}");
+        }
+    }
+
+    /**
      * Handles the CN SDK's session-token exchange call.
      *
      * <p>The official endpoint swaps a login token (token_type 1) for a game token
@@ -222,6 +254,7 @@ public final class AuthenticationHandler implements Router {
         javalin.post("/hk4e_cn/account/ma-passport/token/verifySToken", AuthenticationHandler::maPassportVerify);
         // ma-cn-passport (passport-api.mihoyo.com/account/ma-cn-passport/...) - 国服 SDK 实际请求路径
         javalin.post("/account/ma-cn-passport/app/loginByPassword", AuthenticationHandler::maPassportLogin);
+        javalin.post("/account/ma-cn-passport/app/loginByMobileCaptcha", AuthenticationHandler::maPassportMobileCaptchaLogin);
         javalin.post("/account/ma-cn-passport/token/verifySToken", AuthenticationHandler::maPassportVerify);
         // ma-cn-session (session-api.mihoyo.com/account/ma-cn-session/...) - 国服 SDK 实际请求路径。
         // 之前未注册，落到通配 handler 返回空 data，客户端拿不到 user_info/token。

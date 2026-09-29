@@ -22,13 +22,29 @@ public class HandlerGachaWishReq extends PacketHandler {
             return;
         }
 
+        PlayerGachaBannerInfo gachaInfo = session.getPlayer().getGachaInfo().getBannerInfo(banner);
+
+        // The client sends itemId 0 to cancel the Epitomized Path. Zero is never a rate-up item, so
+        // the validation below would bounce it with RET_GACHA_WISH_INVALID_ITEM and the path -- plus
+        // its Fate Points -- would stay set forever, with the client UI unable to clear it.
+        if (req.getItemId() == 0) {
+            gachaInfo.setWishItemId(0);
+            gachaInfo.setFailedChosenItemPulls(0);
+            session.send(
+                    new PacketGachaWishRsp(
+                            req.getGachaType(),
+                            req.getGachaScheduleId(),
+                            0,
+                            0,
+                            banner.getWishMaxProgress()));
+            return;
+        }
+
         // Only a featured 5-star of this banner can be chosen for the Epitomized Path.
         if (Arrays.stream(banner.getRateUpItems5()).noneMatch(id -> id == req.getItemId())) {
             session.send(new PacketGachaWishRsp(Retcode.RET_GACHA_WISH_INVALID_ITEM));
             return;
         }
-
-        PlayerGachaBannerInfo gachaInfo = session.getPlayer().getGachaInfo().getBannerInfo(banner);
 
         // Fate Points are only lost when the chosen item actually changes; re-picking the same one
         // keeps them.

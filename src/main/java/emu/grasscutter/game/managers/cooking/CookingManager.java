@@ -107,25 +107,34 @@ public class CookingManager extends BasePlayerManager {
     public void handlePlayerCookReq(PlayerCookReq req) {
         // Get info from the request.
         int recipeId = req.getRecipeId();
-        // qte_quality and cook_count are unnamed in the 7.0 dump and PlayerCookReq has four
-        // indistinguishable uint32s, so neither can be read. Assume a single perfect dish.
-        int quality = 0;
-        int count = 1;
         int avatar = req.getAssistAvatar();
 
-        // Record which of the four unnamed uint32s actually carries the QTE quality and the
-        // cook count, once per recipe, so the hardcoded values above can be retired.
-        if (loggedReqLayout.add(recipeId)) {
+        // The 7.0 client dump renamed both cooking quantities, but kept their roles:
+        // KLACBPCPCMJ (field 2) is how many dishes the client asked for -- 1 for a manual cook,
+        // the slider value for an auto cook -- and JJPABEHGMCH (field 15) is the QTE result,
+        // whose 1/2/3 select the recipe's 奇怪/普通/美味 output tiers.
+        int count = req.getKLACBPCPCMJ();
+        int quality = req.getJJPABEHGMCH();
+
+        // A cook always has to yield at least one dish; the client omits the field entirely
+        // only when it is broken, so never hand out a zero-count stack.
+        if (count < 1) {
+            count = 1;
+        }
+
+        // Trace the raw request once per recipe, and on every auto cook (count != 1), so the
+        // field mapping above stays verifiable from the logs.  DDACKLBMIKL/OLLOPKLIIAC are two
+        // 7.0-only context fields that are still unidentified.
+        if (loggedReqLayout.add(recipeId) || count != 1) {
             Grasscutter.getLogger()
                     .debug(
-                            "PlayerCookReq recipe={} assist={} f2={} f5={} f8={} f12={} f15={}",
+                            "PlayerCookReq recipe={} assist={} count={} quality={} f5={} f12={}",
                             recipeId,
                             avatar,
-                            req.getKLACBPCPCMJ(),
+                            count,
+                            quality,
                             req.getDDACKLBMIKL(),
-                            req.getRecipeId(),
-                            req.getOLLOPKLIIAC(),
-                            req.getJJPABEHGMCH());
+                            req.getOLLOPKLIIAC());
         }
 
         // Get recipe data.
@@ -146,7 +155,8 @@ public class CookingManager extends BasePlayerManager {
             return; // ref keeps going here, which would create the dish without paying for it
         }
 
-        // Get result item information.
+        // Get result item information.  A quality of 0 means the client sent no QTE result,
+        // which only an auto cook does; those resolve to the top tier.
         int qualityIndex = quality == 0 ? 2 : quality - 1;
 
         ItemParamData resultParam = recipeData.getQualityOutputVec().get(qualityIndex);
@@ -200,11 +210,9 @@ public class CookingManager extends BasePlayerManager {
             this.player.getInventory().addItem(cookResultSpecialty);
         }
 
-        // Increase player proficiency, if this was a manual perfect cook.
-        // qte_quality is unreadable in the 7.0 dump, but qteQualityWeightVec is [0,0,100] for
-        // all 281 recipes -- the QTE can only yield the top tier -- so a cook that resolved to
-        // that tier counts as perfect, which covers both the manual and the auto path.
-        // if (quality == MANUAL_PERFECT_COOK_QUALITY) {
+        // Increase player proficiency, if this was a manual perfect cook.  Auto cooks also
+        // report the top tier, but only recipes whose proficiency is already capped offer auto
+        // cooking, so the +1 they take here is harmless -- it clamps straight back to the cap.
         if (quality == 0 || quality == MANUAL_PERFECT_COOK_QUALITY) {
             proficiency = Math.min(proficiency + 1, recipeData.getMaxProficiency());
             this.player.getUnlockedRecipies().put(recipeId, proficiency);

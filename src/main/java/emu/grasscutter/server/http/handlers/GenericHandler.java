@@ -99,8 +99,11 @@ public final class GenericHandler implements Router {
                 new HttpJsonResponse("{\"retcode\":0,\"message\":\"OK\",\"data\":{\"ticket\":\"lunagc-ticket\",\"greeting\":\"\"}}"));
         this.allRoutes(javalin, "/common/aigis/api/checkSmartCaptcha",
                 new HttpJsonResponse("{\"retcode\":0,\"message\":\"OK\",\"data\":{\"verify_result\":true,\"ticket\":\"lunagc-ticket\"}}"));
+        // 国服 SDK 先请求 createLoginCaptcha 拿 captcha_id，再带着它请求
+        // loginByMobileCaptcha。必须返回一个 captcha_id，否则客户端不会提交登录。
+        // 私服不发真实短信，任何验证码都接受，因此返回一个固定的占位 id。
         this.allRoutes(javalin, "/account/ma-cn-verifier/verifier/createLoginCaptcha",
-                new HttpJsonResponse("{\"retcode\":0,\"message\":\"OK\",\"data\":{\"need_captcha\":false}}"));
+                new HttpJsonResponse("{\"retcode\":0,\"message\":\"OK\",\"data\":{\"captcha_id\":\"lunagc-captcha\",\"need_captcha\":false}}"));
 
         // 国服 SDK 配置接口（客户端请求的是 hk4e_cn 变体，原仓库只注册了 hk4e_global）
         this.allRoutes(javalin, "/hk4e_cn/combo/granter/api/compareProtocolVersion",

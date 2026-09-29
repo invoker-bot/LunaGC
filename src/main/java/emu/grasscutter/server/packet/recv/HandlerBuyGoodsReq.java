@@ -1,8 +1,11 @@
 package emu.grasscutter.server.packet.recv;
 
+import emu.grasscutter.Grasscutter;
+import emu.grasscutter.data.GameData;
 import emu.grasscutter.data.common.ItemParamData;
 import emu.grasscutter.game.inventory.*;
 import emu.grasscutter.game.props.ActionReason;
+import emu.grasscutter.game.props.ItemUseAction.UseItemParams;
 import emu.grasscutter.game.shop.*;
 import emu.grasscutter.net.packet.*;
 import emu.grasscutter.net.proto.BuyGoodsReqOuterClass;
@@ -15,6 +18,17 @@ import java.util.stream.Stream;
 
 @Opcodes(PacketOpcodes.BuyGoodsReq)
 public class HandlerBuyGoodsReq extends PacketHandler {
+
+    // putItem refuses to store these material types (see Inventory.putItem: it warns about a
+    // resources error and returns null), so a useOnGain good of one of them can never be
+    // delivered by dropping it in the bag. The item's own use action is the only delivery the
+    // player ever sees - for a costume that unlocks the skin, for a namecard it adds the card.
+    private static final Set<MaterialType> NON_STORABLE_USE_ON_GAIN =
+            EnumSet.of(
+                    MaterialType.MATERIAL_AVATAR,
+                    MaterialType.MATERIAL_FLYCLOAK,
+                    MaterialType.MATERIAL_COSTUME,
+                    MaterialType.MATERIAL_NAMECARD);
 
     @Override
     public void handle(GameSession session, byte[] header, byte[] payload) throws Exception {
@@ -108,17 +122,68 @@ public class HandlerBuyGoodsReq extends PacketHandler {
                 }
                 player.getInventory().addItems(rolled, ActionReason.Shop);
             } else {
-                GameItem item = new GameItem(itemId, itemCount);
-                // A bundle is useOnGain, so the default path consumes it and hands out whatever the
-                // chest table holds - and if that table is missing the purchase just vanishes.
-                // The player bought the item, so put the item in the bag and let them open it.
-                boolean delivered = player.getInventory().addItem(item, ActionReason.Shop, true, true);
-                if (!delivered) {
-                    // The bag was full or the stack could not take the count. Hand the currency back
-                    // and answer failure, rather than charging for a good that never arrived.
-                    costs.forEach(cost -> player.getInventory().addItem(cost.getId(), cost.getCount() * buyCount));
-                    session.send(new PacketBuyGoodsRsp(Retcode.RET_PACK_EXCEED_MAX_WEIGHT));
-                    continue;
+                var itemData = GameData.getItemDataMap().get(itemId);
+                if (itemData != null
+                        && itemData.isUseOnGain()
+                        && NON_STORABLE_USE_ON_GAIN.contains(itemData.getMaterialType())) {
+                    // A costume pack (shop 1052) is useOnGain MATERIAL_COSTUME, so the bag path
+                    // below would refuse it, the purchase would "fail", and the player would walk
+                    // away with a refund instead of the skin. The good delivers itself: run its use
+                    // action once per unit bought.
+                    int delivered = 0;
+                    for (int i = 0; i < itemCount; i++) {
+                        var params = new UseItemParams(player, itemData.getUseTarget());
+                        params.usedItemId = itemId;
+                        if (!session.getServer().getInventorySystem().useItemDirect(itemData, params)) {
+                            break;
+                        }
+                        delivered++;
+                    }
+                    if (delivered == 0) {
+                        // The use action rejected the good, so the player got nothing for the
+                        // currency they handed over.
+                        costs.forEach(
+                                cost ->
+                                        player.getInventory()
+                                                .addItem(cost.getId(), cost.getCount() * buyCount));
+                        session.send(new PacketBuyGoodsRsp(Retcode.RET_SHOP_CONTENT_NOT_MATCH));
+                        continue;
+                    }
+                    if (delivered < itemCount) {
+                        Grasscutter.getLogger()
+                                .warn(
+                                        "Item use consumed {} of the {} units of item {} bought by player {}.",
+                                        delivered,
+                                        itemCount,
+                                        itemId,
+                                        player.getUid());
+                        int undelivered = itemCount - delivered;
+                        for (var cost : costs) {
+                            int perUnit = cost.getCount() * buyCount / itemCount;
+                            if (perUnit > 0) {
+                                player.getInventory().addItem(cost.getId(), perUnit * undelivered);
+                            }
+                        }
+                    }
+                } else {
+                    GameItem item = new GameItem(itemId, itemCount);
+                    // A bundle is useOnGain, so the default path consumes it and hands out whatever
+                    // the chest table holds - and if that table is missing the purchase just
+                    // vanishes. The player bought the item, so put the item in the bag and let them
+                    // open it.
+                    boolean delivered =
+                            player.getInventory().addItem(item, ActionReason.Shop, true, true);
+                    if (!delivered) {
+                        // The bag was full or the stack could not take the count. Hand the currency
+                        // back and answer failure, rather than charging for a good that never
+                        // arrived.
+                        costs.forEach(
+                                cost ->
+                                        player.getInventory()
+                                                .addItem(cost.getId(), cost.getCount() * buyCount));
+                        session.send(new PacketBuyGoodsRsp(Retcode.RET_PACK_EXCEED_MAX_WEIGHT));
+                        continue;
+                    }
                 }
             }
             // Only now that the goods are in the bag does the purchase count against the refresh

@@ -11,12 +11,13 @@ import json
 import ssl
 import sys
 import urllib.request
+from pathlib import Path
 
 # Use exactly the hostname the patched AccountPlatNative.dll points the native
 # SDK at -- it resolves via public DNS to 127.0.0.1/::1, so this also proves the
 # client's own resolution path works.
 HOST = "http://lunagc.localtest.me:8088"
-PUB = r"D:\Projects\Experiment\LunaGC_7.0.0\tools\_key1024_pub.pem"
+PUB = Path(__file__).with_name("_key1024_pub.pem")
 
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
@@ -58,6 +59,27 @@ steps.append(("POST", "/hk4e_cn/combo/granter/api/compareProtocolVersion",
 steps.append(("POST", "/account/ma-cn-passport/app/loginByPassword",
               {"account": enc(ACCOUNT), "password": enc(PASSWORD)}))
 
+# --- session resume: the ma-cn-session verify step -----------------------
+# The real client caches mid + stoken in process memory and re-runs this on
+# every launch / server restart instead of re-entering credentials.  The token
+# is carried in a nested object, so this is also a regression test for the
+# verifySToken field-name mismatch that used to persist a null session key.
+
+
+def verify(mid, token, path="/account/ma-cn-session/app/verify"):
+    body = {"mid": str(mid), "token": {"token_type": 1, "token": token}, "refresh": True}
+    code, resp = call("POST", path, body)
+    echo = ""
+    try:
+        j = json.loads(resp)
+        if j.get("retcode") == 0 and j["data"].get("tokens"):
+            echo = j["data"]["tokens"][0]["token"]
+    except Exception:
+        pass
+    print("POST %-50s -> %s  echoed token %s" % (path, code, echo[:24] or "<none>"))
+    return code, echo
+
+
 st = None
 for m, p, b in steps:
     code, resp = call(m, p, b)
@@ -75,6 +97,13 @@ if st:
             token = j["data"]["token"]["token"]
             aid = j["data"]["user_info"]["aid"]
             print("aid=%s token=%s..." % (aid, token[:24]))
+            # session resume with the token we were just issued -- the stored key
+            # must already match, so no adoption should happen and the key must
+            # stay non-null in the db.
+            verify(aid, token)
+            verify(aid, token, "/account/ma-cn-passport/token/verifySToken")
+            # a stale/foreign token still has to be accepted (private-server leniency)
+            verify(aid, "v2_deadbeef_invalid_token_for_replay_test")
             # mdk/shield/api/login -- exchange the passport token for an access token
             code, resp = call("POST", "/hk4e_cn/mdk/shield/api/login",
                               {"account": ACCOUNT, "password": PASSWORD,

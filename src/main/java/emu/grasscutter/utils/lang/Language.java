@@ -273,7 +273,37 @@ public final class Language {
                                             TextStrings t =
                                                     new TextStrings(
                                                             IntStream.range(0, TextStrings.NUM_LANGUAGES)
-                                                                    .mapToObj(i -> languageMaps.get(i).get((int) key))
+                                                                    .mapToObj(
+                                                                            i -> {
+                                                                                String s =
+                                                                                        languageMaps
+                                                                                                .get(i)
+                                                                                                .get((int) key);
+                                                                                // The text maps and the
+                                                                                // excel tables come from
+                                                                                // different dumps, and
+                                                                                // the drift between
+                                                                                // them is not uniform:
+                                                                                // EN usually lands on
+                                                                                // the hash the excel
+                                                                                // table points at while
+                                                                                // CHS and CHT sit 512
+                                                                                // along. Without this
+                                                                                // lookup a row that is
+                                                                                // perfectly healthy in
+                                                                                // English still reads
+                                                                                // "[EN] - 胡桃" in the
+                                                                                // Chinese console.
+                                                                                if (s == null) {
+                                                                                    s =
+                                                                                            languageMaps
+                                                                                                    .get(i)
+                                                                                                    .get(
+                                                                                                            (int) key
+                                                                                                                    + HASH_DRIFT);
+                                                                                }
+                                                                                return s;
+                                                                            })
                                                                     .collect(Collectors.toList()),
                                                             key);
                                             return canonicalTextStrings.computeIfAbsent(t, x -> t);
@@ -505,6 +535,10 @@ public final class Language {
     /** UI_AvatarIcon_MarionetteNew to Sandrone, UI_EquipIcon_Claymore_CrystallineSword to Crystalline Sword. */
     private static String displayName(String iconName) {
         if (iconName == null || iconName.isBlank()) return null;
+
+        // A character's unlock card ends in _Card -- the name is the segment before it, and falling
+        // back to "Card" would label a few hundred different cards identically.
+        if (iconName.endsWith("_Card")) iconName = iconName.substring(0, iconName.lastIndexOf('_'));
 
         var internal = iconName.substring(iconName.lastIndexOf('_') + 1);
         if (internal.isBlank()) return null;

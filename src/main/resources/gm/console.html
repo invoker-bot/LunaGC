@@ -15,6 +15,7 @@
     --accent: #4f8cff;
     --accent2: #2f6ae0;
     --ok: #3fb96c;
+    --warn: #d8a13a;
     --err: #e05a5a;
     --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
   }
@@ -59,7 +60,7 @@
   .row input#target { width: 110px; font-family: var(--mono); }
   #output { background: #10141a; border: 1px solid var(--line); border-radius: 6px;
             font-family: var(--mono); font-size: 12.5px; padding: 10px; white-space: pre-wrap;
-            word-break: break-all; min-height: 280px; max-height: calc(100vh - 260px); overflow-y: auto; }
+            word-break: break-all; min-height: 160px; max-height: 220px; overflow-y: auto; }
   #output .line { padding: 1px 0; }
   #output .line.err { color: var(--err); }
   #output .line.cmd { color: #9fc0ff; }
@@ -74,6 +75,58 @@
           border-top-color: #fff; border-radius: 50%; animation: sp .7s linear infinite;
           vertical-align: -2px; margin-right: 6px; }
   @keyframes sp { to { transform: rotate(360deg); } }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 12px; border-bottom: 1px solid var(--line);
+          padding-bottom: 8px; }
+  .tab { background: transparent; color: var(--dim); border: 1px solid transparent;
+         border-radius: 6px 6px 0 0; padding: 6px 14px; }
+  .tab:hover { background: var(--panel2); color: var(--text); }
+  .tab.sel { color: #9fc0ff; border-color: var(--line); border-bottom-color: var(--panel);
+             background: var(--panel2); margin-bottom: -9px; padding-bottom: 9px; }
+  .pane { display: none; }
+  .pane.sel { display: block; }
+
+  /* Items */
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .chip { background: var(--panel2); color: var(--text); border: 1px solid var(--line);
+          border-radius: 999px; padding: 3px 11px; font-size: 12.5px; cursor: pointer; }
+  .chip:hover { border-color: var(--accent); background: #31404f; }
+  .item { display: flex; align-items: center; gap: 8px; background: var(--panel2);
+          border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; margin-bottom: 5px; }
+  .item .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .id { font-family: var(--mono); font-size: 12px; color: var(--dim); }
+  .item input[type="number"] { width: 74px; font-family: var(--mono); padding: 4px 6px; }
+  .item button { padding: 4px 10px; font-size: 12.5px; }
+  .pager { display: flex; align-items: center; gap: 10px; margin-top: 10px; color: var(--dim);
+           font-size: 12.5px; }
+  .pager button { padding: 4px 12px; font-size: 12.5px; }
+
+  /* Banners */
+  .banner { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px;
+            padding: 9px 11px; margin-bottom: 8px; }
+  .banner.off { opacity: .62; }
+  .banner .hd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+  .banner .sid { font-family: var(--mono); font-weight: 600; color: #9fc0ff; }
+  .banner .gt { font-family: var(--mono); font-size: 12px; color: var(--dim); }
+  .banner .tm { font-size: 12px; color: var(--dim); font-family: var(--mono); }
+  .badge { display: inline-block; font-size: 10.5px; padding: 1px 7px; border-radius: 999px;
+           border: 1px solid var(--line); color: var(--dim); }
+  .badge.ok { color: var(--ok); border-color: #2c5b40; background: #1d2c24; }
+  .badge.warn { color: var(--warn); border-color: #5b4a24; background: #2c2618; }
+  .badge.err { color: var(--err); border-color: #5b2c2c; background: #2c1d1d; }
+  .banner .ops { margin-top: 6px; }
+  .banner .ops button { padding: 4px 12px; font-size: 12.5px; }
+  .banner .up { font-size: 12px; color: var(--dim); font-family: var(--mono);
+                word-break: break-all; margin-top: 2px; }
+
+  .hrev { border: 1px solid var(--line); border-radius: 6px; margin-bottom: 14px; padding: 10px 12px; }
+  .hrev-hd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .hrev-hd .gt { font-family: var(--mono); font-size: 12px; color: var(--dim); }
+  .hrev-hd .dim { font-size: 12px; color: var(--dim); }
+  .hrev-body > .banner { margin-bottom: 8px; }
+  .hrev-body > .banner:last-child { margin-bottom: 0; }
+
   @media (max-width: 900px) { main { grid-template-columns: 1fr; height: auto; } }
 </style>
 </head>
@@ -107,15 +160,70 @@
     <div id="cmdList"><span class="empty">加载中…</span></div>
   </section>
   <section>
-    <h2>执行命令</h2>
-    <div class="row" style="margin-bottom:10px">
-      <input id="command" placeholder="give 11101 1" >
-      <button id="runBtn">运行</button>
+    <div class="tabs">
+      <button class="tab sel" data-tab="cmd">命令</button>
+      <button class="tab" data-tab="items">物品</button>
+      <button class="tab" data-tab="banners">卡池</button>
+      <button class="tab" data-tab="history">历史卡池</button>
     </div>
-    <div style="margin-bottom:10px;color:var(--dim);font-size:12px">
-      命令以服务器控制台身份运行（全部权限）。填了目标 UID 时会前置 <span style="font-family:var(--mono)">@uid</span>，
-      即游戏内 <span style="font-family:var(--mono)">give @10001 11101 1</span> 的写法。
+
+    <div class="pane sel" id="pane-cmd">
+      <h2>执行命令</h2>
+      <div class="row" style="margin-bottom:10px">
+        <input id="command" placeholder="give 11101 1" >
+        <button id="runBtn">运行</button>
+      </div>
+      <div style="margin-bottom:10px;color:var(--dim);font-size:12px">
+        命令以服务器控制台身份运行（全部权限）。填了目标 UID 时会前置 <span style="font-family:var(--mono)">@uid</span>，
+        即游戏内 <span style="font-family:var(--mono)">give @10001 11101 1</span> 的写法。
+      </div>
     </div>
+
+    <div class="pane" id="pane-items">
+      <h2>物品</h2>
+      <div class="chips" id="chips"></div>
+      <div class="row" style="margin-bottom:10px">
+        <input id="itemQ" placeholder="搜索名称或 id，如 原石 / 201" style="flex:1;min-width:180px">
+        <select id="itemType">
+          <option value="">全部类型</option>
+          <option value="ITEM_VIRTUAL">虚拟货币</option>
+          <option value="ITEM_MATERIAL">材料</option>
+          <option value="ITEM_WEAPON">武器</option>
+          <option value="ITEM_RELIQUARY">圣遗物</option>
+          <option value="ITEM_FURNITURE">摆设</option>
+          <option value="ITEM_DISPLAY">展示</option>
+          <option value="ITEM_NONE">其它</option>
+        </select>
+        <button id="itemSearch" class="ghost">搜索</button>
+      </div>
+      <div id="itemList"><span class="empty">输入关键词或选择类型后搜索。</span></div>
+      <div class="pager" id="itemPager" style="display:none">
+        <button id="pgPrev" class="ghost">上一页</button>
+        <span id="pgInfo"></span>
+        <button id="pgNext" class="ghost">下一页</button>
+      </div>
+    </div>
+
+    <div class="pane" id="pane-banners">
+      <h2>卡池 <button id="bannerRefresh" class="ghost" style="padding:3px 10px;font-size:12px">刷新</button></h2>
+      <div style="margin-bottom:10px;color:var(--dim);font-size:12px">
+        开关直接改写 <span style="font-family:var(--mono)">data/Banners.json</span> 并立即重载卡池系统。
+        「已加载」表示卡池在服务器内存中，「生效中」表示客户端祈愿界面会展示它。
+      </div>
+      <div id="bannerList"><span class="empty">加载中…</span></div>
+    </div>
+
+    <div class="pane" id="pane-history">
+      <h2>历史卡池 <button id="historyRefresh" class="ghost" style="padding:3px 10px;font-size:12px">刷新</button></h2>
+      <div style="margin-bottom:10px;color:var(--dim);font-size:12px">
+        列出 <span style="font-family:var(--mono)">data/Banners.json</span> 在 git 中的每一次改动，按官服版本顺序排列。
+        「官服约 YYYY-MM」是该版本在官服开池的月份（数据文件本身不记录时间）。
+        「复刻此卡池」会把该卡池复制进当前卡池表并开启 30 天。
+      </div>
+      <div id="historyList"><span class="empty">加载中…</span></div>
+    </div>
+
+    <h2>输出</h2>
     <div id="output"><span class="empty">输出会显示在这里。</span></div>
   </section>
 </main>
@@ -131,7 +239,7 @@ const $ = id => document.getElementById(id);
 
 function api(path, opts) {
   opts = Object.assign({ headers: {} }, opts);
-  opts.headers["Authorization"] = "Bearer " + token;
+  if (token) opts.headers["Authorization"] = "Bearer " + token;
   return fetch(path, opts).then(r => {
     if (r.status === 403) {
       showGate(r.status);
@@ -181,6 +289,12 @@ function out(text, cls) {
   box.scrollTop = box.scrollHeight;
 }
 
+// --- target UID -------------------------------------------------------
+function targetOf() {
+  return ($("target").value || "").trim().replace(/^@/, "");
+}
+
+// --- commands ---------------------------------------------------------
 function loadCommands() {
   if (commands.length) { renderCommands(); return; }
   api("/gm/api/commands").then(r => {
@@ -250,14 +364,15 @@ function loadPlayers() {
 }
 $("playersBtn").onclick = loadPlayers;
 
-$("runBtn").onclick = () => {
-  const command = $("command").value.trim();
-  if (!command) return;
-  const target = $("target").value.trim().replace(/^@/, "");
+// --- running commands -------------------------------------------------
+function runCommand(command) {
+  command = (command || "").trim();
+  if (!command) return Promise.resolve();
+  const target = targetOf();
   out("$ " + (target ? "@" + target + " " : "") + command, "cmd");
   $("runBtn").disabled = true;
   $("runBtn").innerHTML = '<span class="spin"></span>运行中';
-  api("/gm/api/command", {
+  return api("/gm/api/command", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ command, target: target || null })
@@ -274,21 +389,305 @@ $("runBtn").onclick = () => {
     $("runBtn").disabled = false;
     $("runBtn").textContent = "运行";
   });
-};
+}
+
+$("runBtn").onclick = () => runCommand($("command").value);
 $("command").addEventListener("keydown", e => { if (e.key === "Enter") $("runBtn").click(); });
 
-// Boot: a bookmarked URL may carry ?token=; otherwise use what the browser kept, else ask.
+// --- tabs -------------------------------------------------------------
+document.querySelectorAll(".tab").forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll(".tab").forEach(x => x.classList.toggle("sel", x === t));
+    document.querySelectorAll(".pane").forEach(p => p.classList.toggle("sel", p.id === "pane-" + t.dataset.tab));
+    if (t.dataset.tab === "items") ensureItems();
+    if (t.dataset.tab === "banners") loadBanners();
+    if (t.dataset.tab === "history") loadHistory();
+  };
+});
+
+// --- items ------------------------------------------------------------
+const ITEM_PAGE = 50;
+let itemState = { q: "", type: "", offset: 0, total: -1 };
+
+// Quick searches for the things an operator hands out all the time. Searching by name rather
+// than hardcoding ids keeps working when the item table changes between client versions.
+const PRESETS = ["原石", "星尘", "星辉", "摩拉", "创世结晶", "纠缠之缘", "相遇之缘", "脆弱树脂", "大英雄的经验"];
+
+PRESETS.forEach(name => {
+  const b = document.createElement("button");
+  b.className = "chip";
+  b.textContent = name;
+  b.onclick = () => { $("itemQ").value = name; $("itemType").value = ""; searchItems(0); };
+  $("chips").appendChild(b);
+});
+
+function ensureItems() {
+  if (itemState.total >= 0 || $("itemQ").value) return;
+  searchItems(0);
+}
+
+function searchItems(offset) {
+  itemState.q = $("itemQ").value.trim();
+  itemState.type = $("itemType").value;
+  itemState.offset = offset;
+  const list = $("itemList");
+  list.innerHTML = '<span class="empty"><span class="spin"></span>搜索中…</span>';
+  $("itemPager").style.display = "none";
+
+  const qs = new URLSearchParams();
+  if (itemState.q) qs.set("q", itemState.q);
+  if (itemState.type) qs.set("type", itemState.type);
+  qs.set("limit", ITEM_PAGE);
+  qs.set("offset", offset);
+
+  api("/gm/api/items?" + qs).then(r => {
+    if (!r.ok) { list.textContent = "失败: " + JSON.stringify(r.json); return; }
+    itemState.total = r.json.total || 0;
+    renderItems(r.json.items || [], r.json);
+  }).catch(e => { if (e.message !== "403") list.textContent = "无法连接服务器"; });
+}
+
+function renderItems(items, meta) {
+  const list = $("itemList");
+  list.textContent = "";
+  if (!items.length) {
+    list.innerHTML = '<span class="empty">没有匹配的物品。</span>';
+    return;
+  }
+  for (const it of items) {
+    const el = document.createElement("div");
+    el.className = "item";
+    // Weapons and relics are single stacks that mean something at max level; currency and
+    // materials are asked for in bulk. give takes lv before x, so both fit one command.
+    const bulk = it.type === "ITEM_VIRTUAL" || it.type === "ITEM_MATERIAL";
+    const defCount = bulk ? 99999 : 1;
+    const lv = it.maxLevel && it.maxLevel > 1 ? " lv" + it.maxLevel : "";
+    el.innerHTML =
+      `<span class="nm">${esc(it.name || "(无名)")}</span>
+       <span class="badge">${esc(typeLabel(it.type))}</span>
+       <span class="id">${it.id}</span>
+       <input type="number" min="1" value="${defCount}" title="数量">
+       <button>给予</button>`;
+    const input = el.querySelector("input");
+    el.querySelector("button").onclick = () => {
+      let n = parseInt(input.value, 10);
+      if (!(n > 0)) n = defCount;
+      runCommand(`give ${it.id}${lv} x${n}`);
+    };
+    list.appendChild(el);
+  }
+
+  const pg = $("itemPager");
+  const from = meta.offset + 1, to = meta.offset + items.length;
+  pg.style.display = "flex";
+  $("pgInfo").textContent = `${from}-${to} / 共 ${meta.total} 条`;
+  $("pgPrev").disabled = meta.offset === 0;
+  $("pgNext").disabled = to >= meta.total;
+}
+
+function typeLabel(t) {
+  return ({
+    ITEM_VIRTUAL: "货币", ITEM_MATERIAL: "材料", ITEM_WEAPON: "武器",
+    ITEM_RELIQUARY: "圣遗物", ITEM_FURNITURE: "摆设", ITEM_DISPLAY: "展示", ITEM_NONE: "其它",
+  })[t] || t;
+}
+
+$("itemSearch").onclick = () => searchItems(0);
+$("itemQ").addEventListener("keydown", e => { if (e.key === "Enter") searchItems(0); });
+$("itemType").onchange = () => searchItems(0);
+$("pgPrev").onclick = () => searchItems(Math.max(0, itemState.offset - ITEM_PAGE));
+$("pgNext").onclick = () => searchItems(itemState.offset + ITEM_PAGE);
+
+// --- banners ----------------------------------------------------------
+const BANNER_TYPES = {
+  STANDARD: "常驻", WEAPON: "武器", CHARACTER: "角色",
+  CHARACTER2: "角色", CHRONICLE: "集录",
+};
+const COST_ITEMS = { 223: "纠缠之缘", 224: "相遇之缘" };
+
+function fmtTime(sec) {
+  if (!sec) return "不限";
+  try { return new Date(sec * 1000).toLocaleString("zh-CN", { hour12: false }); }
+  catch (e) { return String(sec); }
+}
+
+function fmtUp(items, fallbackIds) {
+  // The endpoint sends names alongside the ids; fall back to bare ids when the name is unknown.
+  if (Array.isArray(items) && items.length) {
+    return items.map(x => `${x.name || "(无名)"}·${x.id}`).join("  ");
+  }
+  return (fallbackIds || []).join(" ");
+}
+
+function loadBanners() {
+  const list = $("bannerList");
+  list.innerHTML = '<span class="empty"><span class="spin"></span>加载中…</span>';
+  api("/gm/api/banners").then(r => {
+    if (!r.ok) { list.textContent = "失败: " + JSON.stringify(r.json); return; }
+    const banners = r.json.banners || [];
+    list.textContent = "";
+    if (!banners.length) { list.innerHTML = '<span class="empty">没有配置卡池。</span>'; return; }
+    for (const b of banners) {
+      list.appendChild(renderBanner(b));
+    }
+  }).catch(e => { if (e.message !== "403") list.textContent = "无法连接服务器"; });
+}
+
+function renderBanner(b, opts) {
+  opts = opts || {};
+  const el = document.createElement("div");
+  el.className = "banner" + (b.disabled ? " off" : "");
+
+  const badges = [];
+  if (b.active) badges.push('<span class="badge ok">生效中</span>');
+  else if (b.loaded) badges.push('<span class="badge warn">已加载 · 未生效</span>');
+  else badges.push('<span class="badge err">未加载</span>');
+  if (b.disabled) badges.push('<span class="badge err">已禁用</span>');
+  if (b.phase) badges.push(`<span class="badge">${esc(b.phase)}</span>`);
+
+  const up4 = fmtUp(b.rateUpItems4Names, b.rateUpItems4);
+  const up5 = fmtUp(b.rateUpItems5Names, b.rateUpItems5);
+  const cost = COST_ITEMS[b.costItemId] || b.costItemId;
+
+  el.innerHTML = `
+    <div class="hd">
+      <span class="sid">#${b.scheduleId}</span>
+      <span class="badge">${esc(BANNER_TYPES[b.bannerType] || b.bannerType)}</span>
+      <span class="gt">gachaType ${b.gachaType} · 消耗 ${esc(String(cost))}</span>
+      ${badges.join("")}
+    </div>
+    <div class="tm">${fmtTime(b.beginTime)} ~ ${fmtTime(b.endTime)}</div>
+    ${up5 ? `<div class="up">五星 UP: ${esc(up5)}</div>` : ""}
+    ${up4 ? `<div class="up">四星 UP: ${esc(up4)}</div>` : ""}
+    <div class="ops"></div>`;
+
+  const ops = el.querySelector(".ops");
+  if (opts.rerun) {
+    const btn = document.createElement("button");
+    btn.textContent = "复刻此卡池";
+    btn.onclick = () => rerunBanner(b.scheduleId, opts.commit, el);
+    ops.appendChild(btn);
+    return el;
+  }
+  const btn = document.createElement("button");
+  if (b.disabled) {
+    btn.textContent = "启用此卡池";
+    btn.onclick = () => flipBanner(b.scheduleId, "enable", el);
+  } else {
+    btn.textContent = "禁用此卡池";
+    btn.className = "ghost";
+    btn.onclick = () => flipBanner(b.scheduleId, "disable", el);
+  }
+  ops.appendChild(btn);
+  return el;
+}
+
+function flipBanner(scheduleId, action, rowEl) {
+  const btn = rowEl.querySelector("button");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>写入中';
+  api("/gm/api/banners", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ scheduleId, action })
+  }).then(r => {
+    if (!r.ok) {
+      out("卡池操作失败: " + (r.json && JSON.stringify(r.json) || r.text), "err");
+      return;
+    }
+    out(`卡池 #${scheduleId} 已${action === "enable" ? "启用" : "禁用"}`
+        + (r.json.loaded ? "，已重载进卡池系统。" : "，已从卡池系统移除。"));
+    // The file changed, so every other row's "loaded" may have shifted too.
+    loadBanners();
+  }).catch(e => { if (e.message !== "403") out("请求失败: " + e, "err"); })
+  .finally(() => { btn.disabled = false; });
+}
+
+$("bannerRefresh").onclick = loadBanners;
+
+// --- banner history ----------------------------------------------------
+// One revision per git commit that touched data/Banners.json. The server has already sorted
+// them into official-server order, so the list reads oldest-last as you scroll down.
+function loadHistory() {
+  const list = $("historyList");
+  list.innerHTML = '<span class="empty"><span class="spin"></span>读取 git 历史中…</span>';
+  api("/gm/api/banners/history").then(r => {
+    if (!r.ok) { list.textContent = "失败: " + JSON.stringify(r.json); return; }
+    const revisions = r.json.revisions || [];
+    list.textContent = "";
+    if (!revisions.length) { list.innerHTML = '<span class="empty">没有历史卡池。</span>'; return; }
+    for (const rev of revisions) {
+      list.appendChild(renderHistoryRevision(rev));
+    }
+  }).catch(e => { if (e.message !== "403") list.textContent = "无法连接服务器"; });
+}
+
+function renderHistoryRevision(rev) {
+  const el = document.createElement("div");
+  el.className = "hrev";
+
+  // The annotation the operator asked for: which version this table belongs to, and roughly when
+  // that version opened on the official server. The data files carry no schedule of their own,
+  // so the label is the only clue to the order these banners ran in.
+  const version = rev.version
+    ? `${esc(rev.version)}${rev.officialStart ? ` · 官服约 ${esc(rev.officialStart)} 开池` : ""}`
+    : "未标注版本";
+  const when = rev.working && !rev.archive
+    ? "当前工作区（尚未提交）"
+    : rev.archive
+      ? "官服历史归档（随版本整理，未随提交记录）"
+      : `${esc(rev.date || "")} · ${esc(rev.commit || "")}`;
+
+  el.innerHTML = `
+    <div class="hrev-hd">
+      <span class="badge">${version}</span>
+      <span class="gt">${when}</span>
+      <span class="dim">${esc(rev.subject || "")}</span>
+      <span class="dim">${rev.bannerCount} 个卡池</span>
+    </div>
+    <div class="hrev-body"></div>`;
+
+  const body = el.querySelector(".hrev-body");
+  for (const b of (rev.banners || [])) {
+    body.appendChild(renderBanner(b, { rerun: true, commit: rev.commit }));
+  }
+  return el;
+}
+
+function rerunBanner(scheduleId, commit, rowEl) {
+  const btn = rowEl.querySelector("button");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>写入中';
+  api("/gm/api/banners", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ scheduleId, action: "rerun", commit })
+  }).then(r => {
+    if (!r.ok) {
+      out("复刻失败: " + (r.json && JSON.stringify(r.json) || r.text), "err");
+      return;
+    }
+    out(`已复刻 #${scheduleId}（来自 ${commit === "working" ? "当前工作区" : commit}）`
+        + `，开启至 ${fmtTime(r.json.endTime)}。`);
+    loadHistory();
+  }).catch(e => { if (e.message !== "403") out("请求失败: " + e, "err"); })
+  .finally(() => { btn.disabled = false; });
+}
+
+$("historyRefresh").onclick = loadHistory;
+
+// Boot: a bookmarked URL may carry ?token=. The server may also have no token configured at
+// all (this repo's config ships an empty accessToken), so probe first and only ask for a
+// token when the server actually refuses the probe.
 const urlToken = new URLSearchParams(location.search).get("token");
 if (urlToken) {
   token = urlToken;
   localStorage.setItem(TOKEN_KEY, token);
   history.replaceState(null, "", "/gm");
 }
-if (token) {
-  api("/gm/api/players").then(() => { showWork(); loadCommands(); }).catch(() => showGate());
-} else {
-  showGate();
-}
+api("/gm/api/players")
+  .then(() => { showWork(); loadCommands(); loadPlayers(); })
+  .catch(() => showGate());
 </script>
 </body>
 </html>
