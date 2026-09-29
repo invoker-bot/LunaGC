@@ -200,7 +200,7 @@ public final class PlayerProgressManager extends BasePlayerDataManager {
         // Get list of open states that are not yet unlocked.
         var lockedStates =
                 GameData.getOpenStateList().stream()
-                        .filter(s -> this.player.getOpenStates().getOrDefault(s, 0) == 0)
+                        .filter(s -> this.player.getOpenStates().getOrDefault(s.getId(), 0) == 0)
                         .toList();
 
         // Try unlocking all of them.

@@ -3,6 +3,7 @@ package emu.grasscutter.game.battlepass;
 import dev.morphia.annotations.*;
 import emu.grasscutter.*;
 import emu.grasscutter.data.GameData;
+import emu.grasscutter.data.excels.BattlePassScheduleData;
 import emu.grasscutter.data.common.ItemParamData;
 import emu.grasscutter.data.excels.*;
 import emu.grasscutter.database.DatabaseHelper;
@@ -365,7 +366,7 @@ public class BattlePassManager extends BasePlayerDataManager {
 
         BattlePassSchedule.Builder schedule =
                 BattlePassSchedule.newBuilder()
-                        .setScheduleId(2700)
+                        .setScheduleId(BattlePassScheduleData.currentId())
                         .setLevel(this.getLevel())
                         .setPoint(this.getPoint())
                         .setBeginTime(0)

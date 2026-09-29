@@ -12,7 +12,7 @@ public class AvatarReplaceCostumeData extends GameResource {
 
     @SerializedName(
             value = "costumeId",
-            alternate = {"MGLCOPOIJIC", "BDBMOBGKIAP"})
+            alternate = {"replaceCostumeId", "MGLCOPOIJIC", "BDBMOBGKIAP"})
     private int costumeId;
 
     @Override
