@@ -52,6 +52,10 @@ public final class TeamManager extends BasePlayerDataManager {
     @Transient private List<TeamInfo> temporaryTeam;
     @Transient @Getter @Setter private boolean usingTrialTeam;
     @Transient @Getter @Setter private TeamInfo trialAvatarTeam;
+    @Transient private boolean trialTeamIncludesOwnedAvatars;
+
+    // Only grant IDs survive a reconnect; borrowed Avatar objects never become owned avatars.
+    @Getter private Map<Integer, Integer> questTrialAvatarIds = new LinkedHashMap<>();
 
     @Transient @Getter @Setter private Map<Integer, Avatar> trialAvatars;
 
@@ -65,7 +69,7 @@ public final class TeamManager extends BasePlayerDataManager {
         this.teamResonances = new IntOpenHashSet();
         this.teamResonancesConfig = new IntOpenHashSet();
         this.teamAbilityEmbryos = new HashSet<>();
-        this.trialAvatars = new HashMap<>();
+        this.trialAvatars = new LinkedHashMap<>();
         this.trialAvatarTeam = new TeamInfo();
     }
 
@@ -162,6 +166,14 @@ public final class TeamManager extends BasePlayerDataManager {
     }
 
     public TeamInfo getCurrentTeamInfo() {
+        if (temporaryTeam != null && useTemporarilyTeamIndex >= 0
+                && useTemporarilyTeamIndex < temporaryTeam.size())
+            return temporaryTeam.get(useTemporarilyTeamIndex);
+        if (this.isUsingTrialTeam()) return this.getTrialAvatarTeam();
+        return this.getRegularTeamInfo();
+    }
+
+    private TeamInfo getRegularTeamInfo() {
         // The index and the list are both transient and set by different packets - the abyss picks
         // teams in TowerTeamSelectReq and uses one in TowerEnterLevelReq - so a client that enters
         // without selecting first, or that restarts a floor, can leave the index set with no list
@@ -408,8 +420,11 @@ public final class TeamManager extends BasePlayerDataManager {
 
         for (int i = 0; i < this.getCurrentTeamInfo().getAvatars().size(); i++) {
             var avatarId = (int) this.getCurrentTeamInfo().getAvatars().get(i);
+            var avatar = this.isUsingTrialTeam() ? this.getTrialAvatars().get(avatarId) : null;
+            if (avatar == null) avatar = this.getPlayer().getAvatars().getAvatarById(avatarId);
+            if (avatar == null) continue;
             EntityAvatar entity;
-            if (existingAvatars.containsKey(avatarId)) {
+            if (existingAvatars.containsKey(avatarId) && existingAvatars.get(avatarId).getAvatar() == avatar) {
                 entity = existingAvatars.get(avatarId);
                 existingAvatars.remove(avatarId);
                 if (entity == currentEntity) {
@@ -421,7 +436,7 @@ public final class TeamManager extends BasePlayerDataManager {
                     EntityCreationEvent.call(
                         EntityAvatar.class,
                         new Class<?>[] {Scene.class, Avatar.class},
-                        new Object[] {player.getScene(), player.getAvatars().getAvatarById(avatarId)});
+                        new Object[] {player.getScene(), avatar});
             }
 
             this.getActiveTeam().add(entity);
@@ -536,13 +551,17 @@ public final class TeamManager extends BasePlayerDataManager {
     }
 
     public void setupTrialAvatars(boolean save) {
+        if (this.isUsingTrialTeam()) return;
         this.setPreviousIndex(this.getCurrentCharacterIndex());
-
-        if (save) {
-            var originalTeam = this.getCurrentTeamInfo();
-            this.getTrialAvatarTeam().copyFrom(originalTeam);
-        } else this.getActiveTeam().clear();
-
+        this.trialTeamIncludesOwnedAvatars = save;
+        this.trialAvatarTeam = new TeamInfo();
+        if (save) this.trialAvatarTeam.copyFrom(this.getRegularTeamInfo());
+        else {
+            var scene = this.getPlayer().getScene();
+            if (scene != null) this.getActiveTeam().forEach(entity ->
+                scene.removeEntity(entity, VisionTypeOuterClass.VisionType.VisionType_VISION_REMOVE));
+            this.getActiveTeam().clear();
+        }
         this.usingTrialTeam = true;
     }
 
@@ -566,12 +585,8 @@ public final class TeamManager extends BasePlayerDataManager {
         this.getActiveTeam().removeIf(x -> x.getAvatar().getAvatarId() == trialAvatar.getAvatarId());
         this.getCurrentTeamInfo().getAvatars().removeIf(x -> x == trialAvatar.getAvatarId());
 
-        this.getActiveTeam()
-            .add(
-                EntityCreationEvent.call(
-                    EntityAvatar.class,
-                    new Class<?>[] {Scene.class, Avatar.class},
-                    new Object[] {player.getScene(), trialAvatar}));
+        var entity = this.createTrialAvatarEntity(trialAvatar);
+        if (entity != null) this.getActiveTeam().add(entity);
         this.getCurrentTeamInfo().addAvatar(trialAvatar);
         this.getTrialAvatars().put(trialAvatar.getAvatarId(), trialAvatar);
     }
@@ -596,7 +611,7 @@ public final class TeamManager extends BasePlayerDataManager {
 
     public void removeTrialAvatarTeam() {
         this.removeTrialAvatarTeam(
-            this.getActiveTeam().stream().map(avatar -> avatar.getAvatar().getAvatarId()).toList());
+            this.getTrialAvatars().values().stream().map(Avatar::getTrialAvatarId).toList());
     }
 
     public void removeTrialAvatarTeam(int avatarId) {
@@ -604,67 +619,47 @@ public final class TeamManager extends BasePlayerDataManager {
     }
 
     public void removeTrialAvatarTeam(List<Integer> trialAvatarIds) {
-        var isTeam = trialAvatarIds.size() == this.getActiveTeam().size();
-
-        var player = this.getPlayer();
-        var scene = player.getScene();
-
-        this.usingTrialTeam = false;
+        boolean removed = this.getTrialAvatars().values()
+            .removeIf(avatar -> trialAvatarIds.contains(avatar.getTrialAvatarId()));
+        if (!removed) return;
+        this.usingTrialTeam = !this.getTrialAvatars().isEmpty();
         this.trialAvatarTeam = new TeamInfo();
-
-        this.getActiveTeam()
-            .forEach(
-                avatarEntity ->
-                    scene.removeEntity(
-                        avatarEntity, VisionTypeOuterClass.VisionType.VisionType_VISION_REMOVE));
-
-        if (isTeam) {
-            this.getActiveTeam().clear();
-            this.getTrialAvatars().clear();
-        } else {
-            trialAvatarIds.forEach(
-                trialAvatarId -> {
-                    this.getActiveTeam().removeIf(x -> x.getAvatar().getTrialAvatarId() == trialAvatarId);
-                    this.getTrialAvatars().values().removeIf(x -> x.getTrialAvatarId() == trialAvatarId);
-                });
-        }
-
-        if (isTeam) {
-
-            this.getCurrentTeamInfo()
-                .getAvatars()
-                .forEach(
-                    avatarId ->
-                        this.getActiveTeam()
-                            .add(
-                                EntityCreationEvent.call(
-                                    EntityAvatar.class,
-                                    new Class<?>[] {Scene.class, Avatar.class},
-                                    new Object[] {scene, player.getAvatars().getAvatarById(avatarId)})));
-        } else {
-
-            var avatars = this.getCurrentTeamInfo().getAvatars();
-            for (var index = 0; index < avatars.size() - 1; index++) {
-                var avatar = avatars.get(index);
-                if (this.getActiveTeam().stream()
-                    .map(entity -> entity.getAvatar().getAvatarId())
-                    .toList()
-                    .contains(avatar)) continue;
-
-                var avatarData = player.getAvatars().getAvatarById(avatar);
-                if (avatarData == null) continue;
-
-                this.getActiveTeam()
-                    .add(
-                        index,
-                        EntityCreationEvent.call(
-                            EntityAvatar.class,
-                            new Class<?>[] {Scene.class, Avatar.class},
-                            new Object[] {scene, avatarData}));
+        if (this.isUsingTrialTeam()) {
+            if (this.trialTeamIncludesOwnedAvatars)
+                this.trialAvatarTeam.copyFrom(this.getRegularTeamInfo());
+            for (var avatar : this.getTrialAvatars().values()) {
+                this.trialAvatarTeam.getAvatars().removeIf(id -> id == avatar.getAvatarId());
+                this.trialAvatarTeam.addAvatar(avatar);
             }
         }
+        this.refreshTrialTeamEntities();
+    }
 
-        this.unsetTrialAvatarTeam();
+    private EntityAvatar createTrialAvatarEntity(Avatar avatar) {
+        if (player.getScene() == null) return null;
+        return EntityCreationEvent.call(EntityAvatar.class,
+            new Class<?>[] {Scene.class, Avatar.class}, new Object[] {player.getScene(), avatar});
+    }
+
+    private void refreshTrialTeamEntities() {
+        var scene = this.getPlayer().getScene();
+        if (scene == null) {
+            this.getActiveTeam().clear();
+            var index = this.isUsingTrialTeam() ? this.getCurrentCharacterIndex() : this.getPreviousIndex();
+            this.setCurrentCharacterIndex(Math.max(0, Math.min(index, this.getCurrentTeamInfo().size() - 1)));
+            if (!this.isUsingTrialTeam()) this.setPreviousIndex(-1);
+            return;
+        }
+        if (scene != null) this.getActiveTeam().forEach(entity ->
+            scene.removeEntity(entity, VisionTypeOuterClass.VisionType.VisionType_VISION_REMOVE));
+        this.getActiveTeam().clear();
+        for (var id : this.getCurrentTeamInfo().getAvatars()) {
+            var avatar = this.getTrialAvatars().get(id);
+            if (avatar == null) avatar = this.getPlayer().getAvatars().getAvatarById(id);
+            if (avatar != null) this.getActiveTeam().add(this.createTrialAvatarEntity(avatar));
+        }
+        if (this.isUsingTrialTeam()) this.trialAvatarTeamPostUpdate(this.getCurrentCharacterIndex());
+        else this.unsetTrialAvatarTeam();
     }
 
     public void setupTemporaryTeam(List<List<Long>> guidList) {
@@ -1118,6 +1113,10 @@ public final class TeamManager extends BasePlayerDataManager {
         this.getPlayer().sendPacket(new PacketAvatarAddNotify(avatar, false));
 
         this.addAvatarToTrialTeam(avatar);
+        if (questMainId != 0) {
+            this.questTrialAvatarIds.put(avatarId, questMainId);
+            this.getPlayer().save();
+        }
         return true;
     }
 
@@ -1156,8 +1155,7 @@ public final class TeamManager extends BasePlayerDataManager {
 
     public void removeTrialAvatar() {
         this.removeTrialAvatar(
-            this.getActiveTeam().stream()
-                .map(EntityAvatar::getAvatar)
+            this.getTrialAvatars().values().stream()
                 .map(Avatar::getTrialAvatarId)
                 .toList());
     }
@@ -1167,15 +1165,53 @@ public final class TeamManager extends BasePlayerDataManager {
     }
 
     public void removeTrialAvatar(List<Integer> trialAvatarIds) {
-
-        if (!this.isUsingTrialTeam()) return;
-
-        this.getPlayer()
-            .sendPacket(
-                new PacketAvatarDelNotify(
-                    trialAvatarIds.stream().map(this::getTrialAvatarGuid).toList()));
+        boolean changed = this.questTrialAvatarIds.keySet().removeAll(trialAvatarIds);
+        var guids = trialAvatarIds.stream().map(this::getTrialAvatarGuid)
+            .filter(guid -> guid != 0).distinct().toList();
+        if (changed) this.getPlayer().save();
+        if (guids.isEmpty()) return;
+        this.getPlayer().sendPacket(new PacketAvatarDelNotify(guids));
         this.removeTrialAvatarTeam(trialAvatarIds);
+        this.getPlayer().sendPacket(new PacketAvatarTeamUpdateNotify(this.getPlayer()));
+    }
 
-        if (trialAvatarIds.size() == 1) this.getPlayer().sendPacket(new PacketAvatarTeamUpdateNotify());
+    public void removeQuestTrialAvatars(int questId) {
+        var ids = new HashSet<Integer>();
+        this.questTrialAvatarIds.forEach((id, parent) -> { if (parent == questId) ids.add(id); });
+        this.getTrialAvatars().values().stream().filter(a -> a.getFromParentQuestId() == questId)
+            .map(Avatar::getTrialAvatarId).forEach(ids::add);
+        this.removeTrialAvatar(new ArrayList<>(ids));
+    }
+
+    public void restoreQuestTrialAvatars() {
+        var scene = this.getPlayer().getScene();
+        for (var grant : new LinkedHashMap<>(this.questTrialAvatarIds).entrySet()) {
+            var quest = this.getPlayer().getQuestManager().getMainQuests().get(grant.getValue());
+            if (quest == null) continue;
+            if (quest.isFinished() || scene == null || scene.getSceneType() != SceneType.SCENE_DUNGEON) {
+                this.removeTrialAvatar(grant.getKey());
+            } else if (this.getTrialAvatarGuid(grant.getKey()) == 0) {
+                this.addTrialAvatar(grant.getKey(), grant.getValue());
+            }
+        }
+    }
+
+    public void repairPersistentTeams() {
+        for (var team : this.getTeams().values()) {
+            var ids = new ArrayList<>(new LinkedHashSet<>(team.getAvatars()));
+            ids.removeIf(id -> !this.getPlayer().getAvatars().hasAvatar(id));
+            if (ids.size() > GAME_OPTIONS.avatarLimits.singlePlayerTeam)
+                ids.subList(GAME_OPTIONS.avatarLimits.singlePlayerTeam, ids.size()).clear();
+            team.getAvatars().clear();
+            team.getAvatars().addAll(ids);
+        }
+        var current = this.getCurrentSinglePlayerTeamInfo();
+        if (current.getAvatars().isEmpty()) {
+            var owned = this.getPlayer().getAvatars();
+            var first = owned.getAvatarById(this.getPlayer().getMainCharacterId());
+            if (first == null && owned.iterator().hasNext()) first = owned.iterator().next();
+            if (first != null) current.addAvatar(first);
+        }
+        this.setCurrentCharacterIndex(Math.max(0, Math.min(this.getCurrentCharacterIndex(), current.size() - 1)));
     }
 }

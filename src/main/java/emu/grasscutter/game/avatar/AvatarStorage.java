@@ -6,9 +6,11 @@ import emu.grasscutter.data.excels.avatar.AvatarSkillDepotData;
 import emu.grasscutter.database.DatabaseHelper;
 import emu.grasscutter.game.entity.EntityAvatar;
 import emu.grasscutter.game.inventory.GameItem;
+import emu.grasscutter.game.inventory.MaterialType;
 import emu.grasscutter.game.player.BasePlayerManager;
 import emu.grasscutter.game.player.Player;
 import emu.grasscutter.net.proto.SceneEntityInfoOuterClass.SceneEntityInfo;
+import emu.grasscutter.net.proto.GrantReasonOuterClass.GrantReason;
 import emu.grasscutter.server.event.entity.EntityCreationEvent;
 import emu.grasscutter.server.packet.send.PacketAvatarChangeCostumeNotify;
 import emu.grasscutter.server.packet.send.PacketAvatarFlycloakChangeNotify;
@@ -17,12 +19,14 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 public class AvatarStorage extends BasePlayerManager implements Iterable<Avatar> {
     private final Int2ObjectMap<Avatar> avatars;
     private final Long2ObjectMap<Avatar> avatarsGuid;
+    private final List<Avatar> legacyTrialAvatars = new ArrayList<>();
 
     public AvatarStorage(Player player) {
         super(player);
@@ -51,7 +55,7 @@ public class AvatarStorage extends BasePlayerManager implements Iterable<Avatar>
     }
 
     public boolean addAvatar(Avatar avatar) {
-        if (avatar.getAvatarData() == null || this.hasAvatar(avatar.getAvatarId())) {
+        if (avatar.getTrialAvatarId() != 0 || avatar.getAvatarData() == null || this.hasAvatar(avatar.getAvatarId())) {
             return false;
         }
 
@@ -158,6 +162,14 @@ public class AvatarStorage extends BasePlayerManager implements Iterable<Avatar>
         List<Avatar> avatars = DatabaseHelper.getAvatars(getPlayer());
 
         for (Avatar avatar : avatars) {
+            if (avatar.getTrialAvatarId() != 0) {
+                this.legacyTrialAvatars.add(avatar);
+                if (avatar.getGrantReason() == GrantReason.GRANT_REASON_BY_QUEST.getNumber()
+                        && avatar.getFromParentQuestId() != 0)
+                    this.getPlayer().getTeamManager().getQuestTrialAvatarIds()
+                        .putIfAbsent(avatar.getTrialAvatarId(), avatar.getFromParentQuestId());
+                continue;
+            }
             // Should never happen
             if (avatar.getObjectId() == null) {
                 continue;
@@ -201,6 +213,40 @@ public class AvatarStorage extends BasePlayerManager implements Iterable<Avatar>
             }
             // Recalc stats
             avatar.recalcStats();
+        }
+    }
+
+    protected Avatar createRecoveredAvatar(int avatarId) {
+        return new Avatar(avatarId);
+    }
+
+    public void recoverLegacyTrialAvatars() {
+        for (var avatar : new ArrayList<>(this.legacyTrialAvatars)) {
+            if (avatar.getGrantReason() != GrantReason.GRANT_REASON_BY_QUEST.getNumber()) continue;
+            var quest = this.getPlayer().getQuestManager().getMainQuests().get(avatar.getFromParentQuestId());
+            if (quest == null || !quest.isFinished()) continue;
+            var mainData = GameData.getMainQuestDataMap().get(avatar.getFromParentQuestId());
+            if (!this.hasAvatar(avatar.getAvatarId()) && mainData != null && mainData.getRewardIdList() != null) {
+                for (var rewardId : mainData.getRewardIdList()) {
+                    var reward = GameData.getRewardDataMap().get(rewardId);
+                    if (reward == null) continue;
+                    for (var item : reward.getRewardItemList()) {
+                        var data = GameData.getItemDataMap().get(item.getId());
+                        if (item.getCount() > 0 && data != null
+                                && data.getMaterialType() == MaterialType.MATERIAL_AVATAR
+                                && item.getId() % 1000 + 10000000 == avatar.getAvatarId()
+                                && !this.hasAvatar(avatar.getAvatarId())) {
+                            var recovered = this.createRecoveredAvatar(avatar.getAvatarId());
+                            if (!this.addAvatar(recovered)) continue;
+                            // Inventory loads next and restores existing equipment; postLoad supplies
+                            // a starter weapon only when there is no saved weapon to restore.
+                            DatabaseHelper.saveGameSync(recovered);
+                        }
+                    }
+                }
+            }
+            DatabaseHelper.deleteTrialAvatar(avatar);
+            this.legacyTrialAvatars.remove(avatar);
         }
     }
 

@@ -420,7 +420,14 @@ public final class DatabaseHelper {
     }
 
     public static void saveAvatar(Avatar avatar) {
+        if (avatar.getTrialAvatarId() != 0) return;
         DatabaseHelper.saveGameAsync(avatar);
+    }
+
+    public static void deleteTrialAvatar(Avatar avatar) {
+        if (avatar.getTrialAvatarId() == 0 || avatar.getObjectId() == null)
+            throw new IllegalArgumentException("Only a persisted trial avatar can be deleted here.");
+        DatabaseManager.getGameDatastore().delete(avatar);
     }
 
     /**

@@ -806,6 +806,11 @@ Setting the last three to `1`, `1` and `0` gives you plain, unweighted domain ro
 - **Quest log is empty / no beginner quest** — `questing.enabled` is off. It
   defaults to on; see the section above. Also confirm the server is running with
   `-debug`, since quest progress is only logged at DEBUG.
+- **Temple trial characters remain after the quest** — quest trials use a temporary
+  party and are removed when their parent quest finishes. Logging in repairs older
+  saves with leftover trial records or oversized parties, preserves owned characters
+  and equipment, and restores a character reward missed because of a trial copy.
+  Permanently obtained Amber and Kaeya remain available in the character roster.
 - **No account / login refused** — create one first. The server has no web panel
   by default; use the console command `account create <name> <uid>`.
 - **MongoDB connection timeout** — check the service. On Windows, `Win+R` →

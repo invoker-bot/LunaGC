@@ -169,6 +169,7 @@ public class GameMainQuest {
             this.state = ParentQuestState.PARENT_QUEST_STATE_FINISHED;
         }
 
+        this.getOwner().getTeamManager().removeQuestTrialAvatars(this.getParentQuestId());
         this.getOwner().getSession().send(new PacketFinishedParentQuestUpdateNotify(this));
         this.getOwner().getSession().send(new PacketCodexDataUpdateNotify(this));
 

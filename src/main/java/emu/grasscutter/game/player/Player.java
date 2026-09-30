@@ -1377,12 +1377,16 @@ public class Player implements PlayerHook, FieldFetch {
         var runner = Grasscutter.getThreadPool();
         runner.submit(() -> this.achievements = Achievements.getByPlayer(this));
 
-        runner.submit(this.getAvatars()::loadFromDatabase);
-        runner.submit(this.getInventory()::loadFromDatabase);
+        runner.submit(() -> {
+            this.getAvatars().loadFromDatabase();
+            this.getQuestManager().loadFromDatabase();
+            // Recover earned characters before inventory resolves saved equipment owners.
+            this.getAvatars().recoverLegacyTrialAvatars();
+            this.getInventory().loadFromDatabase();
+        });
 
         runner.submit(this.getFriendsList()::loadFromDatabase);
         runner.submit(this.getMailHandler()::loadFromDatabase);
-        runner.submit(this.getQuestManager()::loadFromDatabase);
 
         runner.submit(this::loadBattlePassManager);
         runner.submit(
@@ -1399,6 +1403,7 @@ public class Player implements PlayerHook, FieldFetch {
     }
 
     public void onLogin() {
+        this.getTeamManager().repairPersistentTeams();
 
         // Union the defaults in on every login, not just when the player has none. A save made
         // against an older resource set keeps its old tag set for good otherwise, and a scene tag
@@ -1528,6 +1533,7 @@ public class Player implements PlayerHook, FieldFetch {
         }
 
         getServer().registerPlayer(this);
+        this.getTeamManager().restoreQuestTrialAvatars();
     }
 
     public void onLogout() {
