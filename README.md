@@ -446,9 +446,23 @@ works from any shell that has the server's stdin; the console is the easy option
 ## Patching the client
 
 ```
+task game-path      # show the resolved client directory without changing it
 task patch          # build the DLL if stale, then install it into the client
 task patch:status   # what is patched right now, and are the backups intact
 task patch:reset    # restore the pristine client files from their backups
+```
+
+Run these commands from the repository directory or a subdirectory. The patch
+script derives the repository root from its own location, so moving the checkout
+does not require changing the script. The client directory is resolved separately:
+`GAME_PATH` from `.env.local` / `.env` takes priority; otherwise the script reads
+the miHoYo launcher's install path from the Windows registry. It does not search
+all disks for a client. Use `task game-path` to confirm the selected directory.
+For an explicit override, put this in the ignored `.env.local`, adjusting it to
+your installation:
+
+```dotenv
+GAME_PATH=C:/Users/InvokerBot/AppData/Local/hoyo/hk4e/versions/current
 ```
 
 `task patch` does the whole job: it builds `ext.dll` if the sources changed, then
@@ -459,8 +473,9 @@ the server's. It keeps `.lunagc-bak` backups next to each patched file so
 about the client looks wrong — it prints the whole state and exits non-zero on a
 problem.
 
-You only need Rust if you are changing the patch itself. The built DLL is
-committed-adjacent and `task patch` builds it when the sources change.
+The built DLL is an ignored local build output. Rust nightly is required for the
+first build and whenever the patch sources change; `task patch` reuses an
+up-to-date DLL.
 
 **While the game is running, `task patch:status` reads the session state, not
 the install state.** Both swapped slots hold their pristine image on disk for

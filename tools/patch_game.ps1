@@ -49,6 +49,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Load this PowerShell installation's utility cmdlets explicitly so Get-FileHash
+# is available when the script is invoked through Task.
+Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1') -ErrorAction Stop
+
 $repo = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 
 # --- locate the game -------------------------------------------------------
