@@ -917,10 +917,11 @@ public class SceneScriptManager {
          */
         long activityTicket = scene.getCrucibleSceneController().getLifecycle().ticket();
         long activityRound = scene.getCrucibleSceneController().currentRoundSerial();
-        return eventExecutor.submit(() -> this.realCallEvent(params, activityTicket, activityRound));
+        long invitationSerial = scene.getCrucibleSceneController().invitationSerial();
+        return eventExecutor.submit(() -> this.realCallEvent(params, activityTicket, activityRound, invitationSerial));
     }
 
-    private void realCallEvent(@Nonnull ScriptArgs params, long activityTicket, long activityRound) {
+    private void realCallEvent(@Nonnull ScriptArgs params, long activityTicket, long activityRound, long invitationSerial) {
         try {
             ScriptLoader.getScriptLib().setSceneScriptManager(this);
 
@@ -949,6 +950,7 @@ public class SceneScriptManager {
                 var activity = scene.getCrucibleSceneController();
                 if (activity.owns(trigger.currentGroup.id)) {
                     activity.runIfCurrent(activityTicket, activityRound, () -> {
+                        if (!activity.allowsInvitationEvent(invitationSerial, eventType)) return;
                         if ((eventType == EventType.EVENT_ANY_MONSTER_DIE
                                 || eventType == EventType.EVENT_GADGET_LUA_NOTIFY
                                 || eventType == EventType.EVENT_GADGET_PLAY_START

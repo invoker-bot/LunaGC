@@ -1,5 +1,6 @@
 package emu.grasscutter.data.excels.activity;
 
+import com.google.gson.annotations.SerializedName;
 import emu.grasscutter.data.*;
 import emu.grasscutter.game.world.Position;
 import java.util.List;
@@ -12,6 +13,7 @@ public class MpPlayGroupData extends GameResource {
     private List<Float> centerPosList;
     private List<Integer> groupList;
     private int prepareTime;
+    @SerializedName(value = "centerRadius", alternate = {"radius"})
     private int radius;
     private int bornGroupId;
     private int bornConfigId;

@@ -1,0 +1,8 @@
+// 7.1 native writer and packet getter; see docs/CRUCIBLE_PROTOCOL.md.
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MpPlayOwnerCheckReqOuterClass";
+message MpPlayOwnerCheckReq {
+  bool is_skip_match = 4;
+  uint32 mp_play_id = 14;
+}

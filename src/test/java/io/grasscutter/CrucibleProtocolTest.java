@@ -13,6 +13,10 @@ import emu.grasscutter.net.proto.GadgetPlayStopNotifyOuterClass.GadgetPlayStopNo
 import emu.grasscutter.net.proto.GadgetPlayUidOpNotifyOuterClass.GadgetPlayUidOpNotify;
 import emu.grasscutter.net.proto.GadgetPlayUidInfoOuterClass.GadgetPlayUidInfo;
 import emu.grasscutter.net.proto.MpPlayPrepareNotifyOuterClass.MpPlayPrepareNotify;
+import emu.grasscutter.net.proto.MpPlayOwnerCheckReqOuterClass.MpPlayOwnerCheckReq;
+import emu.grasscutter.net.proto.MpPlayOwnerStartInviteReqOuterClass.MpPlayOwnerStartInviteReq;
+import emu.grasscutter.net.proto.MpPlayGuestReplyInviteReqOuterClass.MpPlayGuestReplyInviteReq;
+import emu.grasscutter.net.proto.MpPlayOwnerInviteNotifyOuterClass.MpPlayOwnerInviteNotify;
 import emu.grasscutter.scripts.data.SceneGadgetCrucibleConfig;
 import emu.grasscutter.server.packet.send.*;
 import java.io.ByteArrayOutputStream;
@@ -24,6 +28,56 @@ import org.junit.jupiter.api.Test;
 
 /** Tags independently observed in the supplied client's native protobuf readers. */
 class CrucibleProtocolTest {
+    @Test void invitationRequestsDecodeTheThreeNativeWriters() throws Exception {
+        var checkBytes = nativeScalars(Map.of(4, 1L, 14, 1L));
+        var check = MpPlayOwnerCheckReq.parseFrom(checkBytes);
+        assertEquals(6899, PacketOpcodes.MpPlayOwnerCheckReq);
+        assertTrue(check.getIsSkipMatch());
+        assertEquals(1, check.getMpPlayId());
+        assertEquals(UnknownFieldSet.parseFrom(checkBytes), UnknownFieldSet.parseFrom(check.toByteArray()));
+        var startBytes = nativeScalars(Map.of(1, 1L, 3, 1L));
+        var start = MpPlayOwnerStartInviteReq.parseFrom(startBytes);
+        assertEquals(28718, PacketOpcodes.MpPlayOwnerStartInviteReq);
+        assertTrue(start.getIsSkipMatch());
+        assertEquals(1, start.getMpPlayId());
+        assertEquals(UnknownFieldSet.parseFrom(startBytes), UnknownFieldSet.parseFrom(start.toByteArray()));
+        var guestBytes = nativeScalars(Map.of(3, 1L, 14, 1L));
+        var guest = MpPlayGuestReplyInviteReq.parseFrom(guestBytes);
+        assertEquals(5376, PacketOpcodes.MpPlayGuestReplyInviteReq);
+        assertTrue(guest.getIsAgree());
+        assertEquals(1, guest.getMpPlayId());
+        assertEquals(UnknownFieldSet.parseFrom(guestBytes), UnknownFieldSet.parseFrom(guest.toByteArray()));
+    }
+
+    @Test void invitationResponsesAndNotificationsMatchAllNativeReaderTags() throws Exception {
+        var packets = List.of(PacketMpPlay.ownerCheck(1, true, 1212, 10002),
+                PacketMpPlay.startInvite(1, true, 1219), PacketMpPlay.ownerInvite(1, 30),
+                PacketMpPlay.guestReplyResponse(1, 1225), PacketMpPlay.guestReply(1, 10002, true),
+                PacketMpPlay.inviteResult(1, true), PacketMpPlay.interrupt(1));
+        var opcodes = List.of(8829, 8056, 25124, 2563, 21009, 22704, 7851);
+        var nativeFields = List.of(Map.of(1, 10002L, 2, 1212L, 3, 1L, 11, 1L),
+                Map.of(7, 1L, 8, 1L, 11, 1219L), Map.of(8, 1L, 15, 30L),
+                Map.of(8, 1225L, 11, 1L), Map.of(5, 1L, 8, 1L, 10, 10002L),
+                Map.of(4, 1L, 7, 1L), Map.of(9, 1L));
+        for (int i = 0; i < packets.size(); i++) {
+            assertEquals(opcodes.get(i), packets.get(i).getOpcode());
+            assertEquals(UnknownFieldSet.parseFrom(nativeScalars(nativeFields.get(i))),
+                    UnknownFieldSet.parseFrom(packets.get(i).getData()));
+        }
+        var decline = UnknownFieldSet.parseFrom(PacketMpPlay.inviteResult(1, false).getData());
+        assertFalse(decline.hasField(4));
+        assertEquals(1, decline.getField(7).getVarintList().get(0));
+        assertEquals(1, rawField(MpPlayOwnerInviteNotify.newBuilder().setIsRemainReward(true).build().toByteArray(), 6));
+    }
+
+    private static byte[] nativeScalars(Map<Integer, Long> fields) throws Exception {
+        var bytes = new ByteArrayOutputStream();
+        var wire = CodedOutputStream.newInstance(bytes);
+        for (var field : fields.entrySet()) wire.writeUInt64(field.getKey(), field.getValue());
+        wire.flush();
+        return bytes.toByteArray();
+    }
+
     @Test void clientSubmissionUsesTheNativeWriterTagsAndSignedParameters() throws Exception {
         assertEquals(26835, PacketOpcodes.ExecuteGadgetLuaReq);
         var bytes = new ByteArrayOutputStream();

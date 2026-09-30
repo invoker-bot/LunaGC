@@ -1,0 +1,7 @@
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "MpPlayGuestReplyInviteRspOuterClass";
+message MpPlayGuestReplyInviteRsp {
+  int32 retcode = 8;
+  uint32 mp_play_id = 11;
+}

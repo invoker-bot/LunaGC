@@ -13,7 +13,7 @@
 ## 消息与包号
 
 客户端方法 `AEGNNPENLNM` 的以下实现都是 `mov ax, imm16; ret`，
-立即数与项目已有的 7.1 `PacketOpcodes` 一致。消息身份还通过玩法处理函数、
+通知立即数与项目已有的 7.1 `PacketOpcodes` 一致，新恢复的请求编号也记录在此表中。消息身份还通过玩法处理函数、
 字段引用和原生 protobuf 读取分支交叉核对。
 
 | 消息 | 混淆类型 / 索引 | 包号 | 包号函数地址 | 读取函数地址 |
@@ -23,6 +23,47 @@
 | `GadgetPlayStopNotify` | `LKACNOCAHKC` / 33805 | 25650 | `0x1508cc650` | `0x1508cc670` |
 | `GadgetPlayDataNotify` | `GHDPDAHBOOA` / 81286 | 20094 | `0x14b1d35f0` | `0x14b1d32b0` |
 | `GadgetPlayStartNotify` | `NJEHDFEAHJL` / 81315 | 29148 | `0x14ad266d0` | `0x14ad266e0` |
+
+### 邀请与准备
+
+| 消息 | 混淆类型 / 索引 | 包号 | 包号函数地址 | 读 / 写函数地址 |
+| --- | --- | ---: | --- | --- |
+| `MpPlayOwnerCheckReq` | `IOIAGINPEJF` / 48491 | 6899 | `0x14fafbe00` | 写 `0x14fafb980` |
+| `MpPlayOwnerCheckRsp` | `DEHEMPBKEOM` / 79304 | 8829 | `0x153f737e0` | 读 `0x153f737f0` |
+| `MpPlayOwnerStartInviteReq` | `IPMDLDDNAAN` / 41678 | 28718 | `0x149a4a990` | 写 `0x149a4ab20` |
+| `MpPlayOwnerStartInviteRsp` | `CFEDMCCHIPB` / 37848 | 8056 | `0x149f48210` | 读 `0x149f48230` |
+| `MpPlayGuestReplyInviteReq` | `MNJOAPIBONA` / 30820 | 5376 | `0x15215f490` | 写 `0x15215f570` |
+| `MpPlayGuestReplyInviteRsp` | `FMKKGHINFGE` / 22123 | 2563 | `0x14a4a1510` | 读 `0x14a4a1710` |
+| `MpPlayGuestReplyNotify` | `NPLNKBICHBL` / 62578 | 21009 | `0x1517527d0` | 读 `0x151752950` |
+| `MpPlayOwnerInviteNotify` | `GGJKCBOAKBA` / 69240 | 25124 | `0x15360a990` | 读 `0x15360a560` |
+| `MpPlayInviteResultNotify` | `LONKAKAHOPC` / 54528 | 22704 | `0x1514a0670` | 读 `0x1514a0490` |
+| `MpPlayPrepareInterruptNotify` | `PHHAPOBMANG` / 87015 | 7851 | `0x14ae14940` | 读 `0x14ae14a40` |
+
+邀请管理器类型 62046 的房主检查发送方法 `0x14f74f3a0` 使用类指针 `0x1457f2820`，
+发起邀请发送方法 `0x14f751670` 使用 `0x1457f2c30`。类指针与两个请求类型由元数据初始化表关联。
+已知 `OwnerCheckRsp` 的处理函数 `0x14f7380d0` 在成功时进入 `0x14f7385b0`，
+其中 `0x14f7389b3` 直接调用上述发起邀请方法，传入响应的 `mp_play_id`。
+两次发送都将玩法参数存入 `+0x1c`，将管理器的同一个布尔字段存入 `+0x18`，并调用网络发送入口。
+请求类型身份由这条调用链与对应响应交叉核对。
+
+语义名称还参考固定版本的历史定义：[房主检查](https://github.com/Hiro420/3.5_protos/blob/d42eec84da01b1b28abb40d8565fbbcb306a8969/deobfuscated/MpPlayOwnerCheckReq.proto)、
+[队友答复](https://github.com/Hiro420/3.5_protos/blob/d42eec84da01b1b28abb40d8565fbbcb306a8969/deobfuscated/MpPlayGuestReplyInviteReq.proto)、
+[邀请通知](https://github.com/Hiro420/3.5_protos/blob/d42eec84da01b1b28abb40d8565fbbcb306a8969/deobfuscated/MpPlayOwnerInviteNotify.proto)。
+字段编号全部来自上表的本地 7.1 原生分支。邀请通知处理函数 `0x14f73f2d0` 将 `cd` 转为浮点传给弹窗，
+服务器使用它发送本次邀请的等待秒数；准备结束时间使用独立的 epoch 秒字段。
+
+| 消息 | 本地 7.1 字段编号、类型及对象偏移 |
+| --- | --- |
+| `MpPlayOwnerCheckReq` | `is_skip_match` 4 / bool / `0x18`；`mp_play_id` 14 / uint32 / `0x1c` |
+| `MpPlayOwnerCheckRsp` | `wrong_uid` 1 / uint32 / `0x1c`；`retcode` 2 / int32 / `0x20`；`is_skip_match` 3 / bool / `0x24`；`mp_play_id` 11 / uint32 / `0x18` |
+| `MpPlayOwnerStartInviteReq` | `mp_play_id` 1 / uint32 / `0x1c`；`is_skip_match` 3 / bool / `0x18` |
+| `MpPlayOwnerStartInviteRsp` | `is_skip_match` 7 / bool / `0x1c`；`mp_play_id` 8 / uint32 / `0x18`；`retcode` 11 / int32 / `0x20` |
+| `MpPlayGuestReplyInviteReq` | `is_agree` 3 / bool / `0x18`；`mp_play_id` 14 / uint32 / `0x1c` |
+| `MpPlayGuestReplyInviteRsp` | `retcode` 8 / int32 / `0x18`；`mp_play_id` 11 / uint32 / `0x1c` |
+| `MpPlayGuestReplyNotify` | `is_agree` 5 / bool / `0x20`；`mp_play_id` 8 / uint32 / `0x18`；`uid` 10 / uint32 / `0x1c` |
+| `MpPlayOwnerInviteNotify` | `is_remain_reward` 6 / bool / `0x18`；`mp_play_id` 8 / uint32 / `0x20`；`cd` 15 / uint32 / `0x1c` |
+| `MpPlayInviteResultNotify` | `all_agree` 4 / bool / `0x18`；`mp_play_id` 7 / uint32 / `0x1c` |
+| `MpPlayPrepareInterruptNotify` | `mp_play_id` 9 / uint32 / `0x18` |
 
 类型 23204 的玩法管理器分别处理开始、进度、玩家操作和结束消息。
 它派发的客户端事件枚举值 895–898 与上述包号属于不同编号空间。
@@ -84,7 +125,15 @@
 - 成功、超时、主动取消及场景卸载发送 `GadgetPlayStopNotify`。
   成绩与耗时来自不可变的本轮快照；耗时从倒计时结束起计算并限制在挑战时长内。
   参与者的昵称与头像在开局时保存，退出场景后仍可出现在本轮结束列表中。
-- 已提供 `MpPlayPrepareNotify` 的发包类；邀请与准备状态机尚未接入它。
+- 房主检查与发起邀请均验证当前排期、安装的主炉、房主身份、玩家加载状态、活动半径与可用角色。
+  当前世界的固定队伍全部同意后，广播 `MpPlayPrepareNotify` 并调用原 Lua 的 `EVENT_MP_PLAY_PREPARE`；
+  资源指定的 20 秒准备完成后调用 `EVENT_MP_PLAY_BATTLE`，由 Lua 进入原有的 3 秒开战倒计时。
+  主炉的场景实体信息同步 `prepare_end_time`。准备事件完成前不会提交开战事件；不在场景锁中等待 Lua。
+- 邀请等待 30 秒，拒绝或超时发送失败结果；准备阶段的队员离场、加载状态变化或越出半径会广播中断，
+  执行原 Lua 中断事件。旧邀请序号使迟到的准备和开战事件失效，旧中断也不能重新启用下一次准备的主炉。
+  房主离开正在进行的挑战会取消本轮。活动卸载同样取消邀请和准备。
+- 当前只支持 `is_skip_match = true` 的本世界队伍；跨世界匹配请求返回 `RET_MP_MATCH_PLAY_NOT_OPEN`。
+  尚未提供挑战结算奖励，邀请通知的 `is_remain_reward` 使用默认值 false。
 - `ExecuteGadgetLuaReq` 的烘炉入口检查安装中的主炉、当前活动排期、场景代次、
   玩家在场、本轮参与资格与挑战时限。`param3` 必须属于发送玩家的队伍实体，
   `param2` 仅接受提交操作 1；`param1 = 5001` 的服务端点名操作不能从此入口调用。
@@ -92,8 +141,8 @@
 
 测试先验证缺失消息会失败，再核对所有字段编号、实际发包的包号和字节，
 覆盖 repeated 的两种编码、重开后的旧快照、取消、延迟超时及现有 Lua / 场景回归。
-这些结果确认服务端行为和消息编码；完整客户端挑战、邀请流程、点名效果、
-结算称号和体力奖励仍需继续适配和实机验证。
+这些结果确认服务端行为和消息编码；邀请弹窗、准备及完整客户端挑战、点名效果、
+结算称号和体力奖励仍需实机验证，跨世界匹配与结算奖励仍待接入。
 
 ## 重复提取包号
 

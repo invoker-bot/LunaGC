@@ -235,6 +235,7 @@ public class Scene {
             player.sendPacket(new PacketDungeonChallengeFinishNotify(this.getChallenge()));
         }
 
+        this.crucibleSceneController.onPlayerLeaving(player);
         getPlayers().remove(player);
         player.setScene(null);
 

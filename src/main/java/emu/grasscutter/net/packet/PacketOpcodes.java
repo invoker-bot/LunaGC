@@ -1222,8 +1222,10 @@ public final class PacketOpcodes {
     public static final int MpPlayGuestReplyInviteRsp = 2563;
     public static final int MpPlayGuestReplyNotify = 21009;
     public static final int MpPlayInviteResultNotify = 22704;
+    public static final int MpPlayOwnerCheckReq = 6899;
     public static final int MpPlayOwnerCheckRsp = 8829;
     public static final int MpPlayOwnerInviteNotify = 25124;
+    public static final int MpPlayOwnerStartInviteReq = 28718;
     public static final int MpPlayOwnerStartInviteRsp = 8056;
     public static final int MpPlayPrepareInterruptNotify = 7851;
     public static final int MpPlayPrepareNotify = 21654;

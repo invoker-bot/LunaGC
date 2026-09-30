@@ -181,13 +181,19 @@ public class EntityGadget extends EntityBaseGadget {
         return startGadgetPlayRound();
     }
 
+    public boolean canStartGadgetPlay() {
+        return metaGadget != null && metaGadget.crucible_config != null && !getGadgetPlayState().isActive()
+                && !dispatchingPlayChanges.get() && getPendingPlayChanges().isEmpty()
+                && (playStopCallback == null || playStopCallback.isDone());
+    }
+
     private boolean startGadgetPlayRound() {
-            if (dispatchingPlayChanges.get() || !getPendingPlayChanges().isEmpty()
-                    || (playStopCallback != null && !playStopCallback.isDone())) return false;
+            if (!canStartGadgetPlay()) return false;
             var activity = getScene().getCrucibleSceneController();
             var round = activity.owns(getGroupId()) ? activity.captureRound(this) : GadgetPlayState.Round.NONE;
             if (round == null || !getGadgetPlayState().start(metaGadget.crucible_config,
                     System.currentTimeMillis() / 1000, round)) return false;
+            if (activity.owns(getGroupId())) activity.onRoundStarted();
             var profiles = getPlayParticipantProfiles();
             profiles.clear();
             for (var player : getScene().getPlayers()) {
@@ -556,8 +562,12 @@ public class EntityGadget extends EntityBaseGadget {
 
         if (this.metaGadget != null) {
             gadgetInfo.setDraftId(this.metaGadget.draft_id);
-            if (metaGadget.crucible_config != null)
-                gadgetInfo.setPlayInfo(getGadgetPlayState().toProto(metaGadget.crucible_config));
+            if (metaGadget.crucible_config != null) {
+                var playInfo = getGadgetPlayState().toProto(metaGadget.crucible_config).toBuilder();
+                playInfo.setCrucibleInfo(playInfo.getCrucibleInfo().toBuilder()
+                        .setPrepareEndTime(getScene().getCrucibleSceneController().prepareEndTime(this)));
+                gadgetInfo.setPlayInfo(playInfo);
+            }
         }
 
         if (owner != null) {
