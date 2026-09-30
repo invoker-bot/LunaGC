@@ -2,6 +2,7 @@ package emu.grasscutter.scripts.data.controller;
 
 import emu.grasscutter.*;
 import emu.grasscutter.game.entity.GameEntity;
+import emu.grasscutter.game.entity.EntityGadget;
 import emu.grasscutter.game.props.ElementType;
 import emu.grasscutter.scripts.*;
 import java.util.Set;
@@ -37,6 +38,11 @@ public class EntityController {
         callControllerScriptFunc(entity, "OnTimer", LuaValue.valueOf(now));
     }
 
+    public void onPlayStageChange(GameEntity entity, int previous, int stage, int last) {
+        callControllerScriptFunc(entity, "OnPlayStageChange", LuaValue.valueOf(previous),
+                LuaValue.valueOf(stage), LuaValue.valueOf(last));
+    }
+
     public int onClientExecuteRequest(GameEntity entity, int param1, int param2, int param3) {
         if (DebugConstants.LOG_LUA_SCRIPTS) {
             Grasscutter.getLogger()
@@ -68,7 +74,7 @@ public class EntityController {
         return callControllerScriptFunc(entity, funcName, arg1, arg2, LuaValue.NIL);
     }
 
-    private LuaValue callControllerScriptFunc(
+    private synchronized LuaValue callControllerScriptFunc(
             GameEntity entity, String funcName, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
         LuaValue funcLua = null;
         if (funcName != null && !funcName.isEmpty()) {
@@ -78,8 +84,16 @@ public class EntityController {
         LuaValue ret = LuaValue.ONE;
 
         if (funcLua != null) {
+            var library = ScriptLoader.getScriptLib();
+            var previousEntity = library.getCurrentEntity().orElse(null);
+            var previousGroup = library.getCurrentGroup().orElse(null);
+            var previousManager = library.getSceneScriptManagerOrNull();
             try {
-                ScriptLoader.getScriptLib().setCurrentEntity(entity);
+                library.setCurrentEntity(entity);
+                library.setSceneScriptManager(entity.getScene().getScriptManager());
+                if (entity instanceof EntityGadget gadget && gadget.getMetaGadget() != null)
+                    library.setCurrentGroup(gadget.getMetaGadget().group);
+                else library.removeCurrentGroup();
                 ret =
                         funcLua
                                 .invoke(new LuaValue[] {ScriptLoader.getScriptLibLua(), arg1, arg2, arg3})
@@ -94,6 +108,13 @@ public class EntityController {
                         arg3,
                         error);
                 ret = LuaValue.valueOf(-1);
+            } finally {
+                if (previousEntity == null) library.removeCurrentEntity();
+                else library.setCurrentEntity(previousEntity);
+                if (previousGroup == null) library.removeCurrentGroup();
+                else library.setCurrentGroup(previousGroup);
+                if (previousManager == null) library.removeSceneScriptManager();
+                else library.setSceneScriptManager(previousManager);
             }
         } else if (funcName != null && !SERVER_CALLED.contains(funcName)) {
             ScriptLib.logger.error(

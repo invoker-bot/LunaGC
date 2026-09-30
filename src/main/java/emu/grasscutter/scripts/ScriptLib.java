@@ -58,6 +58,10 @@ public class ScriptLib {
         return Optional.of(sceneScriptManager.get()).get();
     }
 
+    @Nullable public SceneScriptManager getSceneScriptManagerOrNull() {
+        return sceneScriptManager.getIfExists();
+    }
+
     private String printTable(LuaTable table) {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
@@ -77,7 +81,7 @@ public class ScriptLib {
     }
 
     public Optional<SceneGroup> getCurrentGroup() {
-        return Optional.of(this.currentGroup.get());
+        return Optional.ofNullable(this.currentGroup.getIfExists());
     }
 
     public void removeCurrentGroup() {
@@ -93,7 +97,7 @@ public class ScriptLib {
     }
 
     public Optional<GameEntity> getCurrentEntity() {
-        return Optional.of(this.currentEntity.get());
+        return Optional.ofNullable(this.currentEntity.getIfExists());
     }
 
     private GameEntity createGadget(int configId, SceneGroup group) {
@@ -591,10 +595,35 @@ public class ScriptLib {
         return 0;
     }
 
-    public int GadgetPlayUidOp(int groupId, int gadget_crucible, int var3, int var4, String var5, int var6) {
-        logger.warn("[LUA] Call unimplemented GadgetPlayUidOp with {}, {}, {}, {}, {}, {}", groupId, gadget_crucible, var3, var4, var5, var6);
+    public int GadgetPlayUidOp(int groupId, int configId, LuaTable uids, int op, String name, LuaTable args) {
+        logger.debug("[LUA] GadgetPlayUidOp {} requires a verified 7.1 notification schema", name);
+        return -1;
+    }
 
+    public int StartGadgetPlay(int groupId, int configId) {
+        var gadget = playGadget(groupId, configId);
+        return gadget != null && gadget.startGadgetPlay() ? 0 : -1;
+    }
+
+    public int StopGadgetPlay(int groupId, int configId) {
+        var gadget = playGadget(groupId, configId);
+        if (gadget == null) return -1;
+        gadget.stopGadgetPlay();
         return 0;
+    }
+
+    public int GadgetLuaNotifyGroup(int param1, int param2, int param3) {
+        var gadget = getCurrentEntityGadget();
+        if (gadget == null) return -1;
+        gadget.getScene().getScriptManager().callEvent(new ScriptArgs(gadget.getGroupId(),
+                EventType.EVENT_GADGET_LUA_NOTIFY, param1, param2).setParam3(param3));
+        return 0;
+    }
+
+    public int ExecuteGadgetLua(int groupId, int configId, int param1, int param2, int param3) {
+        var gadget = playGadget(groupId, configId);
+        if (gadget == null || gadget.getEntityController() == null) return -1;
+        return gadget.onClientExecuteRequest(param1, param2, param3);
     }
 
     private EntityGadget playGadget(int groupId, int configId) {
@@ -627,8 +656,13 @@ public class ScriptLib {
     public int AddGadgetPlayProgress(int groupId, int configId, int delta) {
         var gadget = playGadget(groupId, configId);
         if (gadget == null) return -1;
-        gadget.getGadgetPlayState().addProgress(delta);
+        gadget.addGadgetPlayProgress(delta);
         return 0;
+    }
+
+    public int GetGadgetPlayStageBeginProgress(int groupId, int configId) {
+        var gadget = playGadget(groupId, configId);
+        return gadget == null ? 0 : gadget.getGadgetPlayState().getStageBeginProgress();
     }
 
     public int GetUidByTeamEntityId(int entityId) {
@@ -850,7 +884,7 @@ public class ScriptLib {
     }
 
     public LuaTable GetSceneUidList() {
-        logger.warn("[LUA] Call unchecked GetSceneUidList");
+        logger.debug("[LUA] Call GetSceneUidList");
 
         var scriptManager = sceneScriptManager.getIfExists();
         if (scriptManager == null) {
@@ -859,15 +893,13 @@ public class ScriptLib {
         var players = scriptManager.getScene().getPlayers();
         var result = new LuaTable();
         for (int i = 0; i < players.size(); i++) {
-            result.set(Integer.toString(i + 1), players.get(i).getUid());
+            result.set(i + 1, LuaValue.valueOf(players.get(i).getUid()));
         }
         return result;
     }
 
     public long GetServerTime() {
-        logger.warn("[LUA] Call unchecked GetServerTime");
-
-        return new Date().getTime();
+        return System.currentTimeMillis() / 1000;
     }
 
     public int GoToGroupSuite(int groupId, int suite) {

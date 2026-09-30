@@ -17,6 +17,7 @@ public class SceneGadget extends SceneObject {
     public int point_type;
     public int owner;
     public SceneBossChest boss_chest;
+    public SceneGadgetCrucibleConfig crucible_config;
     public int interact_id;
     /**
      * Note: this field indicates whether the gadget should disappear permanently. For example, if

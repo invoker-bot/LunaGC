@@ -33,6 +33,9 @@ import emu.grasscutter.server.packet.send.*;
 import emu.grasscutter.utils.helpers.ProtoHelper;
 import it.unimi.dsi.fastutil.ints.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import javax.annotation.Nullable;
 import lombok.*;
 
@@ -53,6 +56,8 @@ public class EntityGadget extends EntityBaseGadget {
     @Getter @Setter private int pointType;
     @Getter private GadgetContent content;
     @Getter(lazy = true) private final GadgetPlayState gadgetPlayState = new GadgetPlayState();
+    @Getter(lazy = true) private final Queue<GadgetPlayState.Change> pendingPlayChanges = new ConcurrentLinkedQueue<>();
+    private final AtomicBoolean dispatchingPlayChanges = new AtomicBoolean();
 
     @Getter(onMethod_ = @Override, lazy = true)
     private final Int2FloatMap fightProperties = new Int2FloatOpenHashMap();
@@ -161,6 +166,57 @@ public class EntityGadget extends EntityBaseGadget {
         this.interactEnabled = enable;
         this.getScene()
                 .broadcastPacket(new PacketGadgetStateNotify(this, this.getState())); // Update the interact
+    }
+
+    public boolean startGadgetPlay() {
+        if (metaGadget == null || metaGadget.crucible_config == null) return false;
+        var play = getGadgetPlayState();
+        if (!play.start(metaGadget.crucible_config, System.currentTimeMillis() / 1000)) return false;
+        getScene().getScriptManager().callEvent(new ScriptArgs(getGroupId(),
+                EventType.EVENT_GADGET_PLAY_START_CD, getConfigId()));
+        updateGadgetPlay(state -> state.tick(System.currentTimeMillis() / 1000));
+        return true;
+    }
+
+    public void addGadgetPlayProgress(int delta) {
+        updateGadgetPlay(state -> state.addProgress(delta, System.currentTimeMillis() / 1000));
+    }
+
+    public void stopGadgetPlay() { updateGadgetPlay(GadgetPlayState::stop); }
+
+    private void updateGadgetPlay(Function<GadgetPlayState, List<GadgetPlayState.Change>> update) {
+        var play = getGadgetPlayState();
+        var pending = getPendingPlayChanges();
+        synchronized (play) { pending.addAll(update.apply(play)); }
+        // Lua may submit from different players concurrently. Keep callbacks in state order,
+        // and never hold the state monitor while entering the shared Lua controller.
+        do {
+            if (!dispatchingPlayChanges.compareAndSet(false, true)) return;
+            try {
+                GadgetPlayState.Change change;
+                while ((change = pending.poll()) != null) dispatchPlayChange(change);
+            } finally { dispatchingPlayChanges.set(false); }
+        } while (!pending.isEmpty());
+    }
+
+    private void dispatchPlayChange(GadgetPlayState.Change change) {
+        switch (change.type()) {
+            case STARTED -> getScene().getScriptManager().callEvent(new ScriptArgs(getGroupId(),
+                    EventType.EVENT_GADGET_PLAY_START, getConfigId()));
+            case STAGE_CHANGED -> {
+                if (getEntityController() != null) getEntityController().onPlayStageChange(this,
+                        change.previousStage(), change.stage(), getGadgetPlayState().getFinalStage());
+            }
+            case SUCCEEDED, TIMED_OUT, CANCELLED -> getScene().getScriptManager().callEvent(
+                    new ScriptArgs(getGroupId(), EventType.EVENT_GADGET_PLAY_STOP, getConfigId(), 1)
+                            .setParam3(change.type() == GadgetPlayState.ChangeType.SUCCEEDED ? 1 : 0));
+        }
+    }
+
+    @Override public void onTick(int sceneTime) {
+        super.onTick(sceneTime);
+        if (metaGadget != null && metaGadget.crucible_config != null)
+            updateGadgetPlay(state -> state.tick(System.currentTimeMillis() / 1000));
     }
 
     public void setState(int state) {
@@ -425,6 +481,8 @@ public class EntityGadget extends EntityBaseGadget {
 
         if (this.metaGadget != null) {
             gadgetInfo.setDraftId(this.metaGadget.draft_id);
+            if (metaGadget.crucible_config != null)
+                gadgetInfo.setPlayInfo(getGadgetPlayState().toProto(metaGadget.crucible_config));
         }
 
         if (owner != null) {

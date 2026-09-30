@@ -43,7 +43,7 @@ public final class HistoricalActivityService {
             row.put("endTime", config == null ? 0 : config.getEndTime().getTime() / 1000);
             row.put("restoration", event.getActivityId() == 5001 ? "还原中" : "待还原");
             row.put("restorationNote", event.getActivityId() == 5001
-                    ? "活动详情、原始 Lua 计分已接入；主控组、烘炉交互与多人结算待补齐"
+                    ? "已恢复主控脚本、计分、倒计时与阶段回调；场景接入、7.1 多人交互和结算待验证"
                     : !resource ? "本资源版本缺少活动记录，暂不能开启"
                     : !event.hasKnownType() ? "活动类型编号尚未核实，暂不能开启"
                     : "可管理活动排期；专属玩法尚未完成客户端验证");

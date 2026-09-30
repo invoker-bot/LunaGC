@@ -1,2 +1,4 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+# Preserve archived Lua bytes, including the original whitespace.
+src/main/resources/historical-scripts/**/*.lua text eol=lf -whitespace

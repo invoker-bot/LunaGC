@@ -11,6 +11,7 @@ import emu.grasscutter.scripts.serializer.*;
 import emu.grasscutter.utils.FileUtils;
 import java.io.*;
 import java.lang.ref.SoftReference;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -226,6 +227,20 @@ public class ScriptLoader {
         // Attempt to load the script.
         var scriptPath = useAbsPath ? Paths.get(path) : FileUtils.getScriptPath(path);
         if (!Files.exists(scriptPath)) {
+            // Historical activity control groups may no longer be shipped in the client dump.
+            // A resource checkout takes precedence over the pinned recovery in this jar.
+            if (!useAbsPath) {
+                try (var stream = ScriptLoader.class.getResourceAsStream("/historical-scripts/" + path)) {
+                    if (stream != null) {
+                        var source = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+                        ScriptLoader.scriptSources.put(path, new SoftReference<>(source));
+                        return source;
+                    }
+                } catch (IOException exception) {
+                    Grasscutter.getLogger().error("Loading historical script {} failed", path, exception);
+                    return null;
+                }
+            }
             reportMissingScript(path);
             return null;
         }
