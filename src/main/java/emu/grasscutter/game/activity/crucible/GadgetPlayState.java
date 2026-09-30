@@ -50,6 +50,13 @@ public final class GadgetPlayState {
     public synchronized long getRoundSerial() { return roundSerial; }
     public synchronized int getStartTime() { return (int) countdownBegin; }
 
+    /** Crucible.lua accepts a player's clot submission, while 5001 is a server-only selection operation. */
+    public synchronized boolean acceptsClientSubmission(int uid, int param1, int param2, int param3,
+                                                         int teamEntityId, long now) {
+        return uid > 0 && teamEntityId != 0 && param3 == teamEntityId && param1 != 5001 && param2 == 1
+                && round.scheduleId() != 0 && round.participantWorldLevels().containsKey(uid) && isRunningAt(now);
+    }
+
     public synchronized boolean recordMonsterKill(int entityId, int uid, long now) {
         return entityId > 0 && isRunningAt(now) && round.participantWorldLevels().containsKey(uid)
                 && killedMonsters.add(entityId);

@@ -5,6 +5,7 @@
 
 - `YuanShen.exe` SHA-256：`7f89938da606c1281659607d464702cddb9a09a7d4320a196630f60a811ec38e`
 - `global-metadata.dat` SHA-256：`469eccd43aa48fe7a2df4e1caf66fa1268a17f5a4a03fa209e1427e467cb0161`
+- `startup-metadata.dat` SHA-256：`90848967d3f9432e7a13caffcec999bf457ac3be1f2ae86336443a63acbaadcf`
 
 没有用辅助 JSON 或 `config.ini` 判定版本。客户端及完整提取结果保存在本地，
 不随 Git 仓库、jar 或 Docker 镜像发布。
@@ -30,6 +31,27 @@
 初始化表项 290724 将该类型放入 `0x145809fa0`，随后用于创建字段 2 的消息编码器。
 其读取函数位于 `0x14b327670`，对应补入的 `GadgetPlayUidInfo`。
 头像子消息引用类型 49812 `MFDLDKCDGCF`；其读取分支与现有 `ProfilePicture` 的字段 1–4 相符。
+
+### 玩家提交请求
+
+`ExecuteGadgetLuaReq` 对应类型 18475 `JNLGGNKIEDH`，包号函数
+`0x14cd0b440` 直接返回 **26835**，与项目已有请求编号一致。
+该请求的读取方法已被客户端裁剪；写入函数 `0x14cd0aad0` 保留了以下标签：
+
+| 字段 | 编号 / 类型 / 对象偏移 | 写入标签 |
+| --- | --- | ---: |
+| `source_entity_id` | 8 / uint32 / `0x24` | 64 |
+| `param1` | 14 / int32 / `0x18` | 112 |
+| `param2` | 9 / int32 / `0x20` | 72 |
+| `param3` | 6 / int32 / `0x1c` | 48 |
+
+烘炉管理器的发送方法 `0x1488c6320` 使用初始化表关联的类指针 `0x1457e2cd0`
+创建该请求，设置这四个字段，随后交给网络发送方法 `0x14724a3b0`。
+这与资源 `Crucible.lua` 的玩家凝块提交入口吻合。
+
+对应 `ExecuteGadgetLuaRsp` 的编号和 7.1 字段仍未确认；保留原负数占位。
+现有 `GameSession.send` 会拦截未恢复编号的包，提交请求的服务端处理不依赖该响应。
+这尚不能证明客户端完整交互已正常，仍需实机核对。
 
 ## 字段编号
 
@@ -63,6 +85,10 @@
   成绩与耗时来自不可变的本轮快照；耗时从倒计时结束起计算并限制在挑战时长内。
   参与者的昵称与头像在开局时保存，退出场景后仍可出现在本轮结束列表中。
 - 已提供 `MpPlayPrepareNotify` 的发包类；邀请与准备状态机尚未接入它。
+- `ExecuteGadgetLuaReq` 的烘炉入口检查安装中的主炉、当前活动排期、场景代次、
+  玩家在场、本轮参与资格与挑战时限。`param3` 必须属于发送玩家的队伍实体，
+  `param2` 仅接受提交操作 1；`param1 = 5001` 的服务端点名操作不能从此入口调用。
+  校验和 Lua 执行共同持有场景锁，避免卸载或重开发生在两者之间。
 
 测试先验证缺失消息会失败，再核对所有字段编号、实际发包的包号和字节，
 覆盖 repeated 的两种编码、重开后的旧快照、取消、延迟超时及现有 Lua / 场景回归。
@@ -79,3 +105,22 @@ python tools/extract_client_type_names.py 'C:\Users\InvokerBot\AppData\Local\hoy
 2002、1013、1025、1017 各有两个类型返回同一编号；工具保留全部记录，
 不会按编号覆盖类型或自动替换 `PacketOpcodes`。这些数据提供包号到混淆类型的线索，
 其他消息的名称和字段仍需逐项核对，不能直接当作完整的 `.proto` 导出。
+
+## 嵌套泛型类型
+
+工具增加 `--include-generic-types`，需要同时启用 `--include-fields`。
+此选项严格校验上述 startup 元数据哈希；普通名称、字段和方法导出保持原有格式。
+
+```powershell
+python tools/extract_client_type_names.py 'C:\Users\InvokerBot\AppData\Local\hoyo\hk4e\versions\current' --include-fields --include-methods --include-packet-ids --include-generic-types
+```
+
+原生初始化代码 `0x1405365c5` 读取 startup 的 406,563 条八字节泛型记录，
+再通过注册表 `0x142871b68 + 0x28` 的 `GenericInst` 获取参数列表。
+startup 从文件起点读取，global 元数据则跳过 `0x210` 字节；两个文件的基址不同。
+字段导出共解析到 18,822 个不同的泛型实例，可递归显示其泛型定义和参数。
+数组元素及完整方法签名仍待恢复。
+
+独立核对的列表负载包括 `GadgetPlayUidOpNotify` 的 `0x71eb`（uint32 参数），
+以及 `GadgetPlayStopNotify` 的 `0x22a60`（类型 71290 `INJIGKFJGLP` 参数）。
+后者与字段 2 编码器及原生读取分支的结论一致。

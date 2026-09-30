@@ -62,7 +62,9 @@
 **尚未达到完整可玩状态**：还需接入队友邀请与准备状态机、核对玩家结算称号、接入结算奖励，
 并在客户端中验证完整挑战、点名效果和结算界面。多人准备消息已有定义和发包类，状态机尚未接入。
 页面标记为「还原中」，后续活动标记为「待还原」。
-已有 `ExecuteGadgetLuaReq/Rsp` 的包号也尚未核实，仍保留负数占位；内部 Lua 调用已接入。
+已从客户端写入代码核实 `ExecuteGadgetLuaReq` 的包号 26835 与四个字段。
+玩家提交入口检查自己的队伍实体、当前排期、在场和本轮资格、挑战时限；拒绝客户端点名操作。
+`ExecuteGadgetLuaRsp` 的编号和 7.1 字段仍未确认，响应保留负数占位并由发包层拦截；内部 Lua 调用已接入。
 
 当前使用用户确认已更新的 7.1.0 客户端进行分析。辅助 JSON 与 `config.ini` 可能残留旧值，
 不用于否定用户确认的版本。客户端文件仅保留在本地，分析结果写入被忽略的 `local/activity-research/`。
@@ -75,8 +77,9 @@
 继续按可执行文件的字段和方法读取函数，恢复了 440,172 个字段名称及类型引用，
 以及 733,442 个方法名称、原生地址和参数数量。字段和方法归属范围连续且无重叠，
 名称均通过 UTF-8 与控制字符检查；非零方法地址位于 PE 文件支持的区间。
-字段类型输出包括基础类型、属性及类/值类型的定义索引；泛型和数组的负载保留原始索引，
-尚未恢复完整的泛型参数或方法签名。
+字段类型输出包括基础类型、属性及类/值类型的定义索引。
+新增可选的 startup 泛型参数提取，能解析字段引用的 18,822 个不同泛型实例；
+未启用该选项时继续保留原始索引。数组元素及完整方法签名尚未恢复。
 随后从客户端直接返回包号的函数恢复了 4,923 个类型的编号，其中有 4,919 个不同编号。
 烘炉的五个外层通知包号与项目已有 7.1 表一致，字段通过原生 protobuf 读取分支交叉核对。
 其他混淆消息的名称和字段仍需逐项核实，完整提取结果不能直接当作可用的 `.proto`。
@@ -89,12 +92,16 @@ python tools/extract_client_type_names.py 'C:\Users\InvokerBot\AppData\Local\hoy
 
 # 包号返回函数可选导出，需要同时提取方法
 python tools/extract_client_type_names.py 'C:\Users\InvokerBot\AppData\Local\hoyo\hk4e\versions\current' --include-fields --include-methods --include-packet-ids
+
+# 解析嵌套泛型参数，需要字段选项和匹配的 startup-metadata.dat
+python tools/extract_client_type_names.py 'C:\Users\InvokerBot\AppData\Local\hoyo\hk4e\versions\current' --include-fields --include-methods --include-packet-ids --include-generic-types
 ```
 
 该工具只读取客户端；内置偏移与解码常量严格绑定本次 exe 和元数据的 SHA-256，
 其他构建会被拒绝，避免更新后套用旧偏移。输出默认保存在被忽略的
 `local/activity-research/client-type-names.json`；带字段或方法选项时默认保存为同目录的
 `client-type-metadata.json`。字段和方法选项可单独使用；包号选项要求同时启用方法选项。
+泛型参数选项要求字段选项，并独立校验本次 startup 元数据的 SHA-256。
 工具保留同一编号的多个类型，不自动替换项目的包号表。`--output` 可指定分析结果路径，
 客户端目录内的输出会被拒绝。客户端文件和提取出的元数据不随仓库或镜像发布。
 

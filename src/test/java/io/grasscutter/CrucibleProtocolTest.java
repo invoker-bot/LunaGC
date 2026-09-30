@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.UnknownFieldSet;
 import emu.grasscutter.game.activity.crucible.GadgetPlayState;
+import emu.grasscutter.net.packet.PacketOpcodes;
+import emu.grasscutter.net.proto.ExecuteGadgetLuaReqOuterClass.ExecuteGadgetLuaReq;
 import emu.grasscutter.net.proto.GadgetPlayStartNotifyOuterClass.GadgetPlayStartNotify;
 import emu.grasscutter.net.proto.GadgetPlayDataNotifyOuterClass.GadgetPlayDataNotify;
 import emu.grasscutter.net.proto.GadgetPlayStopNotifyOuterClass.GadgetPlayStopNotify;
@@ -22,6 +24,45 @@ import org.junit.jupiter.api.Test;
 
 /** Tags independently observed in the supplied client's native protobuf readers. */
 class CrucibleProtocolTest {
+    @Test void clientSubmissionUsesTheNativeWriterTagsAndSignedParameters() throws Exception {
+        assertEquals(26835, PacketOpcodes.ExecuteGadgetLuaReq);
+        var bytes = new ByteArrayOutputStream();
+        var wire = CodedOutputStream.newInstance(bytes);
+        wire.writeUInt32(8, 0x40001001);
+        wire.writeInt32(14, -1);
+        wire.writeInt32(9, 1);
+        wire.writeInt32(6, 0x90001001);
+        wire.flush();
+        var request = ExecuteGadgetLuaReq.parseFrom(bytes.toByteArray());
+        assertEquals(0x40001001, request.getSourceEntityId());
+        assertEquals(-1, request.getParam1());
+        assertEquals(1, request.getParam2());
+        assertEquals(0x90001001, request.getParam3());
+        assertEquals(UnknownFieldSet.parseFrom(bytes.toByteArray()),
+                UnknownFieldSet.parseFrom(request.toByteArray()));
+    }
+
+    @Test void clientSubmissionRequiresItsOwnTeamAndAnActiveRoundMember() {
+        var state = new GadgetPlayState();
+        var member = new GadgetPlayState.Round(5001005, 42, 8, Map.of(10001, 8));
+        assertFalse(state.acceptsClientSubmission(10001, 0, 1, 90001, 90001, 1000));
+        state.start(config(), 1000, member);
+        assertFalse(state.acceptsClientSubmission(10001, 0, 1, 90001, 90001, 1002));
+        assertTrue(state.acceptsClientSubmission(10001, 0, 1, 90001, 90001, 1003));
+        assertFalse(state.acceptsClientSubmission(10002, 0, 1, 90002, 90002, 1003));
+        assertFalse(state.acceptsClientSubmission(10001, 0, 1, 90002, 90001, 1003));
+        assertFalse(state.acceptsClientSubmission(10001, 5001, 1, 90001, 90001, 1003),
+                "Player requests must not invoke server-only random selection");
+        assertFalse(state.acceptsClientSubmission(10001, 0, 9, 90001, 90001, 1003));
+        assertFalse(state.acceptsClientSubmission(10001, 0, 1, 0, 0, 1003));
+        assertFalse(state.acceptsClientSubmission(10001, 0, 1, 90001, 90001, 1903));
+        state.stop(1004);
+        assertFalse(state.acceptsClientSubmission(10001, 0, 1, 90001, 90001, 1004));
+        state.start(config(), 2000, new GadgetPlayState.Round(5001006, 43, 8, Map.of(10002, 8)));
+        assertFalse(state.acceptsClientSubmission(10001, 0, 1, 90001, 90001, 2003));
+        assertTrue(state.acceptsClientSubmission(10002, 0, 1, 90002, 90002, 2003));
+    }
+
     @Test void verifiedClientSchemasExistWithTheObservedTags() throws Exception {
         var schemas = Map.of(
                 "GadgetPlayStartNotify", Map.of("entity_id", 3, "play_type", 5, "start_time", 15),

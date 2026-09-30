@@ -15,11 +15,21 @@ public class HandlerExecuteGadgetLuaReq extends PacketHandler {
         ExecuteGadgetLuaReq req = ExecuteGadgetLuaReq.parseFrom(payload);
 
         Player player = session.getPlayer();
-        GameEntity entity = player.getScene().getEntities().get(req.getSourceEntityId());
+        if (player == null || player.getScene() == null) return;
+        var scene = player.getScene();
+        GameEntity entity = scene.getEntities().get(req.getSourceEntityId());
 
         int result = 1;
-        if (entity instanceof EntityGadget gadget)
-            result = gadget.onClientExecuteRequest(req.getParam1(), req.getParam2(), req.getParam3());
+        if (entity instanceof EntityGadget gadget) {
+            var activity = scene.getCrucibleSceneController();
+            if (activity.owns(gadget.getGroupId())) {
+                // Keep validation and execution together across round changes and group unloading.
+                synchronized (scene) {
+                    if (activity.acceptsClientSubmission(player, gadget, req.getParam1(), req.getParam2(), req.getParam3()))
+                        result = gadget.onClientExecuteRequest(req.getParam1(), req.getParam2(), req.getParam3());
+                }
+            } else result = gadget.onClientExecuteRequest(req.getParam1(), req.getParam2(), req.getParam3());
+        }
 
         player.sendPacket(new PacketExecuteGadgetLuaRsp(result));
     }

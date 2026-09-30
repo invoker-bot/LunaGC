@@ -18,6 +18,7 @@ from pathlib import Path
 
 BINARY_SHA256 = "7f89938da606c1281659607d464702cddb9a09a7d4320a196630f60a811ec38e"
 METADATA_SHA256 = "469eccd43aa48fe7a2df4e1caf66fa1268a17f5a4a03fa209e1427e467cb0161"
+STARTUP_SHA256 = "90848967d3f9432e7a13caffcec999bf457ac3be1f2ae86336443a63acbaadcf"
 HEADER_VA = 0x1427D5CB0
 BODY_OFFSET = 0x210
 TYPE_STRIDE = 70
@@ -124,16 +125,82 @@ def recover_types(binary: bytes, metadata: bytes) -> tuple[list[dict], dict]:
                      "typeCount": len(records), "stringDataBase": hex(strings_offset)}
 
 
+class GenericTypes:
+    """Resolve field generic arguments using the startup table read at 0x1405365C5.
+
+    Unlike global metadata, the runtime uses startup metadata without skipping
+    a header. Its eight-byte records become 32-byte cached GenericClass records.
+    The arguments are registered GenericInst records, not metadata pointers.
+    """
+
+    def __init__(self, binary: bytes, startup: bytes, records: list[dict]):
+        self.binary, self.startup, self.records = binary, startup, records
+        header = pe_file_offset(binary, HEADER_VA, BODY_OFFSET)
+        self.base = u32(binary, header + 0x120) ^ 0x1C3F68EA
+        size = (u32(binary, header + 0xA0) + 0xE2AC71C1) & 0xFFFFFFFF
+        if not (size > 0 and size % 8 == 0 and self.base + size <= len(startup)):
+            raise ValueError("Invalid startup generic class table")
+        self.count = size // 8
+        registration = pe_file_offset(binary, METADATA_REGISTRATION_VA, 0x58)
+        self.instances = struct.unpack_from("<Q", binary, registration + 0x28)[0]
+        self.references = struct.unpack_from("<Q", binary, registration + 0x50)[0]
+        self.reference_count = u32(binary, registration + 0x30) ^ 0x28A0FA2D
+        self.cache = {}
+        # Validate every startup record before using an index from a field.
+        for definition, instance in struct.iter_unpack("<II", startup[self.base:self.base + size]):
+            if definition >= len(records):
+                raise ValueError("Invalid generic class definition")
+            pe_file_offset(binary, self.instances + instance * 16, 16)
+
+    def resolve(self, reference: dict, visiting: frozenset = frozenset()) -> dict:
+        if reference["kind"] != "genericinst":
+            return reference
+        index = int(reference["data"], 16)
+        if index not in self.cache:
+            if not 0 <= index < self.count or index in visiting or len(visiting) >= 64:
+                raise ValueError(f"Invalid or recursive generic class {index}")
+            definition, instance = struct.unpack_from("<II", self.startup, self.base + index * 8)
+            entry = pe_file_offset(self.binary, self.instances + instance * 16, 16)
+            count, pointers = struct.unpack_from("<QQ", self.binary, entry)
+            if not 0 < count <= 255:
+                raise ValueError(f"Invalid generic argument count for class {index}")
+            arguments = []
+            entry = pe_file_offset(self.binary, pointers, count * 8)
+            for pointer, in struct.iter_unpack("<Q", self.binary[entry:entry + count * 8]):
+                if (not self.references <= pointer < self.references + self.reference_count * 16
+                        or (pointer - self.references) % 16):
+                    raise ValueError(f"Invalid generic argument reference for class {index}")
+                data, bits = struct.unpack_from("<QI", self.binary, pe_file_offset(self.binary, pointer, 16))
+                kind = (bits >> 16) & 0xFF
+                if kind not in TYPE_KINDS:
+                    raise ValueError(f"Unknown generic argument kind {kind:#x}")
+                argument = {"kind": TYPE_KINDS[kind], "attributes": hex(bits & 0xFFFF), "data": hex(data)}
+                if kind in (17, 18):
+                    if data >= len(self.records):
+                        raise ValueError(f"Invalid generic argument definition for class {index}")
+                    argument.update(typeDefinition=data, name=self.records[data]["name"],
+                                    namespace=self.records[data]["namespace"])
+                arguments.append(self.resolve(argument, visiting | {index}))
+            self.cache[index] = {"typeDefinition": definition, "name": self.records[definition]["name"],
+                                 "namespace": self.records[definition]["namespace"], "arguments": arguments}
+        return {**reference, **self.cache[index]}
+
+
 def recover_members(binary: bytes, metadata: bytes, records: list[dict], report: dict,
-                    *, fields: bool, methods: bool, packet_ids: bool = False) -> None:
+                    *, fields: bool, methods: bool, packet_ids: bool = False,
+                    startup: bytes | None = None) -> None:
     """Recover the tables read by Class::SetupFields and Class::SetupMethods.
 
-    Generic/array payloads remain raw indexes. An optional packet ID comes only
+    Generic arguments can optionally be resolved from startup metadata; array
+    payloads remain raw indexes. An optional packet ID comes only
     from the observed literal-return getter; it does not recover a message name
     or protobuf fields. Duplicate IDs across types are preserved.
     """
     if packet_ids and not methods:
         raise ValueError("Packet ID extraction requires method metadata")
+    if startup is not None and not fields:
+        raise ValueError("Generic type extraction requires field metadata")
+    generics = GenericTypes(binary, startup, records) if startup is not None else None
     header = pe_file_offset(binary, HEADER_VA, BODY_OFFSET)
     type_base = int(report["typeOffset"], 16)
     names = MetadataNames(metadata, int(report["stringDataBase"], 16))
@@ -182,6 +249,8 @@ def recover_members(binary: bytes, metadata: bytes, records: list[dict], report:
                         definition = records[data]
                         reference.update(typeDefinition=data, name=definition["name"],
                                          namespace=definition["namespace"])
+                    if generics:
+                        reference = generics.resolve(reference)
                     reference_cache[type_index] = reference
                 item["fields"].append({"index": index, "name": names.decode(name_index),
                                        "nameIndex": hex(name_index), "typeIndex": type_index,
@@ -227,6 +296,8 @@ def recover_members(binary: bytes, metadata: bytes, records: list[dict], report:
     if packet_ids:
         ids = [item["packetId"] for item in records if "packetId" in item]
         report.update(packetIdCount=len(ids), uniquePacketIdCount=len(set(ids)))
+    if generics:
+        report.update(genericClassCount=generics.count, resolvedGenericClassCount=len(generics.cache))
 
 
 def main() -> None:
@@ -239,9 +310,13 @@ def main() -> None:
                         help="Include method names, native addresses and parameter counts")
     parser.add_argument("--include-packet-ids", action="store_true",
                         help="Include literal packet ID getters; requires --include-methods")
+    parser.add_argument("--include-generic-types", action="store_true",
+                        help="Resolve field generic arguments from startup metadata; requires --include-fields")
     args = parser.parse_args()
     if args.include_packet_ids and not args.include_methods:
         parser.error("--include-packet-ids requires --include-methods")
+    if args.include_generic_types and not args.include_fields:
+        parser.error("--include-generic-types requires --include-fields")
     default_name = ("client-type-metadata.json" if args.include_fields or args.include_methods
                     else "client-type-names.json")
     output = (args.output or Path("local/activity-research") / default_name).resolve()
@@ -251,11 +326,13 @@ def main() -> None:
     binary = read_verified(args.client_directory / "YuanShen.exe", BINARY_SHA256)
     metadata = read_verified(args.client_directory / "YuanShen_Data/Native/Data/Metadata/global-metadata.dat",
                              METADATA_SHA256)
+    startup = (read_verified(args.client_directory / "YuanShen_Data/Native/Data/Metadata/startup-metadata.dat",
+                             STARTUP_SHA256) if args.include_generic_types else None)
     records, report = recover_types(binary, metadata)
     if args.include_fields or args.include_methods:
         recover_members(binary, metadata, records, report,
                         fields=args.include_fields, methods=args.include_methods,
-                        packet_ids=args.include_packet_ids)
+                        packet_ids=args.include_packet_ids, startup=startup)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(records, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({**report, "output": str(output),

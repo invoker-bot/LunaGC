@@ -71,6 +71,21 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
                 && gadget.getGadgetPlayState().isActive();
     }
 
+    /** Called with the scene monitor, immediately before invoking the installed gadget controller. */
+    public boolean acceptsClientSubmission(Player player, EntityGadget gadget, int param1, int param2, int param3) {
+        if (gadget != roundGadget || gadget.getGroupId() != MAIN_GROUP || gadget.getConfigId() != 1001
+                || player.getScene() != scene || !scene.getPlayers().contains(player)
+                || scene.getEntities().get(gadget.getId()) != gadget) return false;
+        var play = gadget.getGadgetPlayState();
+        var round = play.getRound();
+        long now = System.currentTimeMillis();
+        var config = ActivityManager.getScheduleActivityConfigMap().get(round.scheduleId());
+        return lifecycle.isCurrent(round.sceneTicket())
+                && CrucibleSceneLifecycle.activeSchedule(config, now) == round.scheduleId()
+                && play.acceptsClientSubmission(player.getUid(), param1, param2, param3,
+                        player.getTeamManager().getEntity().getId(), now / 1000);
+    }
+
     /** Called with the scene monitor before starting the gadget's countdown. */
     public GadgetPlayState.Round captureRound(EntityGadget gadget) {
         var config = ActivityManager.getScheduleActivityConfigMap().get(lifecycle.scheduleId());
