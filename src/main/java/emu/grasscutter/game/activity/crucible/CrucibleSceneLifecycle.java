@@ -43,6 +43,7 @@ public final class CrucibleSceneLifecycle {
     }
 
     public synchronized boolean isMounted() { return scheduleId != 0; }
+    public synchronized int scheduleId() { return scheduleId; }
     public synchronized long ticket() { return generation; }
     public synchronized boolean isCurrent(long ticket) { return isMounted() && generation == ticket; }
 }

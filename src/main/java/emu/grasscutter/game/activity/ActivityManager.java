@@ -121,6 +121,16 @@ public class ActivityManager extends BasePlayerManager {
                 });
     }
 
+    /** A queued round must not contribute to a newer activity schedule. */
+    public synchronized void triggerWatcher(int activityId, int scheduleId, WatcherTriggerType type, String... params) {
+        var item = configuration.activities().get(activityId);
+        var data = playerActivityDataMap.get(activityId);
+        if (item == null || data == null || !item.isActiveAt(System.currentTimeMillis())
+                || item.getScheduleId() != scheduleId || data.getScheduleId() != scheduleId) return;
+        item.getActivityHandler().getWatchersMap().getOrDefault(type, List.of())
+                .forEach(watcher -> watcher.trigger(data, params));
+    }
+
     public boolean isActivityActive(int id) {
         var item = configuration.activities().get(id);
         return item != null && item.isActiveAt(System.currentTimeMillis());

@@ -50,12 +50,9 @@ public class PlayerActivityData {
             return;
         }
 
-        if (watcherInfo.curProgress >= watcherInfo.totalProgress) {
+        if (!watcherInfo.advance(delta)) {
             return;
         }
-
-        watcherInfo.curProgress =
-                Math.min(watcherInfo.curProgress + Math.max(delta, 1), watcherInfo.totalProgress);
         save();
         getPlayer().sendPacket(new PacketActivityUpdateWatcherNotify(activityId, watcherInfo));
     }
@@ -114,6 +111,12 @@ public class PlayerActivityData {
          */
         public boolean isFinished() {
             return this.curProgress >= this.totalProgress;
+        }
+
+        public boolean advance(int delta) {
+            if (delta <= 0 || isFinished()) return false;
+            curProgress = (int) Math.min((long) curProgress + delta, totalProgress);
+            return true;
         }
 
         public static WatcherInfo init(ActivityWatcher watcher) {

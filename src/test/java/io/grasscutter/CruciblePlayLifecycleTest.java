@@ -128,6 +128,65 @@ class CruciblePlayLifecycleTest {
         assertTrue(time >= before && time <= after);
     }
 
+    @Test void acceptedEfficiencyBelongsToTheSubmittingMemberAndIsCreditedOnce() {
+        var members = new HashMap<Integer, Integer>();
+        members.put(10001, 8); members.put(10002, 7);
+        var round = new GadgetPlayState.Round(5001005, 42, 8, members);
+        members.clear();
+        var state = new GadgetPlayState();
+        state.start(originalConfig(), 1000, round);
+        assertFalse(state.setRoundUidValue(10001, "Fire", 1600, 1002));
+        assertFalse(state.setRoundUidValue(99999, "Fire", 1600, 1003));
+        assertTrue(state.setRoundUidValue(10001, "Fire", 1600, 1003));
+        var first = state.addProgress(1600, 1003);
+        var score = first.stream().filter(change -> change.type() == ChangeType.SCORED).findFirst().orElseThrow();
+        assertEquals(Map.of(10001, 1600), score.scores());
+        assertEquals(5001005, score.round().scheduleId());
+        assertEquals(Map.of(10001, 8, 10002, 7), score.round().participantWorldLevels());
+        assertTrue(state.addProgress(0, 1004).isEmpty());
+        state.setRoundUidValue(10002, "Water", 3200, 1004);
+        var second = state.addProgress(3200, 1004).get(0);
+        assertEquals(Map.of(10002, 3200), second.scores());
+        state.setRoundUidValue(10001, "Fire", 1900, 1005);
+        var third = state.addProgress(300, 1005).get(0);
+        assertEquals(Map.of(10001, 300), third.scores());
+    }
+
+    @Test void deadlineAndFreshRoundsCannotCreditPreviousEfficiencyOrReuseCallbacks() {
+        var state = new GadgetPlayState();
+        var round = new GadgetPlayState.Round(5001005, 42, 8, Map.of(10001, 8));
+        state.start(originalConfig(), 1000, round);
+        long first = state.getRoundSerial();
+        assertFalse(state.setRoundUidValue(10001, "Fire", 10000, 1903));
+        var timeout = state.addProgress(35000, 1903);
+        assertTrue(timeout.stream().noneMatch(change -> change.type() == ChangeType.SCORED));
+        state.start(originalConfig(), 2000, round);
+        assertNotEquals(first, state.getRoundSerial());
+        assertEquals(first, timeout.get(1).roundSerial());
+        state.setRoundUidValue(10001, "Fire", 35000, 2183);
+        var success = state.addProgress(35000, 2183);
+        var won = success.get(success.size() - 1);
+        assertEquals(ChangeType.SUCCEEDED, won.type());
+        assertEquals(720, won.remainingTime());
+        assertTrue(state.addProgress(35000, 2184).isEmpty());
+        assertFalse(state.setRoundUidValue(10001, "Fire", 36000, 2184));
+    }
+
+    @Test void killCountsOnceForAParticipantDuringTheBattleAndResetsOnAnotherRound() {
+        var state = new GadgetPlayState();
+        var round = new GadgetPlayState.Round(5001005, 42, 8, Map.of(10001, 8, 10002, 8));
+        state.start(originalConfig(), 1000, round);
+        assertFalse(state.recordMonsterKill(100, 10001, 1002));
+        assertFalse(state.recordMonsterKill(100, 99999, 1003));
+        assertTrue(state.recordMonsterKill(100, 10001, 1003));
+        assertFalse(state.recordMonsterKill(100, 10002, 1003));
+        assertFalse(state.recordMonsterKill(101, 10001, 1903));
+        state.stop();
+        assertFalse(state.recordMonsterKill(102, 10001, 1004));
+        state.start(originalConfig(), 2000, round);
+        assertTrue(state.recordMonsterKill(100, 10001, 2003));
+    }
+
     private static void bind(LuaTable library, String name, java.util.function.Function<Varargs, LuaValue> function) {
         library.set(name, new VarArgFunction() {
             @Override public Varargs invoke(Varargs args) { return function.apply(args); }

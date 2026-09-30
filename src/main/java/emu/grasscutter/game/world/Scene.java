@@ -108,8 +108,8 @@ public class Scene {
         this.loadedGroups = ConcurrentHashMap.newKeySet();
         this.loadedGridBlocks = new HashSet<>();
         this.npcBornEntrySet = ConcurrentHashMap.newKeySet();
-        this.scriptManager = new SceneScriptManager(this);
         this.crucibleSceneController = new CrucibleSceneController(this);
+        this.scriptManager = new SceneScriptManager(this);
         this.blossomManager = new BlossomManager(this);
         this.unlockedForces = new HashSet<>();
         this.sceneEntity = new EntityScene(this);
@@ -582,6 +582,7 @@ public class Scene {
             activityManager.triggerWatcher(WatcherTriggerType.TRIGGER_BATTLE_FOR_MONSTER_DIE_OR, monsterId);
             activityManager.triggerWatcher(
                     WatcherTriggerType.TRIGGER_KILL_MONSTERS_WITHOUT_VEHICLE, monsterId);
+            getCrucibleSceneController().onMonsterKilled(killed, avatarAttacker.getPlayer());
         }
 
         var world = this.getWorld();

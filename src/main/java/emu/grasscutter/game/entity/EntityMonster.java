@@ -1,5 +1,7 @@
 package emu.grasscutter.game.entity;
 
+import emu.grasscutter.Grasscutter;
+
 import static emu.grasscutter.scripts.constants.EventType.EVENT_SPECIFIC_MONSTER_HP_CHANGE;
 
 import emu.grasscutter.data.GameData;
@@ -305,18 +307,18 @@ public class EntityMonster extends GameEntity {
             Optional.ofNullable(scriptManager.getScriptMonsterSpawnService())
                     .ifPresent(s -> s.onMonsterDead(this));
 
-            // Ensure each EVENT_ANY_MONSTER_DIE runs to completion.
-            // Multiple such events firing at the same time may cause
-            // the same lua trigger to fire multiple times, when it
-            // should happen only once.
+            // Wait for ordinary death callbacks; cleanup inside a scene-locked Lua action must
+            // leave the callback queued until that action releases the monitor.
             var future =
                     scriptManager.callEvent(
                             new ScriptArgs(
                                     this.getGroupId(), EventType.EVENT_ANY_MONSTER_DIE, this.getConfigId()));
             try {
-                future.get();
-            } catch (Exception e) {
-                e.printStackTrace();
+                emu.grasscutter.scripts.SceneEventCompletion.await(future, scene);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (java.util.concurrent.ExecutionException e) {
+                Grasscutter.getLogger().error("Monster death script failed for group {}", getGroupId(), e);
             }
         }
         // Battle Pass trigger

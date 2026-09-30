@@ -644,8 +644,7 @@ public class ScriptLib {
     public int SetGadgetPlayUidValue(int groupId, int configId, int uid, String key, int value) {
         var gadget = playGadget(groupId, configId);
         if (gadget == null) return -1;
-        gadget.getGadgetPlayState().setUidValue(uid, key, value);
-        return 0;
+        return gadget.getGadgetPlayState().setRoundUidValue(uid, key, value, System.currentTimeMillis() / 1000) ? 0 : -1;
     }
 
     public int GetGadgetPlayProgress(int groupId, int configId) {

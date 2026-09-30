@@ -34,6 +34,7 @@ import emu.grasscutter.utils.helpers.ProtoHelper;
 import it.unimi.dsi.fastutil.ints.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import javax.annotation.Nullable;
@@ -58,6 +59,7 @@ public class EntityGadget extends EntityBaseGadget {
     @Getter(lazy = true) private final GadgetPlayState gadgetPlayState = new GadgetPlayState();
     @Getter(lazy = true) private final Queue<GadgetPlayState.Change> pendingPlayChanges = new ConcurrentLinkedQueue<>();
     private final AtomicBoolean dispatchingPlayChanges = new AtomicBoolean();
+    private volatile Future<?> playStopCallback;
 
     @Getter(onMethod_ = @Override, lazy = true)
     private final Int2FloatMap fightProperties = new Int2FloatOpenHashMap();
@@ -170,12 +172,23 @@ public class EntityGadget extends EntityBaseGadget {
 
     public boolean startGadgetPlay() {
         if (metaGadget == null || metaGadget.crucible_config == null) return false;
-        var play = getGadgetPlayState();
-        if (!play.start(metaGadget.crucible_config, System.currentTimeMillis() / 1000)) return false;
-        getScene().getScriptManager().callEvent(new ScriptArgs(getGroupId(),
-                EventType.EVENT_GADGET_PLAY_START_CD, getConfigId()));
-        updateGadgetPlay(state -> state.tick(System.currentTimeMillis() / 1000));
-        return true;
+        if (getScene().getCrucibleSceneController().owns(getGroupId())) {
+            synchronized (getScene()) { return startGadgetPlayRound(); }
+        }
+        return startGadgetPlayRound();
+    }
+
+    private boolean startGadgetPlayRound() {
+            if (dispatchingPlayChanges.get() || !getPendingPlayChanges().isEmpty()
+                    || (playStopCallback != null && !playStopCallback.isDone())) return false;
+            var activity = getScene().getCrucibleSceneController();
+            var round = activity.owns(getGroupId()) ? activity.captureRound(this) : GadgetPlayState.Round.NONE;
+            if (round == null || !getGadgetPlayState().start(metaGadget.crucible_config,
+                    System.currentTimeMillis() / 1000, round)) return false;
+            getScene().getScriptManager().callEvent(new ScriptArgs(getGroupId(),
+                    EventType.EVENT_GADGET_PLAY_START_CD, getConfigId()));
+            updateGadgetPlay(state -> state.tick(System.currentTimeMillis() / 1000));
+            return true;
     }
 
     public void addGadgetPlayProgress(int delta) {
@@ -200,14 +213,26 @@ public class EntityGadget extends EntityBaseGadget {
     }
 
     private void dispatchPlayChange(GadgetPlayState.Change change) {
+        var activity = getScene().getCrucibleSceneController();
+        if (activity.owns(getGroupId())) {
+            activity.runIfCurrent(change.round().sceneTicket(), change.roundSerial(), () -> {
+                if (getScene().getEntities().get(getId()) != this) return;
+                activity.onPlayChange(change);
+                dispatchPlayCallback(change);
+            });
+        } else dispatchPlayCallback(change);
+    }
+
+    private void dispatchPlayCallback(GadgetPlayState.Change change) {
         switch (change.type()) {
+            case SCORED -> { }
             case STARTED -> getScene().getScriptManager().callEvent(new ScriptArgs(getGroupId(),
                     EventType.EVENT_GADGET_PLAY_START, getConfigId()));
             case STAGE_CHANGED -> {
                 if (getEntityController() != null) getEntityController().onPlayStageChange(this,
                         change.previousStage(), change.stage(), getGadgetPlayState().getFinalStage());
             }
-            case SUCCEEDED, TIMED_OUT, CANCELLED -> getScene().getScriptManager().callEvent(
+            case SUCCEEDED, TIMED_OUT, CANCELLED -> playStopCallback = getScene().getScriptManager().callEvent(
                     new ScriptArgs(getGroupId(), EventType.EVENT_GADGET_PLAY_STOP, getConfigId(), 1)
                             .setParam3(change.type() == GadgetPlayState.ChangeType.SUCCEEDED ? 1 : 0));
         }

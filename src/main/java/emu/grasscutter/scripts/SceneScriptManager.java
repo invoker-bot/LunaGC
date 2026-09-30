@@ -892,10 +892,11 @@ public class SceneScriptManager {
          * (remove) So we use thread pool to clean the stack to avoid this new issue.
          */
         long activityTicket = scene.getCrucibleSceneController().getLifecycle().ticket();
-        return eventExecutor.submit(() -> this.realCallEvent(params, activityTicket));
+        long activityRound = scene.getCrucibleSceneController().currentRoundSerial();
+        return eventExecutor.submit(() -> this.realCallEvent(params, activityTicket, activityRound));
     }
 
-    private void realCallEvent(@Nonnull ScriptArgs params, long activityTicket) {
+    private void realCallEvent(@Nonnull ScriptArgs params, long activityTicket, long activityRound) {
         try {
             ScriptLoader.getScriptLib().setSceneScriptManager(this);
 
@@ -923,7 +924,12 @@ public class SceneScriptManager {
             for (SceneTrigger trigger : relevantTriggers) {
                 var activity = scene.getCrucibleSceneController();
                 if (activity.owns(trigger.currentGroup.id)) {
-                    activity.runIfCurrent(activityTicket, () -> {
+                    activity.runIfCurrent(activityTicket, activityRound, () -> {
+                        if ((eventType == EventType.EVENT_ANY_MONSTER_DIE
+                                || eventType == EventType.EVENT_GADGET_LUA_NOTIFY
+                                || eventType == EventType.EVENT_GADGET_PLAY_START
+                                || eventType == EventType.EVENT_GADGET_PLAY_START_CD)
+                                && !activity.isRoundActive(activityRound)) return;
                         if ((eventType == EventType.EVENT_ENTER_REGION || eventType == EventType.EVENT_LEAVE_REGION)
                                 && params.source_eid != 0 && !regions.containsKey(params.source_eid)) return;
                         if (sceneGroups.get(trigger.currentGroup.id) == trigger.currentGroup)
@@ -1296,13 +1302,15 @@ public class SceneScriptManager {
                 this.cancelGroupTimerEvent(groupID, source);
                 var activity = scene.getCrucibleSceneController();
                 long activityTicket = activity.getLifecycle().ticket();
+                long activityRound = activity.currentRoundSerial();
                 var taskIdentifier =
                         Grasscutter.getGameServer()
                                 .getScheduler()
                                 .scheduleDelayedRepeatingTask(
                                         () -> {
                                             Runnable callback = () -> callEvent(new ScriptArgs(groupID, EVENT_TIMER_EVENT).setEventSource(source));
-                                            if (activity.owns(groupID)) activity.runIfCurrent(activityTicket, callback);
+                                            if (activity.owns(groupID)) activity.runIfCurrent(activityTicket, activityRound,
+                                                    () -> { if (activity.isRoundActive(activityRound)) callback.run(); });
                                             else callback.run();
                                         },
                                         (int) time,

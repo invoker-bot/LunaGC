@@ -12,6 +12,7 @@ public class MpPlayGroupData extends GameResource {
     private List<Float> centerPosList;
     private List<Integer> groupList;
     private int prepareTime;
+    private int radius;
     private int bornGroupId;
     private int bornConfigId;
 
