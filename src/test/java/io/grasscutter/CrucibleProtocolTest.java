@@ -127,7 +127,7 @@ class CrucibleProtocolTest {
                         "param_list", 11, "play_type", 13, "op", 15),
                 "MpPlayPrepareNotify", Map.of("mp_play_id", 1, "prepare_end_time", 11),
                 "GadgetPlayUidInfo", Map.of("icon", 2, "uid", 3, "profile_picture", 5,
-                        "score", 7, "op", 9, "online_id", 10, "nickname", 11));
+                        "score", 7, "battle_watcher_id", 9, "online_id", 10, "nickname", 11));
         for (var schema : schemas.entrySet()) {
             var file = Path.of("src/main/proto", schema.getKey() + ".proto");
             assertTrue(Files.exists(file), "Missing verified schema: " + schema.getKey());

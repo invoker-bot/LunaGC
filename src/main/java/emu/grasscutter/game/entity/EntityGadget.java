@@ -10,6 +10,7 @@ import emu.grasscutter.game.entity.gadget.*;
 import emu.grasscutter.game.entity.gadget.platform.*;
 import emu.grasscutter.game.player.Player;
 import emu.grasscutter.game.activity.crucible.GadgetPlayState;
+import emu.grasscutter.game.activity.crucible.CrucibleSettlement;
 import emu.grasscutter.game.props.*;
 import emu.grasscutter.game.world.*;
 import emu.grasscutter.net.proto.*;
@@ -241,12 +242,8 @@ public class EntityGadget extends EntityBaseGadget {
     }
 
     private List<GadgetPlayUidInfo> settlementMembers(GadgetPlayState.Change change) {
-        var uids = new TreeSet<>(change.round().participantWorldLevels().keySet());
-        uids.addAll(change.totalScores().keySet());
-        if (change.round().scheduleId() == 0) uids.addAll(getPlayParticipantProfiles().keySet());
-        return uids.stream().map(uid -> getPlayParticipantProfiles()
-                .getOrDefault(uid, GadgetPlayUidInfo.newBuilder().setUid(uid).build()).toBuilder()
-                .setScore(change.totalScores().getOrDefault(uid, 0)).build()).toList();
+        return CrucibleSettlement.members(change,
+                getPlayParticipantProfiles(), GameData.getMpPlayWatcherDataMap().values());
     }
 
     private void updateGadgetPlay(Function<GadgetPlayState, List<GadgetPlayState.Change>> update) {

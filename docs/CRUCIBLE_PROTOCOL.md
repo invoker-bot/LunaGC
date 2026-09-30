@@ -226,7 +226,7 @@ GCG 匹配成功分支 `0x14f73d410` 的确认发送同样使用 3359；
 | `GadgetPlayDataNotify` | `entity_id` 6 / uint32 / `0x20`；`play_type` 9 / uint32 / `0x1c`；`progress` 10 / uint32 / `0x18` |
 | `GadgetPlayUidOpNotify` | `op_name` 1 / string / `0x18`；`uid_list` 5 / repeated uint32 / `0x20`；`entity_id` 7 / uint32 / `0x38`；`param_list` 11 / repeated uint32 / `0x28`；`play_type` 13 / uint32 / `0x34`；`op` 15 / uint32 / `0x30` |
 | `GadgetPlayStopNotify` | `cost_time` 1 / uint32 / `0x28`；`uid_info_list` 2 / repeated message / `0x18`；`entity_id` 4 / uint32 / `0x24`；`is_success` 10 / bool / `0x30`；`score` 11 / uint32 / `0x2c`；`play_type` 12 / uint32 / `0x20` |
-| `GadgetPlayUidInfo` | `icon` 2 / uint32 / `0x30`；`uid` 3 / uint32 / `0x3c`；`profile_picture` 5 / message / `0x20`；`score` 7 / uint32 / `0x34`；`op` 9 / uint32 / `0x38`；`online_id` 10 / string / `0x28`；`nickname` 11 / string / `0x18` |
+| `GadgetPlayUidInfo` | `icon` 2 / uint32 / `0x30`；`uid` 3 / uint32 / `0x3c`；`profile_picture` 5 / message / `0x20`；`score` 7 / uint32 / `0x34`；`battle_watcher_id` 9 / uint32 / `0x38`；`online_id` 10 / string / `0x28`；`nickname` 11 / string / `0x18` |
 
 玩家操作读取函数同时接受字段 5 的标签 40 / 42，以及字段 11 的标签 88 / 90，
 分别对应非压缩与压缩的 repeated uint32。项目使用 protoc 的默认压缩编码。
@@ -234,7 +234,17 @@ GCG 匹配成功分支 `0x14f73d410` 的确认发送同样使用 3359；
 `GadgetCrucibleInfo` 的字段 1–2，也已与这次客户端的读取分支核对。
 
 字段的语义名称依据玩法处理代码、共享字段引用和原 Lua 接口还原。
-`GadgetPlayUidInfo.op` 的具体结算称号含义仍需客户端验证，目前保留默认值 0。
+`GadgetPlayUidInfo` 原命名为 `op` 的字段现改为 `battle_watcher_id`，用于发送本轮称号 watcher ID。
+语义名称参考固定历史 [GadgetPlayUidInfo 定义](https://github.com/Hiro420/3.5_protos/blob/d42eec84da01b1b28abb40d8565fbbcb306a8969/deobfuscated/GadgetPlayUidInfo.proto)：
+它与本地类型 71290 都有头像、UID、昵称、在线 ID、成绩和四个 uint32 字段。
+本地其余三个 uint32 已通过共享字段名和引用识别，余下的 `KPEDADEAFDL` 对应历史 `battle_watcher_id`；
+这个语义关联依据消息结构，未恢复原始明文名称。编号仍由本地读取分支独立确认：
+`0x14b32772e` 比较标签 72，在 `0x14b32774c` 将值写入对象 `0x38`。
+编号不变，只修正 Java / proto API 名称，并接入 `MpPlayWatcherConfigData.json` 中的称号条件。
+
+结束处理函数 `0x1488b8120` 将消息 `cost_time` 存入管理器 `0x9c`，
+将 `score` 存入 `0xa4`，复制 `uid_info_list` 到 `0x28`，再将成功标志派发为事件 898。
+这些原生动作确认了结束信息进入客户端管理器；称号卡片的实际显示与历史同分规则仍待实机核对。
 
 ## 服务端接入与验证范围
 
@@ -246,6 +256,7 @@ GCG 匹配成功分支 `0x14f73d410` 的确认发送同样使用 3359；
 - 成功、超时、主动取消及场景卸载发送 `GadgetPlayStopNotify`。
   成绩与耗时来自不可变的本轮快照；耗时从倒计时结束起计算并限制在挑战时长内。
   参与者的昵称与头像在开局时保存，退出场景后仍可出现在本轮结束列表中。
+  每人按原资源的搬运数、元素、效率、击杀和优先级选择结算 watcher；无符合条件的项发送 0。
 - 房主检查与发起邀请均验证当前排期、安装的主炉、房主身份、玩家加载状态、活动半径与可用角色。
   当前世界的固定队伍全部同意后，广播 `MpPlayPrepareNotify` 并调用原 Lua 的 `EVENT_MP_PLAY_PREPARE`；
   资源指定的 20 秒准备完成后调用 `EVENT_MP_PLAY_BATTLE`，由 Lua 进入原有的 3 秒开战倒计时。
@@ -267,7 +278,7 @@ GCG 匹配成功分支 `0x14f73d410` 的确认发送同样使用 3359；
 测试先验证缺失消息会失败，再核对所有字段编号、实际发包的包号和字节，
 覆盖 repeated 的两种编码、重开后的旧快照、取消、延迟超时及现有 Lua / 场景回归。
 这些结果确认服务端行为和消息编码；邀请弹窗、准备及完整客户端挑战、点名效果、
-结算称号仍需恢复，树脂领奖已接入服务端；匹配弹窗、确认配对、合队、准备和领奖仍待多人实机验证。
+结算称号与树脂领奖已接入服务端；匹配弹窗、确认配对、合队、准备、称号显示和领奖仍待多人实机验证。
 
 ## 重复提取包号
 

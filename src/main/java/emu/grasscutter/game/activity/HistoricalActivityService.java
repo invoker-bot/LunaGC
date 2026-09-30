@@ -42,8 +42,11 @@ public final class HistoricalActivityService {
             row.put("beginTime", config == null ? 0 : config.getBeginTime().getTime() / 1000);
             row.put("endTime", config == null ? 0 : config.getEndTime().getTime() / 1000);
             row.put("restoration", event.getActivityId() == 5001 ? "还原中" : "待还原");
+            long titleCount = event.getActivityId() == 5001 ? GameData.getMpPlayWatcherDataMap().values().stream()
+                    .filter(watcher -> watcher.getMpPlayId() == 1 && !watcher.isDisuse()).count() : 0;
+            row.put("settlementTitleCount", titleCount);
             row.put("restorationNote", event.getActivityId() == 5001
-                    ? "已接入场景、13 项任务、7.1 通知、整队匹配及每轮个人树脂领奖；多人实机、结算称号和完整客户端挑战待验证"
+                    ? "已接入场景、13 项任务、7.1 通知、整队匹配、个人树脂领奖及 " + titleCount + " 项结算称号；完整多人挑战与称号显示待实机验证"
                     : !resource ? "本资源版本缺少活动记录，暂不能开启"
                     : !event.hasKnownType() ? "活动类型编号尚未核实，暂不能开启"
                     : "可管理活动排期；专属玩法尚未完成客户端验证");

@@ -10,7 +10,8 @@ message GadgetPlayUidInfo {
   uint32 uid = 3;
   ProfilePicture profile_picture = 5;
   uint32 score = 7;
-  uint32 op = 9;
+  // Semantic name from the historical message shape; native tag/offset verified independently.
+  uint32 battle_watcher_id = 9;
   string online_id = 10;
   string nickname = 11;
 }

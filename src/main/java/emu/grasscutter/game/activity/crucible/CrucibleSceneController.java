@@ -421,7 +421,8 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
             var state = gadget.getGadgetPlayState();
             var round = state.getRound();
             if (!scene.getPlayers().contains(killer)
-                    || !state.recordMonsterKill(monster.getId(), killer.getUid(), System.currentTimeMillis() / 1000)) return;
+                    || !state.recordMonsterKill(monster.getId(), killer.getUid(), monster.getGroupId(),
+                            System.currentTimeMillis() / 1000)) return;
             killer.getActivityManager().triggerWatcher(5001, round.scheduleId(),
                     WatcherTriggerType.TRIGGER_KILL_GROUP_MONSTER, String.valueOf(monster.getGroupId()));
         });

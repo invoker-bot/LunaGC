@@ -15,13 +15,21 @@ public final class GadgetPlayState {
     }
     public record Change(ChangeType type, int previousStage, int stage, Round round,
                          long roundSerial, int remainingTime, Map<Integer, Integer> scores,
-                         int progress, int costTime, Map<Integer, Integer> totalScores) {
-        public Change { scores = Map.copyOf(scores); totalScores = Map.copyOf(totalScores); }
+                         int progress, int costTime, Map<Integer, Integer> totalScores,
+                         Map<Integer, PlayerStats> participantStats) {
+        public Change {
+            scores = Map.copyOf(scores); totalScores = Map.copyOf(totalScores);
+            participantStats = Map.copyOf(participantStats);
+        }
+    }
+    public record PlayerStats(int score, Map<String, Integer> balls, Map<Integer, Integer> groupKills) {
+        public PlayerStats { balls = Map.copyOf(balls); groupKills = Map.copyOf(groupKills); }
     }
 
     private final Map<Integer, Map<String, Integer>> values = new HashMap<>();
     private final Map<Integer, Integer> creditedScores = new HashMap<>();
     private final Set<Integer> killedMonsters = new HashSet<>();
+    private final Map<Integer, Map<Integer, Integer>> groupKills = new HashMap<>();
     private static final List<String> ELEMENTS = List.of("Water", "Fire", "Electric", "Ice", "Wind", "Rock", "Grass");
     private Round round = Round.NONE;
     private long roundSerial;
@@ -64,8 +72,14 @@ public final class GadgetPlayState {
     }
 
     public synchronized boolean recordMonsterKill(int entityId, int uid, long now) {
-        return entityId > 0 && isRunningAt(now) && round.participantWorldLevels().containsKey(uid)
-                && killedMonsters.add(entityId);
+        return recordMonsterKill(entityId, uid, 0, now);
+    }
+
+    public synchronized boolean recordMonsterKill(int entityId, int uid, int groupId, long now) {
+        if (entityId <= 0 || !isRunningAt(now) || !round.participantWorldLevels().containsKey(uid)
+                || !killedMonsters.add(entityId)) return false;
+        groupKills.computeIfAbsent(uid, key -> new HashMap<>()).merge(groupId, 1, Integer::sum);
+        return true;
     }
 
     public synchronized boolean setRoundUidValue(int uid, String key, int value, long now) {
@@ -86,6 +100,7 @@ public final class GadgetPlayState {
         values.clear();
         creditedScores.clear();
         killedMonsters.clear();
+        groupKills.clear();
         round = Objects.requireNonNull(context);
         roundSerial++;
         progress = 0;
@@ -158,7 +173,21 @@ public final class GadgetPlayState {
         int remaining = (int) Math.max(0L, Math.min(Integer.MAX_VALUE, deadline - now));
         int elapsed = (int) Math.max(0L, Math.min(duration, now - battleBegin));
         return new Change(type, previous, next, round, roundSerial, remaining, scores,
-                progress, elapsed, creditedScores);
+                progress, elapsed, creditedScores, participantStats());
+    }
+
+    private Map<Integer, PlayerStats> participantStats() {
+        var uids = new HashSet<>(round.participantWorldLevels().keySet());
+        if (round.scheduleId() == 0) uids.addAll(values.keySet());
+        var result = new HashMap<Integer, PlayerStats>();
+        for (int uid : uids) {
+            var balls = new HashMap<String, Integer>();
+            for (var element : ELEMENTS) balls.put(element,
+                    Math.max(0, values.getOrDefault(uid, Map.of()).getOrDefault(element + "_ball", 0)));
+            result.put(uid, new PlayerStats(creditedScores.getOrDefault(uid, 0), balls,
+                    groupKills.getOrDefault(uid, Map.of())));
+        }
+        return result;
     }
 
     public synchronized int getStageBeginProgress() {
