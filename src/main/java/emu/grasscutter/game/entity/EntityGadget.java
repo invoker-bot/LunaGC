@@ -9,6 +9,7 @@ import emu.grasscutter.data.excels.monster.MonsterCurveData;
 import emu.grasscutter.game.entity.gadget.*;
 import emu.grasscutter.game.entity.gadget.platform.*;
 import emu.grasscutter.game.player.Player;
+import emu.grasscutter.game.activity.crucible.GadgetPlayState;
 import emu.grasscutter.game.props.*;
 import emu.grasscutter.game.world.*;
 import emu.grasscutter.net.proto.*;
@@ -51,6 +52,7 @@ public class EntityGadget extends EntityBaseGadget {
     @Getter private int state;
     @Getter @Setter private int pointType;
     @Getter private GadgetContent content;
+    @Getter(lazy = true) private final GadgetPlayState gadgetPlayState = new GadgetPlayState();
 
     @Getter(onMethod_ = @Override, lazy = true)
     private final Int2FloatMap fightProperties = new Int2FloatOpenHashMap();

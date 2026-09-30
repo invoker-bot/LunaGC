@@ -4,6 +4,7 @@ import emu.grasscutter.Grasscutter;
 import emu.grasscutter.utils.*;
 import java.io.*;
 import java.nio.file.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import lombok.val;
 
@@ -36,7 +37,7 @@ public class DataLoader {
             throws IOException, FileNotFoundException {
         try {
             InputStream is = load(resourcePath, true);
-            return new InputStreamReader(is);
+            return new InputStreamReader(is, StandardCharsets.UTF_8);
         } catch (FileNotFoundException exception) {
             throw exception;
         }

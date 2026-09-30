@@ -1,5 +1,14 @@
 # LunaGC 7.1.0
 
+## 往期活动
+
+[GM 控制台](http://localhost/gm) 新增「往期活动」，按发布时间排列，显示历史开放时间和本次复刻时间，
+支持开启、关闭、恢复与重新复刻。目录覆盖 401 条资源活动，158 条已对应历史时间。
+按发布时间从 1.0「原素烘炉」开始还原；目前已接入活动详情和原始 Lua 计分，
+主控组、多人流程与结算还在适配。各活动的玩法完成度单独显示。
+详见 [往期活动说明](docs/HISTORICAL_ACTIVITIES.md)。
+
+
 A community server being migrated to the **CN Genshin Impact 7.1.0** client. A fork of girluh's
 [LunaGC](https://github.com/girluh/LunaGC), itself a fork of Grasscutter, reworked
 for the 7.1 protocol while retaining the CN launcher's login chain.

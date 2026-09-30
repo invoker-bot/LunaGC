@@ -11,6 +11,7 @@ import emu.grasscutter.command.Command;
 import emu.grasscutter.command.CommandMap;
 import emu.grasscutter.data.GameData;
 import emu.grasscutter.data.excels.ItemData;
+import emu.grasscutter.game.activity.HistoricalActivityService;
 import emu.grasscutter.game.gacha.GachaBanner;
 import emu.grasscutter.game.gacha.GachaBanner.BannerType;
 import emu.grasscutter.game.inventory.MaterialType;
@@ -168,6 +169,26 @@ public final class GmHandler implements Router {
         javalin.get("/gm/api/banners", GmHandler::listBanners);
         javalin.get("/gm/api/banners/history", GmHandler::listBannerHistory);
         javalin.post("/gm/api/banners", GmHandler::setBanner);
+        javalin.get("/gm/api/activities", GmHandler::listActivities);
+        javalin.post("/gm/api/activities", GmHandler::setActivity);
+    }
+
+    private static void listActivities(Context ctx) throws Exception {
+        if (!authorize(ctx)) return;
+        ctx.json(HistoricalActivityService.list());
+    }
+
+    private static void setActivity(Context ctx) throws Exception {
+        if (!authorize(ctx)) return;
+        try {
+            var body = JsonUtils.decode(ctx.body(), JsonObject.class);
+            if (body == null || !body.has("key") || !body.has("action"))
+                throw new IllegalArgumentException("必须指定活动 key 和 action");
+            ctx.json(HistoricalActivityService.update(body.get("key").getAsString(),
+                    body.get("action").getAsString(), body.has("durationDays") ? body.get("durationDays").getAsInt() : 0));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ctx.status(400).json(Map.of("retcode", -1, "message", e.getMessage()));
+        }
     }
 
     /** Serves the console page; every interaction after that goes through the JSON endpoints. */

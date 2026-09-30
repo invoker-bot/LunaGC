@@ -2,6 +2,7 @@ package emu.grasscutter.server.packet.recv;
 
 import emu.grasscutter.net.packet.*;
 import emu.grasscutter.net.proto.ActivityTakeWatcherRewardReqOuterClass;
+import emu.grasscutter.net.proto.RetcodeOuterClass.Retcode;
 import emu.grasscutter.server.game.GameSession;
 import emu.grasscutter.server.packet.send.PacketActivityTakeWatcherRewardRsp;
 import java.util.Optional;
@@ -14,14 +15,14 @@ public class HandlerActivityTakeWatcherRewardReq extends PacketHandler {
         var req =
                 ActivityTakeWatcherRewardReqOuterClass.ActivityTakeWatcherRewardReq.parseFrom(payload);
 
-        Optional.ofNullable(
+        int retcode = Optional.ofNullable(
                         session
                                 .getPlayer()
                                 .getActivityManager()
                                 .getPlayerActivityDataMap()
                                 .get(req.getActivityId()))
-                .ifPresent(x -> x.takeWatcherReward(req.getWatcherId()));
+                .map(x -> x.takeWatcherReward(req.getWatcherId())).orElse(Retcode.RET_ACTIVITY_CLOSE_VALUE);
 
-        session.send(new PacketActivityTakeWatcherRewardRsp(req.getActivityId(), req.getWatcherId()));
+        session.send(new PacketActivityTakeWatcherRewardRsp(req.getActivityId(), req.getWatcherId(), retcode));
     }
 }

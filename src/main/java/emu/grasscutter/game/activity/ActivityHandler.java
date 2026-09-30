@@ -59,7 +59,7 @@ public abstract class ActivityHandler {
     }
 
     protected void triggerCondEvents(Player player) {
-        if (activityData == null) {
+        if (activityData == null || activityData.getCondGroupId() == null) {
             return;
         }
 
@@ -79,7 +79,7 @@ public abstract class ActivityHandler {
     }
 
     private List<Integer> getActivityConditions() {
-        if (activityData == null) {
+        if (activityData == null || activityData.getCondGroupId() == null) {
             return new ArrayList<>();
         }
 
@@ -107,6 +107,7 @@ public abstract class ActivityHandler {
         PlayerActivityData playerActivityData =
                 PlayerActivityData.of()
                         .activityId(activityConfigItem.getActivityId())
+                        .scheduleId(activityConfigItem.getScheduleId())
                         .uid(player.getUid())
                         .watcherInfoMap(initWatchersDataForPlayer())
                         .build();

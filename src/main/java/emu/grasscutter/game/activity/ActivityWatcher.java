@@ -25,7 +25,6 @@ public abstract class ActivityWatcher {
     public void trigger(PlayerActivityData playerActivityData, String... param) {
         if (isMeet(param)) {
             playerActivityData.addWatcherProgress(watcherId, getProgressDelta(param));
-            playerActivityData.save();
         }
     }
 }

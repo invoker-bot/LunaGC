@@ -15,10 +15,12 @@ public class ActivityConfigItem {
     Date openTime;
     Date closeTime;
     Date endTime;
+    boolean disabled;
+    String historyKey;
 
     transient ActivityHandler activityHandler;
 
-    void onLoad() {
+    public void onLoad() {
         if (openTime == null) {
             this.openTime = beginTime;
         }
@@ -26,5 +28,15 @@ public class ActivityConfigItem {
         if (closeTime == null) {
             this.closeTime = endTime;
         }
+    }
+
+    public boolean isActiveAt(long time) {
+        return !disabled && beginTime != null && endTime != null
+                && time >= beginTime.getTime() && time < endTime.getTime();
+    }
+
+    public boolean isOpenAt(long time) {
+        return isActiveAt(time) && openTime != null && closeTime != null
+                && time >= openTime.getTime() && time < closeTime.getTime();
     }
 }

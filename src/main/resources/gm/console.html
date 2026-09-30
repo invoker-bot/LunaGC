@@ -165,6 +165,7 @@
       <button class="tab" data-tab="items">物品</button>
       <button class="tab" data-tab="banners">卡池</button>
       <button class="tab" data-tab="history">历史卡池</button>
+      <button class="tab" data-tab="activities">往期活动</button>
     </div>
 
     <div class="pane sel" id="pane-cmd">
@@ -221,6 +222,28 @@
         「复刻此卡池」会把该卡池复制进当前卡池表并开启 30 天。
       </div>
       <div id="historyList"><span class="empty">加载中…</span></div>
+    </div>
+
+    <div class="pane" id="pane-activities">
+      <h2>往期活动 <button id="activityRefresh" class="ghost" style="padding:3px 10px;font-size:12px">刷新</button></h2>
+      <p style="color:var(--dim);font-size:12px">按首次开放时间从早到晚排列。开启后显示本次复刻时间，在线玩家同步排期。
+        玩法还原进度单独列出，尚未还原的活动目前只能管理入口与排期。</p>
+      <div class="row" style="margin-bottom:10px">
+        <input id="activityQ" placeholder="搜索活动名称、版本或 ID" style="flex:1;min-width:180px" aria-label="搜索往期活动">
+        <select id="activityFilter" aria-label="活动筛选">
+          <option value="dated">已核实历史时间</option>
+          <option value="all">全部资源活动</option>
+          <option value="active">已开启</option>
+          <option value="restoring">还原中</option>
+        </select>
+        <label for="activityDays">复刻时长</label>
+        <select id="activityDays">
+          <option value="0">原活动时长</option><option value="7">7 天</option>
+          <option value="14">14 天</option><option value="30">30 天</option>
+        </select>
+      </div>
+      <p id="activitySummary" style="color:var(--dim);font-size:12px" role="status"></p>
+      <div id="activityList"><span class="empty">加载中…</span></div>
     </div>
 
     <h2>输出</h2>
@@ -402,6 +425,7 @@ document.querySelectorAll(".tab").forEach(t => {
     if (t.dataset.tab === "items") ensureItems();
     if (t.dataset.tab === "banners") loadBanners();
     if (t.dataset.tab === "history") loadHistory();
+    if (t.dataset.tab === "activities") loadActivities();
   };
 });
 
@@ -675,6 +699,82 @@ function rerunBanner(scheduleId, commit, rowEl) {
 }
 
 $("historyRefresh").onclick = loadHistory;
+
+// --- historical activities ---------------------------------------------
+let activities = [];
+function loadActivities() {
+  $("activitySummary").textContent = "读取活动目录…";
+  api("/gm/api/activities").then(r => {
+    if (!r.ok) throw new Error(r.json && r.json.message || "读取失败");
+    activities = r.json.activities || [];
+    renderActivities();
+  }).catch(e => { if (e.message !== "403") $("activitySummary").textContent = "加载失败：" + e.message; });
+}
+function renderActivities() {
+  const needle = $("activityQ").value.trim().toLowerCase();
+  const filter = $("activityFilter").value;
+  const rows = activities.filter(a => {
+    if (filter === "dated" && !a.officialBeginTime) return false;
+    if (filter === "active" && !a.active) return false;
+    if (filter === "restoring" && a.restoration !== "还原中") return false;
+    return !needle || `${a.name} ${a.version} ${a.activityId}`.toLowerCase().includes(needle);
+  });
+  $("activitySummary").textContent = `显示 ${rows.length} / ${activities.length} 条；`
+    + `${activities.filter(a => a.officialBeginTime).length} 条有历史时间，${activities.filter(a => a.active).length} 条已开启。按发布时间由早到晚。`;
+  const list = $("activityList");
+  list.textContent = "";
+  if (!rows.length) { list.innerHTML = '<span class="empty">没有符合条件的活动。</span>'; return; }
+  for (const a of rows) {
+    const el = document.createElement("div");
+    el.className = "banner";
+    const official = a.officialBeginTime
+      ? `${a.officialBeginDescription || a.officialBeginTime} ~ ${a.officialEndDescription || a.officialEndTime}（国服时间）`
+      : "时间待核实";
+    el.innerHTML = `<div class="hd"><strong>${esc(a.name)}</strong><span class="gt">#${a.activityId}</span>
+      ${a.version ? `<span class="badge">${esc(a.version)}</span>` : ""}
+      <span class="badge ${a.active ? "ok" : ""}">${a.active ? "已开启" : a.disabled ? "已关闭" : "未开启"}</span>
+      <span class="badge ${a.restoration === "还原中" ? "warn" : ""}">${esc(a.restoration)}</span></div>
+      <div class="tm">历史开放：${esc(official)}</div>
+      <div class="tm">本次复刻：${a.scheduleId ? `${fmtTime(a.beginTime)} ~ ${fmtTime(a.endTime)} · 排期 ${a.scheduleId}` : "尚未开启"}</div>
+      <div class="up">${esc(a.restorationNote)}</div><div class="ops row"></div>`;
+    const ops = el.querySelector(".ops");
+    const addButton = (label, action, disabled) => {
+      const button = document.createElement("button");
+      button.textContent = label; button.disabled = disabled;
+      button.onclick = () => changeActivity(a, action, el);
+      ops.appendChild(button);
+    };
+    addButton(a.active ? "关闭活动" : a.disabled && a.endTime * 1000 > Date.now() ? "恢复开启" : "开启活动",
+      a.active ? "disable" : "enable", !a.canEnable && !a.active);
+    if (a.scheduleId) addButton("重新复刻（重置进度）", "rerun", !a.canEnable);
+    if (a.sourceUrl && a.sourceUrl.startsWith("https://")) {
+      const link = document.createElement("a"); link.textContent = "历史资料";
+      link.href = a.sourceUrl; link.target = "_blank"; link.rel = "noopener noreferrer";
+      link.style.color = "#9fc0ff"; ops.appendChild(link);
+    }
+    list.appendChild(el);
+  }
+}
+async function changeActivity(activity, action, row) {
+  row.querySelectorAll("button").forEach(b => { b.disabled = true; });
+  try {
+    const r = await api("/gm/api/activities", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: activity.key, action, durationDays: Number($("activityDays").value) })
+    });
+    if (!r.ok) throw new Error(r.json && r.json.message || r.text || "保存失败");
+    out(`${activity.name}：${action === "disable" ? "已关闭" : "已开启至 " + fmtTime(r.json.endTime)}`
+      + `，已同步 ${r.json.syncedPlayers} 位在线玩家。`
+      + (r.json.syncFailures ? ` ${r.json.syncFailures} 位同步失败，请重新登录。` : ""));
+    loadActivities();
+  } catch (e) {
+    if (e.message !== "403") out("活动操作失败：" + e.message, "err");
+    renderActivities();
+  }
+}
+$("activityRefresh").onclick = loadActivities;
+$("activityQ").oninput = renderActivities;
+$("activityFilter").onchange = renderActivities;
 
 // Boot: a bookmarked URL may carry ?token=. The server may also have no token configured at
 // all (this repo's config ships an empty accessToken), so probe first and only ask for a

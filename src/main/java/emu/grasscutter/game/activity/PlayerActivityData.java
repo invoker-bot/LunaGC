@@ -9,6 +9,7 @@ import emu.grasscutter.game.inventory.GameItem;
 import emu.grasscutter.game.player.Player;
 import emu.grasscutter.game.props.ActionReason;
 import emu.grasscutter.net.proto.ActivityWatcherInfoOuterClass;
+import emu.grasscutter.net.proto.RetcodeOuterClass.Retcode;
 import emu.grasscutter.server.packet.send.PacketActivityUpdateWatcherNotify;
 import emu.grasscutter.utils.JsonUtils;
 import java.util.*;
@@ -23,6 +24,7 @@ public class PlayerActivityData {
     @Id String id;
     int uid;
     int activityId;
+    int scheduleId;
     Map<Integer, WatcherInfo> watcherInfoMap;
     /** the detail data of each type of activity (Json format) */
     String detail;
@@ -54,6 +56,7 @@ public class PlayerActivityData {
 
         watcherInfo.curProgress =
                 Math.min(watcherInfo.curProgress + Math.max(delta, 1), watcherInfo.totalProgress);
+        save();
         getPlayer().sendPacket(new PacketActivityUpdateWatcherNotify(activityId, watcherInfo));
     }
 
@@ -65,11 +68,15 @@ public class PlayerActivityData {
         this.detail = JsonUtils.encode(detail);
     }
 
-    public void takeWatcherReward(int watcherId) {
-        var watcher = watcherInfoMap.get(watcherId);
-        if (watcher == null || watcher.isTakenReward()) {
-            return;
+    public synchronized int takeWatcherReward(int watcherId) {
+        if (player == null || !player.getActivityManager().isActivityActive(activityId)
+                || player.getActivityManager().getPlayerActivityDataMap().get(activityId) != this) {
+            return Retcode.RET_ACTIVITY_CLOSE_VALUE;
         }
+        var watcher = watcherInfoMap.get(watcherId);
+        if (watcher == null) return Retcode.RET_ACTIVITY_ITEM_ERROR_VALUE;
+        if (watcher.isTakenReward()) return Retcode.RET_ACTIVITY_WATCHER_REWARD_TAKEN_VALUE;
+        if (!watcher.isFinished()) return Retcode.RET_ACTIVITY_WATCHER_REWARD_NOT_FINISHED_VALUE;
 
         var reward =
                 Optional.of(watcher)
@@ -78,7 +85,7 @@ public class PlayerActivityData {
                         .map(id -> GameData.getRewardDataMap().get(id.intValue()));
 
         if (reward.isEmpty()) {
-            return;
+            return Retcode.RET_SVR_ERROR_VALUE;
         }
 
         List<GameItem> rewards = new ArrayList<>();
@@ -89,6 +96,7 @@ public class PlayerActivityData {
         player.getInventory().addItems(rewards, ActionReason.ActivityWatcher);
         watcher.setTakenReward(true);
         save();
+        return 0;
     }
 
     @Entity

@@ -19,7 +19,7 @@ public class PacketActivityScheduleInfoNotify extends BasePacket {
                             ActivityScheduleInfoOuterClass.ActivityScheduleInfo.newBuilder()
                                     .setActivityId(item.getActivityId())
                                     .setScheduleId(item.getScheduleId())
-                                    .setIsOpen(true)
+                                    .setIsOpen(item.isActiveAt(System.currentTimeMillis()))
                                     .setBeginTime(DateHelper.getUnixTime(item.getBeginTime()))
                                     .setEndTime(DateHelper.getUnixTime(item.getEndTime()))
                                     .build());

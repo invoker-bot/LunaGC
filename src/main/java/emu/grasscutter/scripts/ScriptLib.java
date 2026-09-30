@@ -597,6 +597,54 @@ public class ScriptLib {
         return 0;
     }
 
+    private EntityGadget playGadget(int groupId, int configId) {
+        var current = getCurrentEntityGadget();
+        if (current != null && groupId == 0 && configId == 0) return current;
+        var scene = current != null ? current.getScene() : getSceneScriptManager().getScene();
+        int resolvedGroup = groupId != 0 ? groupId
+                : current != null ? current.getGroupId() : getCurrentGroup().map(group -> group.id).orElse(0);
+        var entity = scene.getEntityByConfigId(configId, resolvedGroup);
+        return entity instanceof EntityGadget gadget ? gadget : null;
+    }
+
+    public int GetGadgetPlayUidValue(int groupId, int configId, int uid, String key) {
+        var gadget = playGadget(groupId, configId);
+        return gadget == null ? 0 : gadget.getGadgetPlayState().getUidValue(uid, key);
+    }
+
+    public int SetGadgetPlayUidValue(int groupId, int configId, int uid, String key, int value) {
+        var gadget = playGadget(groupId, configId);
+        if (gadget == null) return -1;
+        gadget.getGadgetPlayState().setUidValue(uid, key, value);
+        return 0;
+    }
+
+    public int GetGadgetPlayProgress(int groupId, int configId) {
+        var gadget = playGadget(groupId, configId);
+        return gadget == null ? 0 : gadget.getGadgetPlayState().getProgress();
+    }
+
+    public int AddGadgetPlayProgress(int groupId, int configId, int delta) {
+        var gadget = playGadget(groupId, configId);
+        if (gadget == null) return -1;
+        gadget.getGadgetPlayState().addProgress(delta);
+        return 0;
+    }
+
+    public int GetUidByTeamEntityId(int entityId) {
+        var gadget = getCurrentEntityGadget();
+        var scene = gadget != null ? gadget.getScene() : getSceneScriptManager().getScene();
+        return scene.getPlayers().stream().filter(player -> player.getTeamManager().getEntity().getId() == entityId)
+                .mapToInt(player -> player.getUid()).findFirst().orElse(0);
+    }
+
+    public float GetTeamAbilityFloatValue(int uid, String key) {
+        var gadget = getCurrentEntityGadget();
+        var scene = gadget != null ? gadget.getScene() : getSceneScriptManager().getScene();
+        return scene.getPlayers().stream().filter(player -> player.getUid() == uid).findFirst()
+                .map(player -> player.getTeamManager().getEntity().getGlobalAbilityValues().getOrDefault(key, 0f)).orElse(0f);
+    }
+
     public LuaTable GetActivityOpenAndCloseTimeByScheduleId(int scheduleId) {
         logger.debug("[LUA] Call GetActivityOpenAndCloseTimeByScheduleId with {}", scheduleId);
         var result = new LuaTable();

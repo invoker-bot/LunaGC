@@ -12,6 +12,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ActivityData extends GameResource {
     int activityId;
+    long nameTextMapHash;
     String activityType;
     List<Integer> condGroupId;
     List<Integer> watcherId;
