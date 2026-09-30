@@ -64,18 +64,29 @@
 已用固定提交的
 [gi-stringliteral](https://github.com/kuma-dayo/gi-stringliteral/tree/1008fd7db28dcbc55729d5bb6b3a585dab86cf8b)
 从本次客户端恢复 86,108 条加密字符串，包含烘炉界面和 MP play 资源名称。
-字符串恢复尚未得到上述缺失消息的字段定义；完整元数据、序列化代码和协议字段仍需继续核实。
+字符串恢复尚未得到上述缺失消息的字段定义；序列化代码和协议字段仍需继续核实。
 随后根据本次可执行文件的类型名称读取函数，恢复了 88,904 个类型的名称和命名空间，
 包括 `MonoActivityCrucible` 与 `MonoCrucibleEndPage`。协议类名仍被混淆，
-类型名称不等于消息结构；字段编号和包号对应关系尚未从这份类型表中恢复。
+继续按可执行文件的字段和方法读取函数，恢复了 440,172 个字段名称及类型引用，
+以及 733,442 个方法名称、原生地址和参数数量。字段和方法归属范围连续且无重叠，
+名称均通过 UTF-8 与控制字符检查；非零方法地址位于 PE 文件支持的区间。
+字段类型输出包括基础类型、属性及类/值类型的定义索引；泛型和数组的负载保留原始索引，
+尚未恢复完整的泛型参数或方法签名。
+部分混淆类的解析代码已观察到 protobuf 标签读取分支；
+字段编号与具体消息、包号的对应关系仍待核实，提取结果不能直接当作可用的 `.proto`。
 
 ```powershell
 python tools/extract_client_type_names.py 'C:\Users\InvokerBot\AppData\Local\hoyo\hk4e\versions\current'
+
+# 同时提取字段与方法，默认输出 client-type-metadata.json
+python tools/extract_client_type_names.py 'C:\Users\InvokerBot\AppData\Local\hoyo\hk4e\versions\current' --include-fields --include-methods
 ```
 
 该工具只读取客户端；内置偏移与解码常量严格绑定本次 exe 和元数据的 SHA-256，
 其他构建会被拒绝，避免更新后套用旧偏移。输出默认保存在被忽略的
-`local/activity-research/client-type-names.json`，客户端文件及类型名称表不随仓库或镜像发布。
+`local/activity-research/client-type-names.json`；带字段或方法选项时默认保存为同目录的
+`client-type-metadata.json`。两个选项也可单独使用；`--output` 可指定分析结果路径，
+客户端目录内的输出会被拒绝。客户端文件和提取出的元数据不随仓库或镜像发布。
 
 ## 数据来源和更新
 
