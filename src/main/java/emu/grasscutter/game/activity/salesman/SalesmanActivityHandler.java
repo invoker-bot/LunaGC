@@ -38,6 +38,7 @@ public final class SalesmanActivityHandler extends ActivityHandler {
                 : progress.hasTalked(day) ? SalesmanStatusType.SALESMAN_STATUS_STARTED
                 : SalesmanStatusType.SALESMAN_STATUS_UNSTARTED;
         return SalesmanActivityDetailInfo.newBuilder().setDayIndex(Math.min(day, 7)).setStatus(status)
-                .setHasTalked(progress.hasTalked()).putAllSelectedRewardIdMap(progress.selectedRewardIdMap()).build();
+                .setKOPLLPLDGGH(progress.deliveredDays().contains(day))
+                .putAllSelectedRewardIdMap(progress.selectedRewardIdMap()).build();
     }
 }

@@ -48,7 +48,7 @@ public final class SalesmanSchedule {
                 || data.getActivityId() != ACTIVITY_ID || data.getScheduleId() != config.getScheduleId()) return false;
         var daily = daily(config, now);
         if (daily == null || daily.getCostItemList().isEmpty()) return false;
-        try { return !progress(data).deliveredDays().contains(day); }
+        try { var progress = progress(data); return progress.pendingDeliveryDay() == 0 && !progress.deliveredDays().contains(day); }
         catch (RuntimeException invalid) { return false; }
     }
 

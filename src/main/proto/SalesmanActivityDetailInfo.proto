@@ -16,7 +16,7 @@ message SalesmanActivityDetailInfo {
     uint32 FBDGELFLLGI = 8;
     uint32 PGMJOECPHIN = 9;
     SalesmanStatusType status = 10;
-    // Salesman talk response marks object+0x24. Semantic name is inferred.
-    bool has_talked = 12;
+    // Delivery response marks object+0x24. Keep its native name; the same detail serves later events.
+    bool KOPLLPLDGGH = 12;
     uint32 day_index = 15;
 }

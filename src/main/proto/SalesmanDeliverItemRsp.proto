@@ -1,0 +1,9 @@
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "SalesmanDeliverItemRspOuterClass";
+
+// 7.1 native type 69706 (FGEJKJEJMDM), packet 28807, reader 0x14bbc7130.
+message SalesmanDeliverItemRsp {
+    int32 retcode = 12;
+    uint32 schedule_id = 14;
+}

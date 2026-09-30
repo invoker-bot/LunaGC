@@ -1346,6 +1346,8 @@ public final class PacketOpcodes {
     public static final int RoguelikeRuneRecordUpdateNotify = 7720;
     public static final int RoguelikeSelectAvatarAndEnterDungeonReq = 22085;
     public static final int SalesmanTakeRewardReq = 21130;
+    public static final int SalesmanDeliverItemReq = 988;
+    public static final int SalesmanDeliverItemRsp = 28807;
     public static final int SalesmanTakeRewardRsp = 29368;
     public static final int SalvageEscortSettleNotify = 28358;
     public static final int SalvagePreventSettleNotify = 22683;

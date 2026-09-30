@@ -47,12 +47,12 @@ class SalesmanActivityTest {
         var progress=SalesmanSchedule.progress(data); progress.talk(1); progress.deliver(1); data.setDetail(progress);
         var saved=PlayerActivityData.of().activityId(5003).scheduleId(5003009).detail(data.getDetail()).build();
         var delivered=SalesmanActivityHandler.detail(saved,config,NOW);
-        assertEquals(SalesmanStatusType.SALESMAN_STATUS_DELIVERED,delivered.getStatus()); assertTrue(delivered.getHasTalked());
+        assertEquals(SalesmanStatusType.SALESMAN_STATUS_DELIVERED,delivered.getStatus()); assertTrue(delivered.getKOPLLPLDGGH());
         long tomorrow=Instant.parse("2026-09-30T20:00:00Z").toEpochMilli();
         var nextDay=SalesmanActivityHandler.detail(saved,config,tomorrow);
         assertEquals(2,nextDay.getDayIndex());
         assertEquals(SalesmanStatusType.SALESMAN_STATUS_UNSTARTED,nextDay.getStatus(),"Find Liben at the new day's location");
-        assertTrue(nextDay.getHasTalked(),"Previously encountered flag is independent of today's encounter");
+        assertFalse(nextDay.getKOPLLPLDGGH(),"Yesterday's delivery must not mark today delivered");
         assertEquals(1,SalesmanSchedule.progress(saved).remainingChances());
         config.setDisabled(true); assertEquals(SalesmanStatusType.SALESMAN_STATUS_NONE,SalesmanActivityHandler.detail(saved,config,NOW).getStatus());
         config.setDisabled(false); assertEquals(delivered,SalesmanActivityHandler.detail(saved,config,NOW));

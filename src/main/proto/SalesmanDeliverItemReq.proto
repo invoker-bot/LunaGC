@@ -1,0 +1,8 @@
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "SalesmanDeliverItemReqOuterClass";
+
+// 7.1 native type 81069 (AELKIAEKDLK), packet 988, writer 0x14ab867a0.
+message SalesmanDeliverItemReq {
+    uint32 schedule_id = 15;
+}
