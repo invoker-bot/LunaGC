@@ -31,6 +31,9 @@ public abstract class ActivityHandler {
 
     public abstract void onInitPlayerActivityData(PlayerActivityData playerActivityData);
 
+    /** Add newly restored fields to an existing schedule without resetting the player's progress. */
+    public boolean onLoadPlayerActivityData(PlayerActivityData data) { return false; }
+
     public void initWatchers(Map<WatcherTriggerType, ConstructorAccess<?>> activityWatcherTypeMap) {
         activityData = GameData.getActivityDataMap().get(activityConfigItem.getActivityId());
 

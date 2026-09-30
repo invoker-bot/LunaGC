@@ -1,0 +1,10 @@
+// 7.1 native NBKLACHMLFI: IENGFLPCLNM at 0x14b776950; opcode 29428.
+syntax = "proto3";
+package recovered.p_SelectAsterMidDifficultyReq;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "SelectAsterMidDifficultyReqOuterClass";
+message SelectAsterMidDifficultyReq {
+  uint32 gadget_entity_id = 2;
+  uint32 schedule_id = 7;
+  uint32 difficulty_id = 12;
+}

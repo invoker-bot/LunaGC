@@ -1115,6 +1115,7 @@ public class SceneScriptManager {
 
     public EntityGadget createGadget(int groupId, int blockId, SceneGadget g, int state) {
         if (g == null || !allowsActivityEntity(groupId, g.group)) return null;
+        if (!scene.getAsterSceneController().allowsGadget(groupId, g)) return null;
         if (g.isOneoff) {
             var hasEntity =
                     getScene().getEntities().values().stream()
@@ -1374,8 +1375,8 @@ public class SceneScriptManager {
 
     private boolean allowsActivityEntity(int groupId, SceneGroup group) {
         var activity = scene.getCrucibleSceneController();
-        return !activity.owns(groupId)
-                || (activity.allows(groupId) && sceneGroups.get(groupId) == group);
+        return (!activity.owns(groupId) || (activity.allows(groupId) && sceneGroups.get(groupId) == group))
+                && (!scene.getAsterSceneController().owns(groupId) || scene.getAsterSceneController().allows(group));
     }
 
     // todo use killed monsters instead of spawned entites for check?

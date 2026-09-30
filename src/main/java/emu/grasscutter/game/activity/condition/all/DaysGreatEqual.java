@@ -11,6 +11,8 @@ public class DaysGreatEqual extends ActivityConditionBaseHandler {
     @Override
     public boolean execute(
             PlayerActivityData activityData, ActivityConfigItem activityConfig, int... params) {
+        if (activityConfig.getActivityId() == emu.grasscutter.game.activity.aster.AsterSchedule.ACTIVITY_ID)
+            return emu.grasscutter.game.activity.aster.AsterSchedule.dayIndex(activityConfig, System.currentTimeMillis()) >= params[0];
         Date activityBeginTime = activityConfig.getBeginTime();
         long timeDiff = System.currentTimeMillis() - activityBeginTime.getTime();
         int days = (int) (timeDiff / (1000 * 60 * 60 * 24L));

@@ -38,8 +38,8 @@ public class PlayerActivityData {
     }
 
     public void save() {
-        // Initial/replay saves must not leave an old Salesman document queued while its ID is reused.
-        if (activityId == SalesmanSchedule.ACTIVITY_ID) saveSync();
+        // Acknowledged event documents must not race queued writes when the replay reuses their ID.
+        if (activityId == SalesmanSchedule.ACTIVITY_ID || activityId == emu.grasscutter.game.activity.aster.AsterSchedule.ACTIVITY_ID) saveSync();
         else DatabaseHelper.savePlayerActivityData(this);
     }
 
@@ -73,7 +73,13 @@ public class PlayerActivityData {
     /** Restore an already serialized detail after an uncommitted change, without double encoding. */
     public void setDetailJson(String detail) { this.detail = detail; }
 
-    public synchronized int takeWatcherReward(int watcherId) {
+    public int takeWatcherReward(int watcherId) {
+        if (activityId == emu.grasscutter.game.activity.aster.AsterSchedule.ACTIVITY_ID)
+            return emu.grasscutter.game.activity.aster.AsterWatcherRewards.take(this, watcherId);
+        return takeDefaultWatcherReward(watcherId);
+    }
+
+    private synchronized int takeDefaultWatcherReward(int watcherId) {
         if (player == null || !player.getActivityManager().isActivityActive(activityId)
                 || player.getActivityManager().getPlayerActivityDataMap().get(activityId) != this) {
             return Retcode.RET_ACTIVITY_CLOSE_VALUE;

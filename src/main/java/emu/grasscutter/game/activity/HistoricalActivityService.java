@@ -42,7 +42,7 @@ public final class HistoricalActivityService {
             row.put("scheduleId", config == null ? 0 : config.getScheduleId());
             row.put("beginTime", config == null ? 0 : config.getBeginTime().getTime() / 1000);
             row.put("endTime", config == null ? 0 : config.getEndTime().getTime() / 1000);
-            row.put("restoration", event.getActivityId() == 5001 || event.getActivityId() == 5003 ? "还原中" : "待还原");
+            row.put("restoration", event.getActivityId() == 5001 || event.getActivityId() == 5003 || event.getActivityId() == 2001 ? "还原中" : "待还原");
             long titleCount = event.getActivityId() == 5001 ? GameData.getMpPlayWatcherDataMap().values().stream()
                     .filter(watcher -> watcher.getMpPlayId() == 1 && !watcher.isDisuse()).count() : 0;
             row.put("settlementTitleCount", titleCount);
@@ -63,6 +63,7 @@ public final class HistoricalActivityService {
                     ? "已接入场景、13 项任务、7.1 通知、整队匹配、个人树脂领奖及 " + titleCount + " 项结算称号；完整多人挑战与称号显示待实机验证"
                     : event.getActivityId() == 5003 ? "已加载 " + salesmanDays + " 天材料、" + salesmanRewardCount
                         + " 组首期奖励，已接入七处立本、每日对话、凌晨 4 点换日、材料提交、累计开匣机会、七匣不重复抽取与实际发奖；客户端完整流程待验证"
+                    : event.getActivityId() == 2001 ? "已恢复六处探索区域、118 个碎屑点、两轮区域任务与六组奖励，采集记录和货币 109 保存到个人排期；7.1 通知已核对，货币显示字段、陨星回收、多人挑战、商店与菲谢尔领取仍待补齐，探索流程待实机验证"
                     : !resource ? "本资源版本缺少活动记录，暂不能开启"
                     : !event.hasKnownType() ? "活动类型编号尚未核实，暂不能开启"
                     : "可管理活动排期；专属玩法尚未完成客户端验证");

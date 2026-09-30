@@ -10,11 +10,11 @@ import "AsterProgressDetailInfo.proto";
 
 message AsterActivityDetailInfo {
 	AsterLittleDetailInfo aster_little = 2;
-	uint32 BGHKDINALDB = 50000;
+	uint32 DKOEMPLNJBP = 1;
 	bool is_special_reward_taken = 7;
 	AsterMidDetailInfo aster_mid = 12;
 	uint32 content_close_time = 13;
-	uint32 DGBIKMCIGLN = 50001;
+	uint32 JAHBDIPMKMI = 5;
 	AsterLargeDetailInfo aster_large = 6;
 	bool is_content_closed = 11;
 	AsterProgressDetailInfo aster_progress = 15;

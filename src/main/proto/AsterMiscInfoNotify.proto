@@ -1,4 +1,4 @@
-// Recovered from AsterMiscInfoNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+// 7.1 native DEFAMMEJKOA: NLGBJEEJDLG at 0x153446370; opcode 24878.
 syntax = "proto3";
 
 package recovered.p_AsterMiscInfoNotify;
@@ -6,6 +6,7 @@ option java_package = "emu.grasscutter.net.proto";
 option java_outer_classname = "AsterMiscInfoNotifyOuterClass";
 
 message AsterMiscInfoNotify {
-  uint32 aster_token = 9;
-  uint32 aster_credit = 2;
+  // Balance semantics remain unresolved; names match AsterActivityDetailInfo.
+  uint32 DKOEMPLNJBP = 13;
+  uint32 JAHBDIPMKMI = 15;
 }

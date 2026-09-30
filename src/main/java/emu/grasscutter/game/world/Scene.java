@@ -14,6 +14,7 @@ import emu.grasscutter.data.server.Grid;
 import emu.grasscutter.game.activity.crucible.CrucibleSceneController;
 import emu.grasscutter.game.activity.salesman.SalesmanSceneController;
 import emu.grasscutter.game.activity.salesman.SalesmanNpcScene;
+import emu.grasscutter.game.activity.aster.AsterSceneController;
 import emu.grasscutter.game.avatar.Avatar;
 import emu.grasscutter.game.dungeons.DungeonManager;
 import emu.grasscutter.game.dungeons.DungeonSettleListener;
@@ -75,6 +76,7 @@ public class Scene {
     @Getter private final SceneScriptManager scriptManager;
     @Getter private final CrucibleSceneController crucibleSceneController;
     @Getter private final SalesmanSceneController salesmanSceneController;
+    @Getter private final AsterSceneController asterSceneController;
     @Getter @Setter private WorldChallenge challenge;
     @Getter private List<DungeonSettleListener> dungeonSettleListeners;
     @Getter @Setter private int prevScene;
@@ -114,6 +116,7 @@ public class Scene {
         this.scheduler = new ServerTaskScheduler();
         this.crucibleSceneController = new CrucibleSceneController(this);
         this.salesmanSceneController = new SalesmanSceneController(this);
+        this.asterSceneController = new AsterSceneController(this);
         this.scriptManager = new SceneScriptManager(this);
         this.blossomManager = new BlossomManager(this);
         this.unlockedForces = new HashSet<>();
@@ -259,6 +262,7 @@ public class Scene {
         if (this.getPlayerCount() <= 0 && !this.dontDestroyWhenEmpty) {
             this.crucibleSceneController.close();
             this.salesmanSceneController.close();
+            this.asterSceneController.close();
             this.getScriptManager().onDestroy();
             this.getWorld().deregisterScene(this);
         }
@@ -667,6 +671,7 @@ public class Scene {
                     // moment checkGroups takes over.
                     if (this.getScriptManager().isInit()) {
                         this.crucibleSceneController.update(nowMs);
+                        this.asterSceneController.update(nowMs);
                         this.checkGroups();
                     }
                     else if (this.getScriptManager().isInitAttempted()) this.checkSpawns();

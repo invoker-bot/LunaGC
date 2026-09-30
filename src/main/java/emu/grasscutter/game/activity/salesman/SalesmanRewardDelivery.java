@@ -51,13 +51,16 @@ public final class SalesmanRewardDelivery {
     }
     /** Caller holds the inventory monitor from preflight through the grant. */
     public static void grant(Player player, int rewardId) {
+        grant(player, rewardId, ActionReason.SalesmanReward);
+    }
+    public static void grant(Player player, int rewardId, ActionReason reason) {
         var reward = GameData.getRewardDataMap().get(rewardId);
         if (reward == null || validate(player, rewardId) != 0) throw new IllegalStateException("Salesman reward preflight changed");
         var inventory = player.getInventory();
         for (var param : reward.getRewardItemList()) {
             boolean virtual = GameData.getItemDataMap().get(param.getId()).getItemType() == ItemType.ITEM_VIRTUAL;
             int before = virtual ? currency(player, param.getId()) : inventory.getItemCountById(param.getId());
-            if (!inventory.addItem(param, ActionReason.SalesmanReward)) throw new IllegalStateException("Salesman item was not granted");
+            if (!inventory.addItem(param, reason)) throw new IllegalStateException("Activity item was not granted");
             int after = virtual ? currency(player, param.getId()) : inventory.getItemCountById(param.getId());
             if ((long) after - before != param.getCount()) throw new IllegalStateException("Salesman grant count changed");
             if (!virtual) DatabaseHelper.saveGameSync(inventory.getItemById(param.getId()));

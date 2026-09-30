@@ -353,6 +353,10 @@ public class EntityGadget extends EntityBaseGadget {
     @Override
     public void onInteract(Player player, GadgetInteractReq interactReq) {
         if (!this.interactEnabled) return;
+        if (getScene().getAsterSceneController().owns(getGroupId())) {
+            getScene().getAsterSceneController().gather(player, this, interactReq);
+            return;
+        }
 
         if (this.getContent() == null) {
             return;

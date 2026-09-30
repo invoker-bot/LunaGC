@@ -18,6 +18,10 @@ import emu.grasscutter.data.excels.activity.MpPlayMatchData;
 import emu.grasscutter.data.excels.activity.MpPlayWatcherData;
 import emu.grasscutter.data.excels.activity.SalesmanData;
 import emu.grasscutter.data.excels.activity.SalesmanDailyData;
+import emu.grasscutter.data.excels.activity.AsterLittleData;
+import emu.grasscutter.data.excels.activity.AsterMissionData;
+import emu.grasscutter.data.excels.activity.AsterStageData;
+import emu.grasscutter.data.excels.activity.AsterPreviewData;
 import emu.grasscutter.data.excels.avatar.*;
 import emu.grasscutter.data.excels.codex.*;
 import emu.grasscutter.data.excels.dungeon.*;
@@ -137,6 +141,10 @@ public final class GameData {
     @Getter private static final Int2ObjectMap<MpPlayWatcherData> mpPlayWatcherDataMap = new Int2ObjectOpenHashMap<>();
     @Getter private static final Int2ObjectMap<SalesmanData> salesmanDataMap = new Int2ObjectOpenHashMap<>();
     @Getter private static final Int2ObjectMap<SalesmanDailyData> salesmanDailyDataMap = new Int2ObjectOpenHashMap<>();
+    @Getter private static final Int2ObjectMap<AsterLittleData> asterLittleDataMap = new Int2ObjectOpenHashMap<>();
+    @Getter private static final Int2ObjectMap<AsterMissionData> asterMissionDataMap = new Int2ObjectOpenHashMap<>();
+    @Getter private static final Int2ObjectMap<AsterStageData> asterStageDataMap = new Int2ObjectOpenHashMap<>();
+    @Getter private static final Int2ObjectMap<AsterPreviewData> asterPreviewDataMap = new Int2ObjectOpenHashMap<>();
 
     @Getter
     private static final Int2ObjectMap<ActivityShopData> activityShopDataMap =

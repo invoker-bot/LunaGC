@@ -10,6 +10,10 @@ public class DayLess extends ActivityConditionBaseHandler {
     @Override
     public boolean execute(
             PlayerActivityData activityData, ActivityConfigItem activityConfig, int... params) {
+        if (activityConfig.getActivityId() == emu.grasscutter.game.activity.aster.AsterSchedule.ACTIVITY_ID) {
+            int day = emu.grasscutter.game.activity.aster.AsterSchedule.dayIndex(activityConfig, System.currentTimeMillis());
+            return day > 0 && day < params[0];
+        }
         return true; // TODO implement this and add possibility to always return true
     }
 }

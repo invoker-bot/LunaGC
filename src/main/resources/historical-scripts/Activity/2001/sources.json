@@ -1,0 +1,32 @@
+[
+  {
+    "path": "Scene/3/scene3_group302001005.lua",
+    "source": "https://github.com/Ahanlei123/2.8_live_data/blob/f25e3155e38f9dc8f647493bf23a935147caf59e/lua/activity/2001/activity2001_group302001005.lua",
+    "sha256": "96524a7a588e9e160215636e7ad172e6acc58467e4d3fc0d228ef1bbb39c8ec6"
+  },
+  {
+    "path": "Scene/3/scene3_group302001012.lua",
+    "source": "https://github.com/Ahanlei123/2.8_live_data/blob/f25e3155e38f9dc8f647493bf23a935147caf59e/lua/activity/2001/activity2001_group302001012.lua",
+    "sha256": "43c93cbe6790c057b6dbf28f9c0cc1a116e5f9f6856ff4116b157aac5a77fedd"
+  },
+  {
+    "path": "Scene/3/scene3_group302001013.lua",
+    "source": "https://github.com/Ahanlei123/2.8_live_data/blob/f25e3155e38f9dc8f647493bf23a935147caf59e/lua/activity/2001/activity2001_group302001013.lua",
+    "sha256": "a6f087e6b9f0285fe6dd7e286197eea782f71e5880592ed0830a085812fb74b9"
+  },
+  {
+    "path": "Scene/3/scene3_group302001007.lua",
+    "source": "https://github.com/Ahanlei123/2.8_live_data/blob/f25e3155e38f9dc8f647493bf23a935147caf59e/lua/activity/2001/activity2001_group302001007.lua",
+    "sha256": "85376e36d307410251eb59014f833be1543284d91deca45916f746eb8d5d7892"
+  },
+  {
+    "path": "Scene/3/scene3_group302001014.lua",
+    "source": "https://github.com/Ahanlei123/2.8_live_data/blob/f25e3155e38f9dc8f647493bf23a935147caf59e/lua/activity/2001/activity2001_group302001014.lua",
+    "sha256": "fe38d2af67aa9cfc5d4e43fb37ad50dc5e1715eb6364e943055a9242e0c4c4b4"
+  },
+  {
+    "path": "Scene/3/scene3_group302001015.lua",
+    "source": "https://github.com/Ahanlei123/2.8_live_data/blob/f25e3155e38f9dc8f647493bf23a935147caf59e/lua/activity/2001/activity2001_group302001015.lua",
+    "sha256": "59670ebd9cfa81b08aafb3a625aa994f24c28f57ba33beea3301ab3822e40eb3"
+  }
+]

@@ -1,4 +1,4 @@
-// Recovered from AsterLittleInfoNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+// 7.1 native MKMFPJAHOOJ: NLGBJEEJDLG at 0x14fdd6ea0; opcode 20608.
 syntax = "proto3";
 
 package recovered.p_AsterLittleInfoNotify;
@@ -7,5 +7,5 @@ option java_outer_classname = "AsterLittleInfoNotifyOuterClass";
 import "AsterLittleDetailInfo.proto";
 
 message AsterLittleInfoNotify {
-  .AsterLittleDetailInfo info = 14;
+  .AsterLittleDetailInfo info = 4;
 }

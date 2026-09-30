@@ -12,3 +12,18 @@ The script is retained as historical client resource data. It is not newly autho
 LunaGC code. `ScriptLoader` uses it only when the selected resource checkout does not
 provide that path. Availability of this control group does not activate a scene or
 establish compatibility with newer client messages.
+
+## Unreconciled Stars exploration (2001)
+
+The six original exploration groups `302001005`, `302001012`, `302001013`,
+`302001007`, `302001014`, and `302001015` are recovered from the same pinned
+[activity archive](https://github.com/Ahanlei123/2.8_live_data/tree/f25e3155e38f9dc8f647493bf23a935147caf59e/lua/activity/2001).
+Their bytes are unchanged; only the paths follow the `SceneGroup` convention.
+`Activity/2001/sources.json` records each original URL and SHA-256.
+`Activity/2001/fragments.json` derives positions from `activity2001_block200101.lua`
+and collection IDs from those six scripts (118 points in total). It excludes the
+three disused exploration missions. Each world's controller creates its own group
+definitions and bindings; collected points are kept in the player's activity document.
+
+The archived `Common/AsterMiddle.lua` and `Common/AsterBig.lua` are not activated by
+this recovery. They need the original camp/reward and scene-play battle interfaces.

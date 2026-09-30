@@ -98,6 +98,7 @@ public class ActivityManager extends BasePlayerManager {
             }
             data.setPlayer(player);
             data.setActivityHandler(item.getActivityHandler());
+            if (item.getActivityHandler().onLoadPlayerActivityData(data)) data.saveSync();
             playerActivityDataMap.put(item.getActivityId(), data);
         }
         conditionExecutor = new BasicActivityConditionExecutor(snapshot.activities(),
@@ -149,6 +150,9 @@ public class ActivityManager extends BasePlayerManager {
     public int getOpenDay(int id) {
         var item = configuration.activities().get(id);
         if (item == null || System.currentTimeMillis() < item.getOpenTime().getTime()) return 0;
+        if (id == emu.grasscutter.game.activity.aster.AsterSchedule.ACTIVITY_ID) {
+            return emu.grasscutter.game.activity.aster.AsterSchedule.dayIndex(item, System.currentTimeMillis());
+        }
         return item == null ? 0 : Math.max(0, (int) TimeUnit.MILLISECONDS.toDays(
                 System.currentTimeMillis() - item.getOpenTime().getTime()) + 1);
     }

@@ -745,6 +745,7 @@ public final class PacketOpcodes {
     public static final int AssociateInferenceWordRsp = 27812;
     public static final int AsterLargeInfoNotify = 5937;
     public static final int AsterLittleInfoNotify = 20608;
+    public static final int AsterMiscInfoNotify = 24878;
     public static final int AsterMidCampInfoNotify = 9033;
     public static final int AsterMidInfoNotify = 7830;
     public static final int AsterProgressInfoNotify = 23543;

@@ -17,6 +17,7 @@ public class ActivityWatcherData extends GameResource {
 
     int rewardID;
     int progress;
+    boolean isDisuse;
     WatcherTrigger triggerConfig;
 
     @Override

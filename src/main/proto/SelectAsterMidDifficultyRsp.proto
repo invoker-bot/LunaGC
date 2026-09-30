@@ -1,0 +1,11 @@
+// 7.1 native EFIOBDGHMAO: NLGBJEEJDLG at 0x150e50230; opcode 2401.
+syntax = "proto3";
+package recovered.p_SelectAsterMidDifficultyRsp;
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "SelectAsterMidDifficultyRspOuterClass";
+message SelectAsterMidDifficultyRsp {
+  uint32 gadget_entity_id = 1;
+  uint32 schedule_id = 3;
+  int32 retcode = 12;
+  uint32 difficulty_id = 15;
+}
