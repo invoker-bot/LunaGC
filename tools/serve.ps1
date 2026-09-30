@@ -1,8 +1,8 @@
 # ---------------------------------------------------------------------------
 #  Start / stop the LunaGC server, detached from the shell that launched it.
 #
-#  serve.ps1 -Mode start    -> bring up MongoDB, then the server in its own
-#                             console window (survives this script exiting)
+#  serve.ps1 -Mode start    -> bring up the shared Compose MongoDB, then the
+#                             server in a hidden process (survives this script)
 #  serve.ps1 -Mode stop     -> kill the java process serving 8088
 #  serve.ps1 -Mode status   -> report whether the server is up
 #
@@ -35,7 +35,19 @@ Set-Location $repo
 $jarName = if ($env:LUNAGC_JAR) { $env:LUNAGC_JAR } else { 'LunaGC-7.1.0.jar' }
 $jar = Join-Path $repo $jarName
 
-$mongoContainer = if ($env:LUNAGC_MONGO) { $env:LUNAGC_MONGO } else { 'luna-mongo' }
+$useComposeMongo = [string]::IsNullOrWhiteSpace($env:LUNAGC_MONGO)
+$mongoContainer = $env:LUNAGC_MONGO
+if ($useComposeMongo) {
+    # Resolve the Compose service instead of maintaining a second dev database.
+    $mongoContainer = docker compose ps --all --quiet mongo
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not locate the Compose MongoDB service. Is Docker Desktop running?"
+    }
+    if ([string]::IsNullOrWhiteSpace($env:LUNAGC_MONGO_URI)) {
+        $mongoPort = if ($env:LUNAGC_MONGO_PORT) { $env:LUNAGC_MONGO_PORT } else { '27017' }
+        $env:LUNAGC_MONGO_URI = "mongodb://127.0.0.1:$mongoPort"
+    }
+}
 $httpPort = if ($env:LUNAGC_HTTP_PORT) { $env:LUNAGC_HTTP_PORT } else { '8088' }
 $gamePort  = if ($env:LUNAGC_GAME_PORT) { $env:LUNAGC_GAME_PORT } else { '22101' }
 
@@ -62,7 +74,9 @@ function Get-ServerPid {
 # ---------------------------------------------------------------- status ----
 
 if ($Mode -eq 'status') {
-    $mongo = docker inspect --format '{{.State.Status}}' $mongoContainer 2>$null
+    $mongo = if ($mongoContainer) {
+        docker inspect --format '{{.State.Status}}' $mongoContainer 2>$null
+    } else { 'absent' }
     if (-not $mongo) { $mongo = 'absent' }
 
     $http = if (Test-PortListening $httpPort) { 'listening' } else { 'down' }
@@ -91,22 +105,30 @@ if ($Mode -eq 'start') {
         exit 0
     }
 
-    Write-Host "starting MongoDB container '$mongoContainer' (if stopped)..."
-    $mongoState = docker inspect --format '{{.State.Status}}' $mongoContainer 2>$null
-    if (-not $mongoState) {
-        throw "MongoDB container '$mongoContainer' does not exist. Create it first, e.g.: docker run -d --name $mongoContainer -p 27017:27017 mongo"
-    }
-    if ($mongoState -ne 'running') {
-        docker start $mongoContainer | Out-Null
+    if ($useComposeMongo) {
+        Write-Host "starting the shared Compose MongoDB service..."
+        docker compose up --detach --wait --wait-timeout 60 mongo
         if ($LASTEXITCODE -ne 0) {
-            throw "Failed to start MongoDB container '$mongoContainer' (docker exit $LASTEXITCODE). Is Docker Desktop running?"
+            throw "Failed to start the shared Compose MongoDB service (docker exit $LASTEXITCODE)."
+        }
+    } else {
+        Write-Host "starting MongoDB container '$mongoContainer' (if stopped)..."
+        $mongoState = docker inspect --format '{{.State.Status}}' $mongoContainer 2>$null
+        if (-not $mongoState) {
+            throw "MongoDB container '$mongoContainer' does not exist. Create it first or unset LUNAGC_MONGO to use Compose."
+        }
+        if ($mongoState -ne 'running') {
+            docker start $mongoContainer | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                throw "Failed to start MongoDB container '$mongoContainer' (docker exit $LASTEXITCODE). Is Docker Desktop running?"
+            }
         }
     }
 
     Write-Host "starting LunaGC (dispatch 0.0.0.0:$httpPort, game 127.0.0.1:$gamePort)..."
     Write-Host "  logs: start_stdout.log / start_stderr.log (overwritten each launch)"
 
-    # cmd owns the redirection; the window stays open after this script exits.
+    # cmd owns the redirection; the hidden process survives this script exiting.
     # The inner command line is quoted so cmd treats it as one statement and
     # keeps the redirects attached to java rather than to cmd itself.
     # $ServerArgs is interpolated into that single quoted statement, so it may
@@ -116,7 +138,7 @@ if ($Mode -eq 'start') {
     Start-Process -FilePath 'cmd.exe' `
         -ArgumentList "/c `"$inner`"" `
         -WorkingDirectory $repo `
-        -WindowStyle Normal | Out-Null
+        -WindowStyle Hidden | Out-Null
 
     # wait for the dispatch port to accept connections (server boot takes a
     # few seconds while it loads resources and the handbook)
@@ -167,6 +189,10 @@ if ($Mode -eq 'stop') {
     if (-not $pid_) {
         Write-Host "no server listening on 127.0.0.1:$httpPort -- nothing to stop"
         exit 0
+    }
+    $serverProcess = Get-Process -Id $pid_ -ErrorAction SilentlyContinue
+    if (-not $serverProcess -or $serverProcess.ProcessName -ne 'java') {
+        throw "The HTTP port is owned by a non-Java process. For the Compose runtime, use 'docker compose stop server'."
     }
     Write-Host "stopping LunaGC java process PID $pid_"
     Stop-Process -Id $pid_ -Force

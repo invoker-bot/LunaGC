@@ -81,8 +81,8 @@ else is not.
 
 | Mode | Command | Resources | State |
 | --- | --- | --- | --- |
-| Windows development | `task dev` | A separate checkout selected by `.env.local`, or the `resources/` submodule | Local MongoDB and working directory |
-| Docker Compose runtime | `docker compose up --build -d` | Pinned `resources/` submodule copied into the image | Named MongoDB and server volumes |
+| Windows development | `task dev` | A separate checkout selected by `.env.local`, or the `resources/` submodule | Shared Compose MongoDB volume; config/data in the working directory |
+| Docker Compose runtime | `docker compose up --build -d` | Pinned `resources/` submodule copied into the image | Shared Compose MongoDB volume; config/data in the server volume |
 
 For a fresh checkout, install Git LFS, clone with submodules, and fetch the
 resource files:
@@ -292,13 +292,10 @@ known-broken, not unknown:
 
 - **[Java 17](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)**
   or newer, on `PATH`.
-- **MongoDB**. `task serve` expects the Docker container `luna-mongo` — create it
-  once:
-  ```
-  docker run -d --name luna-mongo -p 27017:27017 mongo
-  ```
-  A locally-installed `mongod` on `127.0.0.1:27017` works just as well; only the
-  task convenience commands assume the container name.
+- **Docker Desktop with Compose**. Both modes use the Compose `mongo` service
+  and its named `mongo-data` volume by default. `task serve` starts this service
+  automatically. For a separate existing database container, override both
+  `LUNAGC_MONGO` and `LUNAGC_MONGO_URI` in `.env.local`.
 - **[NodeJS](https://nodejs.org/) 20** — only for handbook generation. Skip it
   and pass `-PskipHandbook=1` if you do not want the handbook.
 - **[Rust](https://rust-lang.org/learn/get-started/) + Cargo** — only for the
@@ -371,15 +368,43 @@ respond on `http://127.0.0.1:8088/` once startup finishes. Use
 Set `LUNAGC_PUBLIC_ADDRESS` in `.env` (or in the shell) to the IP address or DNS
 name clients use to reach the machine. The default `127.0.0.1` is for testing
 on the same machine. Compose publishes HTTP on TCP 8088 and the game server on
-UDP 22101. MongoDB is reachable only by the server container. MongoDB data and
+UDP 22101. MongoDB is also published on `127.0.0.1:27017` for local development
+and is not exposed on external interfaces. Set `LUNAGC_MONGO_PORT` in `.env` to
+change this host port. MongoDB data and
 server-generated config/data live in separate named volumes and survive
 `docker compose down`; `docker compose down -v` deletes them.
 
 After changing the resource submodule commit or its files, run
 `git -C resources lfs pull` and `docker compose up --build -d` again. The image
 holds its own copy of the resources, so an existing container does not see later
-checkout changes. This Compose MongoDB has its own data volume; it does not use the
-`luna-mongo` container started by the local `task serve` workflow.
+checkout changes. Both runtime and development use this Compose MongoDB, so
+accounts, player progress, inventory and wish history are shared between modes.
+
+### Switching between development and runtime
+
+Stop the current server before starting the other mode; both use the same game
+and HTTP ports. To switch from runtime to development:
+
+```powershell
+docker compose stop server
+task dev
+```
+
+To switch back, close the development session and stop the local Java server:
+
+```powershell
+task dev:stop
+task serve:stop
+docker compose up -d server
+```
+
+MongoDB stays running through either switch. Server config/data files remain
+specific to each mode; only database records are shared. An older `luna-mongo`
+container is not used automatically. To migrate its data, stop database writers,
+back up both databases with `mongodump`, and restore the old `grasscutter` database
+into an empty Compose database using `mongorestore`. Verify document counts,
+collection hashes and indexes before retiring the old container. If both
+databases already contain player records, reconcile conflicts before restoring.
 
 ## Building
 
