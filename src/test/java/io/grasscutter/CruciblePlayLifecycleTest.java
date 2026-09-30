@@ -120,12 +120,24 @@ class CruciblePlayLifecycleTest {
     @Test void originalStageCallbackSelectsTheResourceGroupAndSuccessCleansAllSevenGroups() {
         var globals = originalMainGroup();
         var refreshes = new ArrayList<String>();
+        var uidOperations = new ArrayList<String>();
+        var state = new GadgetPlayState();
+        state.start(originalConfig(), 1000);
+        state.addProgress(35000, 1005);
+        assertFalse(state.isActive());
         var lib = new LuaTable();
         for (var name : List.of("PrintLog", "SetGroupVariableValue", "ShowTemplateReminder", "CancelGroupTimerEvent",
                 "RemoveExtraGroupSuite", "KillGroupEntity", "KillEntityByConfigId", "SetGadgetEnableInteract",
-                "SetGroupGadgetStateByConfigId", "GadgetPlayUidOp", "KillExtraGroupSuite")) {
+                "SetGroupGadgetStateByConfigId", "KillExtraGroupSuite")) {
             bind(lib, name, args -> LuaValue.ZERO);
         }
+        bind(lib, "GadgetPlayUidOp", args -> {
+            int op = args.arg(5).toint();
+            String name = args.arg(6).tojstring();
+            assertTrue(state.acceptsUidOperation(op, name, 1005), "The original stop Lua must be able to clear the finished round's buff");
+            uidOperations.add(op + ":" + name);
+            return LuaValue.ZERO;
+        });
         bind(lib, "GetServerTime", args -> LuaValue.valueOf(1000));
         bind(lib, "GetGroupSuite", args -> LuaValue.ONE);
         bind(lib, "GetSceneUidList", args -> new LuaTable());
@@ -144,8 +156,28 @@ class CruciblePlayLifecycleTest {
         assertTrue(refreshes.contains("133003554:2"));
         refreshes.clear();
         globals.get("action_EVENT_GADGET_PLAY_STOP_1003").call(LuaValue.NIL, event);
+        assertEquals(List.of("1:random_buff"), uidOperations);
         assertTrue(refreshes.containsAll(List.of("133003554:1", "133003555:1", "133003556:1",
                 "133003557:1", "133003568:1", "133003549:1", "133003550:1")));
+    }
+
+    @Test void endedRoundAllowsOnlyBuffCleanupAndFreshCountdownCannotReuseIt() {
+        var state = new GadgetPlayState();
+        assertFalse(state.acceptsUidOperation(1, "random_buff", 1000), "No round has ever started");
+        state.start(originalConfig(), 1000);
+        assertFalse(state.acceptsUidOperation(1, "random_buff", 1002));
+        assertTrue(state.acceptsUidOperation(0, "random_buff", 1003));
+        assertFalse(state.acceptsUidOperation(-1, "random_buff", 1003));
+        assertFalse(state.acceptsUidOperation(0, "", 1003));
+        state.addProgress(35000, 1005);
+        assertTrue(state.acceptsUidOperation(1, "random_buff", 1005));
+        assertFalse(state.acceptsUidOperation(0, "random_buff", 1005), "Cannot grant a buff after settlement");
+        assertFalse(state.acceptsUidOperation(5001, "random_buff", 1005));
+        assertFalse(state.acceptsUidOperation(1, "other_operation", 1005));
+        assertFalse(state.acceptsUidOperation(1, null, 1005));
+        state.start(originalConfig(), 1100);
+        assertFalse(state.acceptsUidOperation(1, "random_buff", 1101));
+        assertTrue(state.acceptsUidOperation(0, "random_buff", 1103));
     }
 
     @Test void luaServerTimeUsesEpochSecondsForBurstDurations() {

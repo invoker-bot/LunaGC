@@ -46,6 +46,12 @@ public final class GadgetPlayState {
     public synchronized int getProgress() { return progress; }
     public synchronized boolean isActive() { return active; }
     public synchronized boolean isRunningAt(long now) { return active && now >= battleBegin && now < deadline; }
+    public synchronized boolean acceptsUidOperation(int op, String name, long now) {
+        if (op < 0 || name == null || name.isEmpty()) return false;
+        // The original stop Lua clears random_buff after the state has ended.
+        // Scene/round tickets guard queued callbacks; a new countdown cannot reuse this exception.
+        return isRunningAt(now) || (!active && roundSerial > 0 && op == 1 && name.equals("random_buff"));
+    }
     public synchronized Round getRound() { return round; }
     public synchronized long getRoundSerial() { return roundSerial; }
     public synchronized int getStartTime() { return (int) countdownBegin; }

@@ -29,6 +29,7 @@ public final class RecoveredProtoDescriptorTest {
                 checked++;
             }
         }
-        assertEquals(819, checked);
+        // ExecuteGadgetLuaRsp now uses the supplied 7.1 native schema, with its own wire test.
+        assertEquals(818, checked);
     }
 }

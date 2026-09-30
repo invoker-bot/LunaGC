@@ -59,9 +59,12 @@ public class EntityController {
                         LuaValue.valueOf(param1),
                         LuaValue.valueOf(param2),
                         LuaValue.valueOf(param3));
-        if (value.isint() && value.toint() == 1) return 1;
+        return clientExecuteResult(value);
+    }
 
-        return 0;
+    static int clientExecuteResult(LuaValue value) {
+        // Controller failures (including LuaError's -1) must reach the client unchanged.
+        return value.isint() ? value.toint() : 0;
     }
 
     // TODO actual execution should probably be handle by EntityControllerScriptManager

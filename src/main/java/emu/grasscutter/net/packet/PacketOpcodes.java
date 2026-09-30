@@ -334,7 +334,7 @@ public final class PacketOpcodes {
     public static final int GivingRecordNotify = 3314;
     public static final int GmTalkRsp = 3904;
     public static final int ExecuteGadgetLuaReq = 26835;
-    public static final int ExecuteGadgetLuaRsp = -52;
+    public static final int ExecuteGadgetLuaRsp = 302;
     public static final int LevelupCityReq = 8352;
     public static final int LevelupCityRsp = 26402;
     public static final int MassiveEntityElementOpBatchNotify = 28227;

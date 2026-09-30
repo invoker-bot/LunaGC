@@ -225,9 +225,9 @@ public class EntityGadget extends EntityBaseGadget {
     public boolean gadgetPlayUidOp(List<Integer> uids, int op, String name, List<Integer> params) {
         synchronized (getScene()) {
             var play = getGadgetPlayState();
-            if (metaGadget == null || metaGadget.crucible_config == null || op < 0 || name == null || name.isEmpty()
+            if (metaGadget == null || metaGadget.crucible_config == null
                     || getScene().getEntities().get(getId()) != this
-                    || !play.isRunningAt(System.currentTimeMillis() / 1000)) return false;
+                    || !play.acceptsUidOperation(op, name, System.currentTimeMillis() / 1000)) return false;
             var members = play.getRound().participantWorldLevels();
             var present = new HashSet<Integer>();
             getScene().getPlayers().forEach(player -> present.add(player.getUid()));

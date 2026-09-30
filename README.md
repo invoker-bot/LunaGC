@@ -13,7 +13,8 @@
 原 Lua 的 5 / 10 秒怪物重生与跨组清场已接入。提供本次 7.1 客户端的元数据提取工具，
 已恢复 88,904 个类型、440,172 个字段名称及类型引用、733,442 个方法名称及地址；
 现已核对烘炉所需的六个消息结构，并直接从客户端提取了 4,923 个包号返回函数。
-玩家提交请求的包号和字段已核实，提交校验已接入；提取工具支持嵌套泛型参数。
+玩家提交请求、回包的包号与字段已适配，Lua 失败码会原样返回，结束脚本可清理玩家增益；
+回包语义名称的推断依据见协议说明。提取工具支持嵌套泛型参数。
 详见 [往期活动说明](docs/HISTORICAL_ACTIVITIES.md) 和 [烘炉协议核对](docs/CRUCIBLE_PROTOCOL.md)。
 
 
@@ -32,7 +33,7 @@ accidentally consume an unrelated 7.1 packet. Their features need fresh captures
 before being enabled. `BlossomBriefInfoNotify` and `DelTeamEntityNotify` use the
 7.1 fan-out map in `data/proto-fanout.json`.
 
-The 819 additional `.proto` files marked `Recovered from ...` preserve schemas
+The 818 additional `.proto` files marked `Recovered from ...` preserve schemas
 embedded in formerly checked-in generated Java classes. They use separate
 protobuf namespaces to avoid conflicting with the 7.1 definitions while keeping
 the Java API needed by existing handlers. These recovered schemas are historical
