@@ -25,6 +25,7 @@ import emu.grasscutter.utils.JsonUtils;
 import emu.grasscutter.utils.lang.Language;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -35,7 +36,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 
 /**
  * A web GM console mounted under {@code /gm} on the dispatch HTTP server.
@@ -47,12 +47,11 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
  * operations, this router drives the same {@link CommandMap} the console uses, which means anything
  * the console can do the page can do, and anything added to either shows up in both.
  *
- * <p>Routes are guarded by {@link
- * emu.grasscutter.config.ConfigContainer.Server.GM#accessToken the configured token}; a request
- * without it gets a 403 and nothing else. An empty token means the console is open to loopback
- * with no secret at all, which is what this repo's config ships. The console page itself is a
- * single self-contained HTML file at {@code /gm/console.html} in resources, so the server ships it
- * and the browser runs it.
+ * <p>Routes are guarded by {@link emu.grasscutter.config.ConfigContainer.Server.GM#accessToken the
+ * configured token}; a request without it gets a 403 and nothing else. An empty token means the
+ * console is open to loopback with no secret at all, which is what this repo's config ships. The
+ * console page itself is a single self-contained HTML file at {@code /gm/console.html} in
+ * resources, so the server ships it and the browser runs it.
  *
  * <p>Besides driving the command system, the console also exposes a read-only view of the item
  * catalogue and the gacha banner table, so an operator can hand out items by name and flip banners
@@ -85,8 +84,8 @@ public final class GmHandler implements Router {
      *
      * <p>These are the approximate first-half openings as month-granular approximations from the
      * official version calendar, not exact maintenance times, so the console always renders them with
-     * a 约 marker next to the exact repository commit date. Trim them as better information arrives;
-     * a value here only changes the label and the sort order of the history view, never the gacha
+     * a 约 marker next to the exact repository commit date. Trim them as better information arrives; a
+     * value here only changes the label and the sort order of the history view, never the gacha
      * system itself. A version missing from this map is labelled with the commit date alone.
      */
     private static final Map<String, YearMonth> OFFICIAL_VERSION_START =
@@ -150,15 +149,17 @@ public final class GmHandler implements Router {
 
     /** The pseudo-revision id used for the working-tree copy of the banner table. */
     private static final String WORKING_REVISION = "working";
+
     private static final String ARCHIVE_REVISION = "archive";
     private static final String BANNER_ARCHIVE_RESOURCE = "/gm/banner-history.json";
 
-    /** scheduleIds at or above this mark disabled "official archive" rows rather than live banners. */
+    /**
+     * scheduleIds at or above this mark disabled "official archive" rows rather than live banners.
+     */
     private static final int ARCHIVE_SCHEDULE_ID_BASE = 90000;
 
     /** Extracts the version label from an archive row's comment, e.g. "v2.4 官服归档 - ...". */
-    private static final Pattern ARCHIVE_VERSION_IN_COMMENT =
-            Pattern.compile("v(\\d+\\.\\d+) 官服归档");
+    private static final Pattern ARCHIVE_VERSION_IN_COMMENT = Pattern.compile("v(\\d+\\.\\d+) 官服归档");
 
     @Override
     public void applyRoutes(Javalin javalin) {
@@ -168,6 +169,8 @@ public final class GmHandler implements Router {
         javalin.get("/gm/api/players", GmHandler::listPlayers);
         javalin.post("/gm/api/command", GmHandler::runCommand);
         javalin.get("/gm/api/items", GmHandler::listItems);
+        javalin.get("/gm/api/equipment/options", GmHandler::equipmentOptions);
+        javalin.post("/gm/api/equipment/give", GmHandler::giveEquipment);
         javalin.get("/gm/api/banners", GmHandler::listBanners);
         javalin.get("/gm/api/banners/history", GmHandler::listBannerHistory);
         javalin.post("/gm/api/banners", GmHandler::setBanner);
@@ -186,8 +189,11 @@ public final class GmHandler implements Router {
             var body = JsonUtils.decode(ctx.body(), JsonObject.class);
             if (body == null || !body.has("key") || !body.has("action"))
                 throw new IllegalArgumentException("必须指定活动 key 和 action");
-            ctx.json(HistoricalActivityService.update(body.get("key").getAsString(),
-                    body.get("action").getAsString(), body.has("durationDays") ? body.get("durationDays").getAsInt() : 0));
+            ctx.json(
+                    HistoricalActivityService.update(
+                            body.get("key").getAsString(),
+                            body.get("action").getAsString(),
+                            body.has("durationDays") ? body.get("durationDays").getAsInt() : 0));
         } catch (IllegalArgumentException | IllegalStateException e) {
             ctx.status(400).json(Map.of("retcode", -1, "message", e.getMessage()));
         }
@@ -261,8 +267,8 @@ public final class GmHandler implements Router {
      * an {@code @uid} argument is how the raw-message syntax picks its target.
      *
      * <p>The handler returns before the command's own output is finished when the command is
-     * annotated {@code threading} ({@link CommandMap} spawns it on a bare thread), so the response
-     * is settled rather than waited on: after invoke returns, the capture keeps draining until the
+     * annotated {@code threading} ({@link CommandMap} spawns it on a bare thread), so the response is
+     * settled rather than waited on: after invoke returns, the capture keeps draining until the
      * output stops moving, then whatever was collected is what the page shows.
      */
     private static void runCommand(Context ctx) throws Exception {
@@ -319,19 +325,73 @@ public final class GmHandler implements Router {
     // Item catalogue
     // ------------------------------------------------------------------
 
+    private static void equipmentOptions(Context ctx) throws Exception {
+        if (!authorize(ctx)) return;
+        try {
+            ctx.json(
+                    Map.of(
+                            "retcode",
+                            0,
+                            "equipment",
+                            GmEquipment.options(parseIntOrDefault(ctx.queryParam("id"), 0))));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("retcode", 400, "message", e.getMessage()));
+        }
+    }
+
+    private static void giveEquipment(Context ctx) throws Exception {
+        if (!authorize(ctx)) return;
+        try {
+            GmEquipment.Request request;
+            try {
+                request = JsonUtils.decode(ctx.body(), GmEquipment.Request.class);
+            } catch (Exception e) {
+                throw new IllegalArgumentException("装备参数不是有效的 JSON。");
+            }
+            if (request == null || request.target <= 0) throw new IllegalArgumentException("请填写目标 UID。");
+            var player = Grasscutter.getGameServer().getPlayerByUid(request.target);
+            if (player == null || !player.isOnline())
+                throw new IllegalArgumentException("目标玩家未在线，请刷新在线列表。");
+            // Reject the entire configuration before making any inventory changes.
+            var items = GmEquipment.create(request);
+            int count = GmEquipment.grant(player, items);
+            ctx.json(
+                    Map.of(
+                            "retcode",
+                            0,
+                            "granted",
+                            count,
+                            "message",
+                            "已给予 UID "
+                                    + request.target
+                                    + " 装备 "
+                                    + request.itemId
+                                    + " × "
+                                    + count
+                                    + "（等级 "
+                                    + request.level
+                                    + "）。"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("retcode", 400, "message", e.getMessage()));
+        } catch (IllegalStateException e) {
+            Grasscutter.getLogger().error("GM equipment grant failed", e);
+            ctx.status(500).json(Map.of("retcode", 500, "message", e.getMessage()));
+        }
+    }
+
     /**
      * Searches the loaded item table so the console can hand things out by name instead of by id.
      *
      * <p>Names come from the text maps -- one lookup per item in {@link
      * Language#getTextMapStrings()}, which is already loaded, rather than {@link
-     * Language#getTextMapKey(int)}, which re-reads the 22 MB cache bin from disk on every miss.
-     * The server's own configured language is not necessarily Chinese, and the console's audience
-     * reads Chinese, so the CHS column is read directly.
+     * Language#getTextMapKey(int)}, which re-reads the 22 MB cache bin from disk on every miss. The
+     * server's own configured language is not necessarily Chinese, and the console's audience reads
+     * Chinese, so the CHS column is read directly.
      *
      * <p>Query parameters: {@code q} matches the Chinese name or the numeric id (as a substring),
-     * {@code type} is an {@link emu.grasscutter.game.inventory.ItemType} name such as
-     * {@code ITEM_WEAPON}, {@code limit} and {@code offset} page the results. The response carries
-     * the filtered {@code total} so the page can tell "no matches" from "last page".
+     * {@code type} is an {@link emu.grasscutter.game.inventory.ItemType} name such as {@code
+     * ITEM_WEAPON}, {@code limit} and {@code offset} page the results. The response carries the
+     * filtered {@code total} so the page can tell "no matches" from "last page".
      */
     private static void listItems(Context ctx) throws Exception {
         if (!authorize(ctx)) return;
@@ -349,22 +409,23 @@ public final class GmHandler implements Router {
         var matched = new ArrayList<Map<String, Object>>();
         for (ItemData data : GameData.getItemDataMap().values()) {
             String name = nameOf(strings, data);
+            boolean named = name != null && !name.isBlank() && !name.startsWith("[N/A]");
+            String displayName = named ? name : "名称待确认（" + data.getId() + "）";
             String typeName = data.getItemType() != null ? data.getItemType().name() : "ITEM_NONE";
             if (type != null && !type.isEmpty() && !type.equals(typeName)) continue;
             if (!needle.isEmpty()) {
-                String hay = (name == null ? "" : name).toLowerCase();
+                String hay = displayName.toLowerCase();
                 if (!hay.contains(needle) && !String.valueOf(data.getId()).contains(needle)) continue;
             }
 
             var row = new LinkedHashMap<String, Object>();
             row.put("id", data.getId());
-            row.put("name", name != null ? name : "");
+            row.put("name", displayName);
+            row.put("missingTranslation", !named);
             row.put("type", typeName);
             row.put("rankLevel", data.getRankLevel());
             row.put("stackLimit", data.getStackLimit());
-            // Weapons and relics level; materials do not, and the page offers "lv90" only when it
-            // means something.
-            row.put("maxLevel", data.getMaxLevel());
+            row.put("maxLevel", data.isEquip() ? GmEquipment.maxLevel(data) : 0);
             matched.add(row);
         }
 
@@ -457,11 +518,10 @@ public final class GmHandler implements Router {
      * including the ones currently disabled, with its live status beside it.
      *
      * <p>{@code loaded} is whether the banner is in the gacha system's map at all -- a disabled row
-     * is skipped by {@link
-     * emu.grasscutter.game.gacha.GachaSystem#load()} and never reaches it. {@code active} is whether
-     * the client's wish screen would actually show it, which mirrors the time-window rule in
-     * {@code createProto}: a banner is active when it is loaded and either inside its
-     * begin/end window or a standard banner.
+     * is skipped by {@link emu.grasscutter.game.gacha.GachaSystem#load()} and never reaches it.
+     * {@code active} is whether the client's wish screen would actually show it, which mirrors the
+     * time-window rule in {@code createProto}: a banner is active when it is loaded and either inside
+     * its begin/end window or a standard banner.
      */
     private static void listBanners(Context ctx) throws Exception {
         if (!authorize(ctx)) return;
@@ -543,7 +603,8 @@ public final class GmHandler implements Router {
     }
 
     /** The UP items of one slot as id-plus-name rows, so the page can show names instead of ids. */
-    private static List<Map<String, Object>> upSlots(Int2ObjectMap<Language.TextStrings> strings, int[] ids) {
+    private static List<Map<String, Object>> upSlots(
+            Int2ObjectMap<Language.TextStrings> strings, int[] ids) {
         if (ids == null || ids.length == 0) return List.of();
         var out = new ArrayList<Map<String, Object>>(ids.length);
         for (int id : ids) out.add(upSlot(strings, id));
@@ -620,8 +681,7 @@ public final class GmHandler implements Router {
             return;
         }
         if (parsed == null || !parsed.has("scheduleId") || !parsed.has("action")) {
-            ctx.status(400)
-                    .json(Map.of("retcode", 400, "message", "missing 'scheduleId' or 'action'"));
+            ctx.status(400).json(Map.of("retcode", 400, "message", "missing 'scheduleId' or 'action'"));
             return;
         }
 
@@ -630,7 +690,8 @@ public final class GmHandler implements Router {
             scheduleId = parsed.get("scheduleId").getAsInt();
             if (scheduleId < 0) throw new IllegalArgumentException("unassigned schedule id");
         } catch (Exception e) {
-            ctx.status(400).json(Map.of("retcode", 400, "message", "'scheduleId' must be a non-negative number"));
+            ctx.status(400)
+                    .json(Map.of("retcode", 400, "message", "'scheduleId' must be a non-negative number"));
             return;
         }
 
@@ -646,12 +707,7 @@ public final class GmHandler implements Router {
             rerunBannerRow(ctx, scheduleId, parsed.get("commit").getAsString());
         } else {
             ctx.status(400)
-                    .json(
-                            Map.of(
-                                    "retcode",
-                                    400,
-                                    "message",
-                                    "'action' must be enable, disable or rerun"));
+                    .json(Map.of("retcode", 400, "message", "'action' must be enable, disable or rerun"));
         }
     }
 
@@ -715,11 +771,11 @@ public final class GmHandler implements Router {
      * Copies one row out of a historical revision and re-runs it in the live table.
      *
      * <p>The historical row's own window is useless for this: every old row carries the sentinel
-     * {@code endTime = 1924992000} and a blank {@code beginTime}, so as-is it would either sit dormant
-     * (begin in the past but end at the sentinel -- actually active, but indistinguishable from the
-     * copy it replaced) or crowd out the banners already running. Instead the copy gets a fresh
-     * {@link #RERUN_WINDOW_SECONDS} window starting now, which is long enough to be useful and short
-     * enough that the re-run expires on its own if the operator forgets it.
+     * {@code endTime = 1924992000} and a blank {@code beginTime}, so as-is it would either sit
+     * dormant (begin in the past but end at the sentinel -- actually active, but indistinguishable
+     * from the copy it replaced) or crowd out the banners already running. Instead the copy gets a
+     * fresh {@link #RERUN_WINDOW_SECONDS} window starting now, which is long enough to be useful and
+     * short enough that the re-run expires on its own if the operator forgets it.
      *
      * <p>If a row with the same scheduleId is already in the live table it is replaced in place, so a
      * re-run never leaves two rows for one schedule; otherwise the row is appended. {@code disabled}
@@ -742,18 +798,14 @@ public final class GmHandler implements Router {
             }
         } catch (Exception e) {
             Grasscutter.getLogger()
-                    .warn(
-                            "Could not read banner table for re-run (commit {}): {}",
-                            commit,
-                            e.getMessage());
+                    .warn("Could not read banner table for re-run (commit {}): {}", commit, e.getMessage());
             ctx.status(400)
                     .json(
                             Map.of(
                                     "retcode",
                                     400,
                                     "message",
-                                    "could not read the banner table at " + commit
-                                            + ": " + e.getMessage()));
+                                    "could not read the banner table at " + commit + ": " + e.getMessage()));
             return;
         }
 
@@ -807,8 +859,7 @@ public final class GmHandler implements Router {
             JsonElement el = target.get(i);
             if (!el.isJsonObject()) continue;
             JsonObject existing = el.getAsJsonObject();
-            if (!existing.has("scheduleId")
-                    || !existing.get("scheduleId").isJsonPrimitive()) continue;
+            if (!existing.has("scheduleId") || !existing.get("scheduleId").isJsonPrimitive()) continue;
             if (existing.get("scheduleId").getAsInt() == scheduleId) {
                 target.set(i, row);
                 replaced = true;
@@ -843,11 +894,7 @@ public final class GmHandler implements Router {
         Path temp = file.resolveSibling(file.getFileName() + ".tmp");
         try {
             Files.writeString(temp, JsonUtils.encode(rows), StandardCharsets.UTF_8);
-            Files.move(
-                    temp,
-                    file,
-                    StandardCopyOption.REPLACE_EXISTING,
-                    StandardCopyOption.ATOMIC_MOVE);
+            Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (Exception e) {
             Grasscutter.getLogger()
                     .error("Could not write the banner table at {}: {}", file, e.getMessage());
@@ -900,9 +947,9 @@ public final class GmHandler implements Router {
     /**
      * The banner table as recorded in a git revision of {@code Banners.json}.
      *
-     * <p>{@code git show <rev>:<path>} reads the path relative to the repository root, not the process
-     * working directory the way a pathspec after {@code --} does, so the path has to be resolved
-     * against the root first.
+     * <p>{@code git show <rev>:<path>} reads the path relative to the repository root, not the
+     * process working directory the way a pathspec after {@code --} does, so the path has to be
+     * resolved against the root first.
      */
     private static JsonArray readBannerTableFromGit(Path dataDir, String commit, String rootPath)
             throws Exception {
@@ -914,7 +961,11 @@ public final class GmHandler implements Router {
     private static String repoRelativeBannerPath(Path dataDir) throws Exception {
         Path repoRoot = Path.of(git(dataDir, "rev-parse", "--show-toplevel").trim());
         // Git wants forward slashes on every platform; Windows gives backslashes.
-        return repoRoot.relativize(dataDir.toAbsolutePath()).resolve(BANNERS_FILE).toString().replace('\\', '/');
+        return repoRoot
+                .relativize(dataDir.toAbsolutePath())
+                .resolve(BANNERS_FILE)
+                .toString()
+                .replace('\\', '/');
     }
 
     /** Reads the banner table as mapped objects, for the list endpoint's status columns. */
@@ -943,10 +994,10 @@ public final class GmHandler implements Router {
             String commit, String date, String subject, List<GachaBanner> banners, boolean archive) {}
 
     /**
-     * The parsed revisions, minus the live state. {@link #listBannerHistory} stamps {@code loaded} and
-     * {@code active} per request, so a cache built before the operator flipped a banner never serves
-     * a stale answer about what is running now. Set to null by any failure, so the next request
-     * re-walks git instead of caching an empty history.
+     * The parsed revisions, minus the live state. {@link #listBannerHistory} stamps {@code loaded}
+     * and {@code active} per request, so a cache built before the operator flipped a banner never
+     * serves a stale answer about what is running now. Set to null by any failure, so the next
+     * request re-walks git instead of caching an empty history.
      */
     private static volatile List<HistoryTable> bannerHistoryCache;
 
@@ -975,8 +1026,7 @@ public final class GmHandler implements Router {
                 tables = loadBannerHistory();
                 bannerHistoryCache = tables;
             } catch (Exception e) {
-                Grasscutter.getLogger()
-                        .warn("Could not walk the banner history: {}", e.getMessage());
+                Grasscutter.getLogger().warn("Could not walk the banner history: {}", e.getMessage());
                 // Answer with just the working copy, and leave the cache null so the next request
                 // retries git instead of caching the degraded answer.
                 tables = List.of(new HistoryTable(WORKING_REVISION, "", "当前工作区", loadBannerRows(), false));
@@ -993,8 +1043,12 @@ public final class GmHandler implements Router {
             // version's slot first, then the schedule id as a tiebreak.
             banners.sort(
                     (a, b2) -> {
-                        int byPhase = Integer.compare(phaseOrder((int) a.get("gachaType")), phaseOrder((int) b2.get("gachaType")));
-                        return byPhase != 0 ? byPhase : Integer.compare((int) a.get("scheduleId"), (int) b2.get("scheduleId"));
+                        int byPhase =
+                                Integer.compare(
+                                        phaseOrder((int) a.get("gachaType")), phaseOrder((int) b2.get("gachaType")));
+                        return byPhase != 0
+                                ? byPhase
+                                : Integer.compare((int) a.get("scheduleId"), (int) b2.get("scheduleId"));
                     });
 
             var revision = new LinkedHashMap<String, Object>();
@@ -1013,8 +1067,10 @@ public final class GmHandler implements Router {
         // Keep the current configuration on top, then sort archives and commits by version.
         revisions.sort(
                 (a, b) -> {
-                    boolean aWorking = Boolean.TRUE.equals(a.get("working")) && !Boolean.TRUE.equals(a.get("archive"));
-                    boolean bWorking = Boolean.TRUE.equals(b.get("working")) && !Boolean.TRUE.equals(b.get("archive"));
+                    boolean aWorking =
+                            Boolean.TRUE.equals(a.get("working")) && !Boolean.TRUE.equals(a.get("archive"));
+                    boolean bWorking =
+                            Boolean.TRUE.equals(b.get("working")) && !Boolean.TRUE.equals(b.get("archive"));
                     if (aWorking != bWorking) return aWorking ? -1 : 1;
                     int byVersion =
                             Integer.compare(
@@ -1117,8 +1173,7 @@ public final class GmHandler implements Router {
             } catch (Exception e) {
                 // A commit whose table no longer parses is skipped rather than failing the walk;
                 // the rows this build does not model are still listed in the live view.
-                Grasscutter.getLogger()
-                        .debug("Skipping banner table at {}: {}", sha, e.getMessage());
+                Grasscutter.getLogger().debug("Skipping banner table at {}: {}", sha, e.getMessage());
             }
         }
 
@@ -1127,9 +1182,10 @@ public final class GmHandler implements Router {
 
     /** Local archive edits override bundled templates without changing enabled live rows. */
     static JsonArray readArchiveBannerTable(Path file) throws Exception {
-        var bundled = JsonUtils.decode(
-                new String(FileUtils.readResource(BANNER_ARCHIVE_RESOURCE), StandardCharsets.UTF_8),
-                JsonArray.class);
+        var bundled =
+                JsonUtils.decode(
+                        new String(FileUtils.readResource(BANNER_ARCHIVE_RESOURCE), StandardCharsets.UTF_8),
+                        JsonArray.class);
         var rows = new LinkedHashMap<Integer, JsonObject>();
         for (var table : List.of(bundled, readBannerTable(file))) {
             for (var el : table) {
@@ -1144,7 +1200,9 @@ public final class GmHandler implements Router {
         return result;
     }
 
-    /** Parses a raw table and appends it, unless an earlier revision already had the identical rows. */
+    /**
+     * Parses a raw table and appends it, unless an earlier revision already had the identical rows.
+     */
     private static void addHistoryRevision(
             List<HistoryTable> tables,
             Set<String> seen,
@@ -1203,9 +1261,10 @@ public final class GmHandler implements Router {
 
     private static boolean isArchiveRow(JsonObject obj, GachaBanner banner) {
         if (banner.getScheduleId() < ARCHIVE_SCHEDULE_ID_BASE) return false;
-        return Boolean.TRUE.equals(obj.has("disabled") && obj.get("disabled").isJsonPrimitive()
-                ? obj.get("disabled").getAsBoolean()
-                : banner.isDisabled());
+        return Boolean.TRUE.equals(
+                obj.has("disabled") && obj.get("disabled").isJsonPrimitive()
+                        ? obj.get("disabled").getAsBoolean()
+                        : banner.isDisabled());
     }
 
     /**
@@ -1252,7 +1311,9 @@ public final class GmHandler implements Router {
         return m.find() ? m.group(1) : "";
     }
 
-    /** The official opening month for the version a subject names, or "" when it is not in the table. */
+    /**
+     * The official opening month for the version a subject names, or "" when it is not in the table.
+     */
     private static String officialStartLabel(String subject) {
         YearMonth ym = OFFICIAL_VERSION_START.get(versionOf(subject));
         return ym != null ? ym.toString() : "";
@@ -1289,18 +1350,18 @@ public final class GmHandler implements Router {
 
     /**
      * Checks the request against the configured token and loopback setting. Returns false (and
-     * answers 403) when the request is not allowed, so a route just writes
-     * {@code if (!authorize(ctx)) return;} before it does anything.
+     * answers 403) when the request is not allowed, so a route just writes {@code if
+     * (!authorize(ctx)) return;} before it does anything.
      *
-     * <p>The token is accepted as a Bearer header -- what the page's own fetch calls send -- and as
-     * a {@code token} query parameter, which is what a bookmarked URL carries. The console page
-     * stores it in localStorage, so neither the server nor the page ever sees a player's session
+     * <p>The token is accepted as a Bearer header -- what the page's own fetch calls send -- and as a
+     * {@code token} query parameter, which is what a bookmarked URL carries. The console page stores
+     * it in localStorage, so neither the server nor the page ever sees a player's session
      * credentials.
      *
-     * <p>An empty configured token means the console is unauthenticated: any loopback request is
-     * let in. That is how this repo's config ships it, so an operator just opens the page and is
-     * never asked for a secret. {@code loopbackOnly} above is then the only thing standing between
-     * the console and the LAN.
+     * <p>An empty configured token means the console is unauthenticated: any loopback request is let
+     * in. That is how this repo's config ships it, so an operator just opens the page and is never
+     * asked for a secret. {@code loopbackOnly} above is then the only thing standing between the
+     * console and the LAN.
      */
     private static boolean authorize(Context ctx) throws Exception {
         if (SERVER.gm.loopbackOnly) {
@@ -1311,8 +1372,7 @@ public final class GmHandler implements Router {
                 }
             } catch (Exception ignored) {
                 // An address that cannot be parsed is not one that can be trusted either.
-                ctx.status(403)
-                        .result("403: the GM console cannot verify where this request came from.");
+                ctx.status(403).result("403: the GM console cannot verify where this request came from.");
                 return false;
             }
         }
@@ -1345,8 +1405,8 @@ public final class GmHandler implements Router {
     // ------------------------------------------------------------------
 
     /**
-     * Captures what a command prints, which is what makes the page useful: without it, a command
-     * that fails tells the browser nothing.
+     * Captures what a command prints, which is what makes the page useful: without it, a command that
+     * fails tells the browser nothing.
      *
      * <p>Every line a command emits goes through {@link
      * emu.grasscutter.command.CommandHandler#sendMessage}, which fires a {@link

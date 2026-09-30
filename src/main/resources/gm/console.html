@@ -98,6 +98,22 @@
   .item .id { font-family: var(--mono); font-size: 12px; color: var(--dim); }
   .item input[type="number"] { width: 74px; font-family: var(--mono); padding: 4px 6px; }
   .item button { padding: 4px 10px; font-size: 12.5px; }
+  .item .equip-meta { display: block; color: var(--dim); font-size: 11px; }
+  dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line);
+           border-radius: 12px; width: min(640px, calc(100vw - 24px)); max-height: calc(100dvh - 24px);
+           overflow-y: auto; padding: 20px; }
+  dialog::backdrop { background: #000a; }
+  dialog [hidden] { display: none !important; }
+  .eq-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .eq-heading h3 { margin: 0; font-size: 18px; }
+  .eq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+  .eq-grid label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .eq-grid input, .eq-grid select { width: 100%; }
+  .eq-note { color: var(--dim); font-size: 12px; white-space: pre-line; }
+  .eq-sub { display: grid; grid-template-columns: minmax(0, 1fr) 76px; gap: 8px; margin: 8px 0; }
+  .eq-sub select, .eq-sub input { min-width: 0; width: 100%; }
+  .eq-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  #eqStatus { color: var(--err); min-height: 21px; white-space: pre-line; }
   .pager { display: flex; align-items: center; gap: 10px; margin-top: 10px; color: var(--dim);
            font-size: 12.5px; flex-wrap: wrap; margin-bottom: 10px; }
   .pager button { padding: 4px 12px; font-size: 12.5px; }
@@ -130,6 +146,13 @@
   @media (max-width: 900px) {
     main { grid-template-columns: 1fr; height: auto; }
     main > section:first-child { max-height: 260px; }
+  }
+  @media (max-width: 500px) {
+    header #target { width: 100px; }
+    .item { flex-wrap: wrap; }
+    .item .nm { flex-basis: calc(100% - 85px); }
+    .eq-grid { grid-template-columns: 1fr; }
+    dialog { padding: 14px; }
   }
 </style>
 </head>
@@ -255,6 +278,28 @@
   </section>
 </main>
 </div>
+
+<dialog id="equipmentDialog" aria-labelledby="eqTitle">
+  <form id="equipmentForm">
+    <div class="eq-heading"><h3 id="eqTitle">配置装备</h3><button type="button" class="ghost" id="eqClose" aria-label="关闭装备配置">关闭</button></div>
+    <p id="eqDescription" class="eq-note"></p>
+    <div class="eq-grid">
+      <label>目标 UID<input id="eqTarget" inputmode="numeric" pattern="[0-9]+" required placeholder="在线玩家 UID"></label>
+      <label>数量<input id="eqAmount" type="number" min="1" max="100" step="1" required value="1"></label>
+      <label>等级<input id="eqLevel" type="number" min="0" max="20" step="1" required></label>
+      <label id="eqPromoteLabel">突破阶段<select id="eqPromote"></select></label>
+      <label id="eqRefineLabel">精炼等级<select id="eqRefine"></select></label>
+      <label id="eqMainLabel">主属性<select id="eqMain"></select></label>
+    </div>
+    <div id="eqArtifact">
+      <p class="eq-note">副属性可留空随机生成。每行选择一种属性的单次数值，右侧为总次数（含初始一次）；未分配的次数随机补齐。</p>
+      <div id="eqSubstats"></div>
+    </div>
+    <p id="eqPreview" class="eq-note"></p>
+    <div id="eqStatus" role="status" aria-live="polite"></div>
+    <div class="eq-actions"><button type="button" class="ghost" id="eqCancel">取消</button><button type="submit" id="eqGive" disabled>给予装备</button></div>
+  </form>
+</dialog>
 
 <script>
 "use strict";
@@ -435,6 +480,7 @@ document.querySelectorAll(".tab").forEach(t => {
 // --- items ------------------------------------------------------------
 const ITEM_PAGE = 50;
 let itemState = { q: "", type: "", offset: 0, total: -1 };
+let itemSearchGeneration = 0;
 
 // Quick searches for the things an operator hands out all the time. Searching by name rather
 // than hardcoding ids keeps working when the item table changes between client versions.
@@ -454,6 +500,7 @@ function ensureItems() {
 }
 
 function searchItems(offset) {
+  const generation = ++itemSearchGeneration;
   itemState.q = $("itemQ").value.trim();
   itemState.type = $("itemType").value;
   itemState.offset = offset;
@@ -468,10 +515,11 @@ function searchItems(offset) {
   qs.set("offset", offset);
 
   api("/gm/api/items?" + qs).then(r => {
+    if (generation !== itemSearchGeneration) return;
     if (!r.ok) { list.textContent = "失败: " + JSON.stringify(r.json); return; }
     itemState.total = r.json.total || 0;
     renderItems(r.json.items || [], r.json);
-  }).catch(e => { if (e.message !== "403") list.textContent = "无法连接服务器"; });
+  }).catch(e => { if (generation === itemSearchGeneration && e.message !== "403") list.textContent = "无法连接服务器"; });
 }
 
 function renderItems(items, meta) {
@@ -484,22 +532,23 @@ function renderItems(items, meta) {
   for (const it of items) {
     const el = document.createElement("div");
     el.className = "item";
-    // Weapons and relics are single stacks that mean something at max level; currency and
-    // materials are asked for in bulk. give takes lv before x, so both fit one command.
+    el.dataset.itemId = it.id;
+    const equip = it.type === "ITEM_WEAPON" || it.type === "ITEM_RELIQUARY";
     const bulk = it.type === "ITEM_VIRTUAL" || it.type === "ITEM_MATERIAL";
     const defCount = bulk ? 99999 : 1;
-    const lv = it.maxLevel && it.maxLevel > 1 ? " lv" + it.maxLevel : "";
     el.innerHTML =
-      `<span class="nm">${esc(it.name || "(无名)")}</span>
+      `<span class="nm">${esc(it.name || "名称待确认")}${equip ? `<small class="equip-meta">${it.rankLevel} 星 · ${it.type === "ITEM_RELIQUARY" ? "+" : "最高 "}${it.maxLevel} 级</small>` : ""}</span>
        <span class="badge">${esc(typeLabel(it.type))}</span>
        <span class="id">${it.id}</span>
-       <input type="number" min="1" value="${defCount}" title="数量">
-       <button>给予</button>`;
+       ${equip ? "" : `<input type="number" min="1" value="${defCount}" title="数量">`}
+       <button>${equip ? "配置并给予" : "给予"}</button>`;
+    el.title = it.missingTranslation ? "资源未提供可核实的名称，暂以物品 ID 标识。" : it.name;
     const input = el.querySelector("input");
     el.querySelector("button").onclick = () => {
+      if (equip) { openEquipment(it); return; }
       let n = parseInt(input.value, 10);
       if (!(n > 0)) n = defCount;
-      runCommand(`give ${it.id}${lv} x${n}`);
+      runCommand(`give ${it.id} x${n}`);
     };
     list.appendChild(el);
   }
@@ -511,6 +560,166 @@ function renderItems(items, meta) {
   $("pgPrev").disabled = meta.offset === 0;
   $("pgNext").disabled = to >= meta.total;
 }
+
+// --- equipment configuration ------------------------------------------
+let equipment = null;
+let equipmentLoad = 0;
+let equipmentBusy = false;
+
+async function openEquipment(item) {
+  const load = ++equipmentLoad;
+  equipment = null;
+  $("eqTitle").textContent = item.name + " · " + item.id;
+  $("eqDescription").textContent = "读取装备资源中…";
+  $("eqStatus").textContent = "";
+  $("eqPreview").textContent = "";
+  $("eqGive").disabled = true;
+  $("eqTarget").value = targetOf();
+  $("eqAmount").value = "1";
+  if (!$("equipmentDialog").open) $("equipmentDialog").showModal();
+  try {
+    const r = await api("/gm/api/equipment/options?id=" + item.id);
+    if (load !== equipmentLoad || !$("equipmentDialog").open) return;
+    if (!r.ok) throw new Error(r.json.message || "读取装备失败");
+    equipment = r.json.equipment;
+    const weapon = equipment.type === "ITEM_WEAPON";
+    $("eqLevel").min = equipment.minLevel;
+    $("eqLevel").max = equipment.maxLevel;
+    $("eqLevel").value = equipment.maxLevel;
+    $("eqAmount").max = equipment.maxAmount;
+    $("eqPromoteLabel").hidden = !weapon;
+    $("eqRefineLabel").hidden = !weapon;
+    $("eqMainLabel").hidden = weapon;
+    $("eqArtifact").hidden = weapon;
+    $("eqDescription").textContent = weapon
+      ? `${equipment.rankLevel} 星武器 · ${equipment.weaponStats.join("、")}由武器、等级和突破阶段自动计算；精炼影响武器效果。`
+      : `${equipment.rankLevel} 星 · ${equipment.slot} · 初始 ${equipment.initialSubstats} 条副属性 · 最高 +${equipment.maxLevel}。星级和套装由物品决定。`;
+    $("eqRefine").replaceChildren(...Array.from({length:equipment.maxRefinement}, (_,i)=>new Option("精炼 " + (i+1), i+1)));
+    $("eqMain").replaceChildren(new Option("随机（避免与所选副属性重复）",0),
+      ...(equipment.mainProps || []).map(p=>new Option(p.label,p.id)));
+    $("eqSubstats").textContent = "";
+    if (!weapon) for (let i=0;i<4;i++) {
+      const row = document.createElement("div");
+      row.className = "eq-sub";
+      const select = document.createElement("select");
+      select.setAttribute("aria-label", "副属性 " + (i+1));
+      select.add(new Option("未指定（随机补齐）",0));
+      equipment.affixes.forEach(p=>select.add(new Option(p.label,p.id)));
+      const count = document.createElement("input");
+      count.type = "number"; count.min = "1"; count.step = "1"; count.value = "1";
+      count.setAttribute("aria-label", "副属性 " + (i+1) + " 总次数");
+      select.onchange = refreshEquipment;
+      count.oninput = refreshEquipment;
+      row.append(select,count);
+      $("eqSubstats").appendChild(row);
+    }
+    refreshEquipment();
+    $("eqTarget").focus();
+  } catch(e) {
+    if (e.message === "403") $("equipmentDialog").close();
+    if (load === equipmentLoad && e.message !== "403") $("eqStatus").textContent = e.message;
+  }
+}
+
+function closeEquipment() {
+  if (equipmentBusy) return;
+  equipmentLoad++;
+  $("equipmentDialog").close();
+}
+$("eqClose").onclick = closeEquipment;
+$("eqCancel").onclick = closeEquipment;
+$("equipmentDialog").addEventListener("cancel",e=>{ if(equipmentBusy) e.preventDefault(); else equipmentLoad++; });
+$("eqLevel").oninput = refreshEquipment;
+$("eqPromote").onchange = refreshEquipment;
+$("eqMain").onchange = refreshEquipment;
+
+function selectedSubstats() {
+  return Array.from($("eqSubstats").children).map(row=>({
+    affixId:Number(row.querySelector("select").value), rolls:Number(row.querySelector("input").value)
+  })).filter(p=>p.affixId);
+}
+
+function refreshEquipment() {
+  if (!equipment) return;
+  const level = Number($("eqLevel").value);
+  let error = "";
+  if (!Number.isInteger(level) || level < equipment.minLevel || level > equipment.maxLevel) error = "等级超出该装备的上限。";
+  if (equipment.type === "ITEM_WEAPON") {
+    const previous = $("eqPromote").value;
+    const stages = equipment.promotions.filter(p=>level >= p.minLevel && level <= p.maxLevel);
+    $("eqPromote").replaceChildren(new Option("自动（满足等级的最低突破）","auto"),
+      ...stages.map(p=>new Option(`突破 ${p.level} 阶 · 等级 ${p.minLevel}–${p.maxLevel}`,p.level)));
+    if (previous !== "auto" && stages.some(p=>String(p.level)===previous)) $("eqPromote").value=previous;
+    const stage = $("eqPromote").value === "auto" ? stages[0]?.level : $("eqPromote").value;
+    $("eqPreview").textContent = `等级 ${level} · 突破 ${stage ?? "—"} 阶 · 星级固定，武器基础属性无需填写。`;
+  } else {
+    const budget = equipment.rollBudgets[level] ?? 0;
+    const selected = selectedSubstats();
+    const main = equipment.mainProps.find(p=>p.id === Number($("eqMain").value));
+    const properties = selected.map(s=>equipment.affixes.find(p=>p.id===s.affixId)?.property);
+    for (const row of $("eqSubstats").children) {
+      const select = row.querySelector("select");
+      const own = equipment.affixes.find(p=>p.id===Number(select.value))?.property;
+      for (const option of select.options) {
+        const prop = equipment.affixes.find(p=>p.id===Number(option.value))?.property;
+        option.disabled = !!prop && (prop === main?.property || (prop !== own && properties.includes(prop)));
+      }
+      const count = row.querySelector("input");
+      count.disabled = select.value === "0";
+      count.max = Math.max(1,budget);
+    }
+    const rolls = selected.reduce((sum,s)=>sum+s.rolls,0);
+    const missing = Math.max(0,Math.min(4,budget)-selected.length);
+    if (new Set(properties).size !== properties.length) error = "不能重复选择同一种副属性。";
+    if (main && properties.includes(main.property)) error = "主属性与副属性不能相同。";
+    if (selected.some(s=>!Number.isInteger(s.rolls)||s.rolls<1) || rolls+missing>budget)
+      error = "所选副属性次数过多，请为其余副属性留下位置。";
+    const mainText = main ? main.label + " " + (main.values[level] || "") : "随机主属性";
+    $("eqPreview").textContent = `+${level} · ${mainText}\n总次数 ${budget}（初始 ${equipment.initialSubstats} + 强化 ${budget-equipment.initialSubstats}），已指定 ${rolls}，剩余 ${Math.max(0,budget-rolls)} 次随机。`;
+  }
+  $("eqStatus").textContent = error;
+  $("eqGive").disabled = !!error || equipmentBusy;
+}
+
+$("equipmentForm").onsubmit = async e => {
+  e.preventDefault();
+  if (!equipment || equipmentBusy || $("eqGive").disabled) return;
+  if (!$("equipmentForm").reportValidity()) return;
+  const payload = {itemId:equipment.itemId, target:Number($("eqTarget").value),
+    amount:Number($("eqAmount").value), level:Number($("eqLevel").value)};
+  if (equipment.type === "ITEM_WEAPON") {
+    payload.refinement = Number($("eqRefine").value);
+    if ($("eqPromote").value !== "auto") payload.promoteLevel = Number($("eqPromote").value);
+  } else {
+    payload.mainPropId = Number($("eqMain").value);
+    payload.substats = selectedSubstats();
+  }
+  $("target").value = payload.target;
+  equipmentBusy = true;
+  $("eqGive").disabled = true;
+  $("eqClose").disabled = true;
+  $("eqCancel").disabled = true;
+  $("eqGive").textContent = "发放中…";
+  try {
+    const r = await api("/gm/api/equipment/give", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    if (!r.ok) throw new Error(r.json.message || "发放失败");
+    out(r.json.message);
+    $("equipmentDialog").close();
+  } catch(e) {
+    if (e.message === "403") $("equipmentDialog").close();
+    if (e.message !== "403") {
+      const message = e instanceof TypeError ? "连接中断，发放结果未确认。请检查玩家背包后再操作。" : e.message;
+      $("eqStatus").textContent = message;
+      out(message,"err");
+    }
+  } finally {
+    equipmentBusy = false;
+    $("eqGive").disabled = false;
+    $("eqGive").textContent = "给予装备";
+    $("eqClose").disabled = false;
+    $("eqCancel").disabled = false;
+  }
+};
 
 function typeLabel(t) {
   return ({

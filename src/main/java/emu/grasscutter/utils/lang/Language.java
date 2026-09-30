@@ -12,19 +12,16 @@ import emu.grasscutter.utils.*;
 import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.objects.*;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.*;
 import java.util.stream.*;
 import lombok.EqualsAndHashCode;
 
 public final class Language {
     private static final Map<String, Language> cachedLanguages = new ConcurrentHashMap<>();
     // Bumped so the caches written before names were filled in are thrown away once.
-    private static final int TEXTMAP_CACHE_VERSION = 0x9CCACE07;
-    private static final Pattern textMapKeyValueRegex = Pattern.compile("\"(\\d+)\": \"(.+)\"");
+    private static final int TEXTMAP_CACHE_VERSION = 0x9CCACE08;
     private static final Path TEXTMAP_CACHE_PATH = getCachePath("TextMap/TextMapCache.bin");
     private static boolean scannedTextmaps =
             false; // Ensure that we don't infinitely rescan on cache misses that don't exist
@@ -224,23 +221,8 @@ public final class Language {
 
     private static Int2ObjectMap<String> loadTextMapFile(String language, IntSet nameHashes) {
         Int2ObjectMap<String> output = new Int2ObjectOpenHashMap<>();
-        try (BufferedReader file =
-                Files.newBufferedReader(
-                        getResourcePath("TextMap/TextMap" + language + ".json"), StandardCharsets.UTF_8)) {
-            Matcher matcher = textMapKeyValueRegex.matcher("");
-            return new Int2ObjectOpenHashMap<>(
-                    file.lines()
-                            .sequential()
-                            .map(matcher::reset) // Side effects, but it's faster than making a new one
-                            .filter(Matcher::find)
-                            .filter(
-                                    m ->
-                                            nameHashes.contains(
-                                                    (int) Long.parseLong(m.group(1)))) // TODO: Cache this parse somehow
-                            .collect(
-                                    Collectors.toMap(
-                                            m -> (int) Long.parseLong(m.group(1)),
-                                            m -> m.group(2).replace("\\\"", "\""))));
+        try {
+            return TextMapLoader.load(getResourcePath("TextMap"), language, nameHashes);
         } catch (Exception e) {
             Grasscutter.getLogger().error("Error loading textmap: " + language);
             Grasscutter.getLogger().error(e.toString());
@@ -275,34 +257,7 @@ public final class Language {
                                                             IntStream.range(0, TextStrings.NUM_LANGUAGES)
                                                                     .mapToObj(
                                                                             i -> {
-                                                                                String s =
-                                                                                        languageMaps
-                                                                                                .get(i)
-                                                                                                .get((int) key);
-                                                                                // The text maps and the
-                                                                                // excel tables come from
-                                                                                // different dumps, and
-                                                                                // the drift between
-                                                                                // them is not uniform:
-                                                                                // EN usually lands on
-                                                                                // the hash the excel
-                                                                                // table points at while
-                                                                                // CHS and CHT sit 512
-                                                                                // along. Without this
-                                                                                // lookup a row that is
-                                                                                // perfectly healthy in
-                                                                                // English still reads
-                                                                                // "[EN] - 胡桃" in the
-                                                                                // Chinese console.
-                                                                                if (s == null) {
-                                                                                    s =
-                                                                                            languageMaps
-                                                                                                    .get(i)
-                                                                                                    .get(
-                                                                                                            (int) key
-                                                                                                                    + HASH_DRIFT);
-                                                                                }
-                                                                                return s;
+                                                                                return TextMapLoader.resolve(languageMaps.get(i), key);
                                                                             })
                                                                     .collect(Collectors.toList()),
                                                             key);
@@ -328,8 +283,7 @@ public final class Language {
         Path tmp = Files.createTempFile(TEXTMAP_CACHE_PATH.getParent(), "TextMapCache-", ".tmp");
         try {
             try (var file =
-                    new ObjectOutputStream(
-                            new BufferedOutputStream(Files.newOutputStream(tmp), 0x100000))) {
+                    new ObjectOutputStream(new BufferedOutputStream(Files.newOutputStream(tmp), 0x100000))) {
                 file.writeInt(TEXTMAP_CACHE_VERSION);
                 file.writeObject(input);
             }
@@ -380,20 +334,20 @@ public final class Language {
                 long textmapsModified;
                 try (var textmaps = Files.list(getResourcePath("TextMap"))) {
                     textmapsModified =
-                        textmaps
-                                .filter(path -> path.toString().endsWith(".json"))
-                                .map(
-                                        path -> {
-                                            try {
-                                                return Files.getLastModifiedTime(path).toMillis();
-                                            } catch (Exception ignored) {
-                                                Grasscutter.getLogger()
-                                                        .debug("Exception while checking modified time: ", path);
-                                                return Long.MAX_VALUE; // Don't use cache, something has gone wrong
-                                            }
-                                        })
-                                .max(Long::compare)
-                                .get();
+                            textmaps
+                                    .filter(path -> path.toString().endsWith(".json"))
+                                    .map(
+                                            path -> {
+                                                try {
+                                                    return Files.getLastModifiedTime(path).toMillis();
+                                                } catch (Exception ignored) {
+                                                    Grasscutter.getLogger()
+                                                            .debug("Exception while checking modified time: ", path);
+                                                    return Long.MAX_VALUE; // Don't use cache, something has gone wrong
+                                                }
+                                            })
+                                    .max(Long::compare)
+                                    .get();
                 }
 
                 Grasscutter.getLogger()
@@ -439,8 +393,7 @@ public final class Language {
         GameData.getMonsterDescribeDataMap()
                 .forEach((k, v) -> usedHashes.add((int) v.getNameTextMapHash()));
         // An artifact set is named by the bonus it grants rather than by a row of its own.
-        GameData.getEquipAffixDataMap()
-                .forEach((k, v) -> usedHashes.add((int) v.getNameTextMapHash()));
+        GameData.getEquipAffixDataMap().forEach((k, v) -> usedHashes.add((int) v.getNameTextMapHash()));
         GameData.getMainQuestDataMap().forEach((k, v) -> usedHashes.add((int) v.getTitleTextMapHash()));
         GameData.getQuestDataMap().forEach((k, v) -> usedHashes.add((int) v.getDescTextMapHash()));
         GameData.getWorldAreaDataMap().forEach((k, v) -> usedHashes.add((int) v.getTextMapHash()));
@@ -454,7 +407,10 @@ public final class Language {
 
         // Load each hash's drifted twin as well, or there is nothing for the recovery below to find.
         var drifted = new IntOpenHashSet(usedHashes.size());
-        for (var hash : usedHashes.toIntArray()) drifted.add(hash + HASH_DRIFT);
+        for (var hash : usedHashes.toIntArray()) {
+            drifted.add(hash + HASH_DRIFT);
+            drifted.add(hash - HASH_DRIFT);
+        }
         usedHashes.addAll(drifted);
 
         textMapStrings = loadTextMapFiles(usedHashes);
@@ -482,8 +438,8 @@ public final class Language {
      * <p>Only 61 of 157 avatars resolve on the nose - Diluc, Jean and the Traveler all read blank in
      * the handbook and in command output, which makes them impossible to look up by name and
      * impossible to tell apart from each other. Most are recovered by the drift; whatever is left
-     * falls back to the internal name in the icon path, since "Crystalline Sword" beats an empty
-     * row even where it is not the name the game itself would print.
+     * falls back to the internal name in the icon path, since "Crystalline Sword" beats an empty row
+     * even where it is not the name the game itself would print.
      */
     private static void nameWhatTheTextMapsMissed(Int2ObjectMap<TextStrings> strings) {
         var recovered = new int[2];
@@ -532,7 +488,10 @@ public final class Language {
         return strings != null && !strings.get(0).startsWith("[N/A]");
     }
 
-    /** UI_AvatarIcon_MarionetteNew to Sandrone, UI_EquipIcon_Claymore_CrystallineSword to Crystalline Sword. */
+    /**
+     * UI_AvatarIcon_MarionetteNew to Sandrone, UI_EquipIcon_Claymore_CrystallineSword to Crystalline
+     * Sword.
+     */
     private static String displayName(String iconName) {
         if (iconName == null || iconName.isBlank()) return null;
 
