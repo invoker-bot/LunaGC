@@ -5,15 +5,18 @@ option java_outer_classname = "SalesmanActivityDetailInfoOuterClass";
 
 import "SalesmanStatusType.proto";
 
+// 7.1 client type 53563 (BOLEBJMCFOF). Scalar tags verified in the native codec.
+// Unresolved semantics retain the native field names instead of invented tags.
 message SalesmanActivityDetailInfo {
-	bool CCIDPKHDGLB = 50000;
-	SalesmanStatusType status = 10;
-	map<uint32, uint32> selected_reward_id_map = 4;
-	uint32 FNPCMPBIIMP = 50001;
-	bool LOCIIDPOHAH = 50002;
-	uint32 KMKFHBKGBOH = 50003;
-	uint32 IKCLPCPHAJF = 9;
-	uint32 DILMJEONOCC = 50004;
-	uint32 KFEIFMLHHGM = 50005;
-	uint32 day_index = 15;
+    uint32 AMMODINPKOF = 1;
+    uint32 FLILLCHPLLH = 3;
+    map<uint32, uint32> selected_reward_id_map = 4;
+    uint32 MOPCCGMDDAE = 6;
+    bool IKOGFJJCIJD = 7;
+    uint32 FBDGELFLLGI = 8;
+    uint32 PGMJOECPHIN = 9;
+    SalesmanStatusType status = 10;
+    // Salesman talk response marks object+0x24. Semantic name is inferred.
+    bool has_talked = 12;
+    uint32 day_index = 15;
 }

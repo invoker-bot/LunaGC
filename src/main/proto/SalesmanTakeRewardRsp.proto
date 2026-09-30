@@ -1,0 +1,10 @@
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "SalesmanTakeRewardRspOuterClass";
+// Client type 75189, packet 29368. Native reader: 0x150fd17d0.
+message SalesmanTakeRewardRsp {
+    uint32 schedule_id = 2;
+    uint32 reward_id = 10;
+    int32 retcode = 14;
+    uint32 position = 15;
+}

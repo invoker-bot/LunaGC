@@ -1,0 +1,8 @@
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "SalesmanTakeRewardReqOuterClass";
+// Client type 47715, packet 21130. Native writer: 0x152c9b090.
+message SalesmanTakeRewardReq {
+    uint32 schedule_id = 9;
+    uint32 position = 13;
+}
