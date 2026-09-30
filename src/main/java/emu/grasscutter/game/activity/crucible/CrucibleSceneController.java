@@ -5,11 +5,22 @@ import emu.grasscutter.data.GameData;
 import emu.grasscutter.game.activity.ActivityManager;
 import emu.grasscutter.game.entity.*;
 import emu.grasscutter.game.player.Player;
+import emu.grasscutter.game.inventory.GameItem;
+import emu.grasscutter.game.props.ActionReason;
+import emu.grasscutter.game.props.EntityType;
+import emu.grasscutter.game.props.PlayerProperty;
 import emu.grasscutter.game.props.WatcherTriggerType;
 import emu.grasscutter.game.props.FightProperty;
 import emu.grasscutter.game.world.*;
 import emu.grasscutter.net.packet.BasePacket;
 import emu.grasscutter.net.proto.RetcodeOuterClass.Retcode;
+import emu.grasscutter.net.proto.GadgetInteractReqOuterClass.GadgetInteractReq;
+import emu.grasscutter.net.proto.InterOpTypeOuterClass.InterOpType;
+import emu.grasscutter.net.proto.InteractTypeOuterClass.InteractType;
+import emu.grasscutter.net.proto.MpPlayRewardInfoOuterClass.MpPlayRewardInfo;
+import emu.grasscutter.net.proto.ResinCostTypeOuterClass.ResinCostType;
+import emu.grasscutter.net.proto.VisionTypeOuterClass.VisionType;
+import emu.grasscutter.scripts.ScriptLoader;
 import emu.grasscutter.scripts.constants.EventType;
 import emu.grasscutter.scripts.data.*;
 import emu.grasscutter.server.packet.send.*;
@@ -26,6 +37,10 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
     private final Map<Integer, SceneGroup> definitions = new LinkedHashMap<>();
     private volatile EntityGadget roundGadget;
     private final CrucibleInvitation invitation = new CrucibleInvitation();
+    private final CrucibleRewards rewards = new CrucibleRewards();
+    private final Set<Integer> departedRoundMembers = new HashSet<>();
+    private EntityGadget rewardPoint;
+    public static final int REWARD_GADGET = 70330039;
     private static final int INVITE_SECONDS = 30;
     private Future<?> prepareCallback, battleCallback, interruptCallback;
 
@@ -50,7 +65,8 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
         var entity = scene.getEntityByConfigId(1001, MAIN_GROUP);
         synchronized (scene) {
             boolean busy = !scene.getPlayers().isEmpty() && (invitation.phase() != CrucibleInvitation.Phase.IDLE
-                    || entity instanceof EntityGadget gadget && gadget.getGadgetPlayState().isActive());
+                    || entity instanceof EntityGadget gadget && gadget.getGadgetPlayState().isActive()
+                    || rewards.hasRemaining());
             lifecycle.update(schedule, nearby, busy);
             updateInvitation(nowMs / 1000);
         }
@@ -116,6 +132,8 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
     public void checkOwnerRequest(Player owner, int playId, boolean skipMatch) {
         synchronized (scene) {
             var check = checkOwner(owner, playId, skipMatch, List.copyOf(scene.getWorld().getPlayers()));
+            if (check.retcode() == 0 && rewards.hasRemaining(owner.getUid()))
+                check = new Check(Retcode.RET_MP_PLAY_REMAIN_REWARDS, owner.getUid());
             owner.sendPacket(PacketMpPlay.ownerCheck(playId, skipMatch, check.retcode(), check.wrongUid()));
         }
     }
@@ -133,7 +151,9 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
             prepareCallback = battleCallback = null;
             if (invitation.phase() == CrucibleInvitation.Phase.PREPARING) beginPreparation();
             else if (invitation.phase() == CrucibleInvitation.Phase.MATCHING) sendToMembers(PacketMpPlay.inviteResult(1, true));
-            else sendToMembers(PacketMpPlay.ownerInvite(1, INVITE_SECONDS));
+            else for (var member : scene.getPlayers())
+                if (members.containsKey(member.getUid())) member.sendPacket(
+                        PacketMpPlay.ownerInvite(1, INVITE_SECONDS, rewards.hasRemaining(member.getUid())));
         }
     }
 
@@ -278,6 +298,11 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
 
     public void onPlayerLeaving(Player player) {
         synchronized (scene) {
+            if (roundGadget != null && roundGadget.getGadgetPlayState().isActive()
+                    && roundGadget.getGadgetPlayState().getRound().participantWorldLevels().containsKey(player.getUid()))
+                departedRoundMembers.add(player.getUid());
+            rewards.forfeit(player.getUid());
+            refreshRewardPoint();
             var context = invitation.context();
             if (context == null || !context.members().containsKey(player.getUid())) return;
             if (invitation.phase() == CrucibleInvitation.Phase.BATTLE) {
@@ -300,7 +325,11 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
         return gadget.getGroupId() == MAIN_GROUP && gadget.getConfigId() == 1001 ? invitation.prepareEndTime() : 0;
     }
 
-    public void onRoundStarted() { invitation.battleStarted(); }
+    public void onRoundStarted() {
+        closeRewards();
+        departedRoundMembers.clear();
+        invitation.battleStarted();
+    }
 
     /** Scene entity operations take the scene monitor first; use the same order for Lua callbacks. */
     public void runIfCurrent(long ticket, Runnable callback) {
@@ -354,8 +383,11 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
                 || context.members().keySet().stream().anyMatch(uid -> scene.getPlayers().stream()
                         .noneMatch(player -> player.getUid() == uid && checkMember(player).retcode() == 0))) return null;
         roundGadget = gadget;
+        var personalLevels = new HashMap<Integer, Integer>();
+        for (var player : scene.getPlayers()) if (context.members().containsKey(player.getUid()))
+            personalLevels.put(player.getUid(), player.getWorldLevel());
         return new GadgetPlayState.Round(config.getScheduleId(), lifecycle.ticket(),
-                scene.getWorld().getWorldLevel(), context.members());
+                scene.getWorld().getWorldLevel(), personalLevels);
     }
 
     /** The caller has already checked the scene generation, gadget identity and round serial. */
@@ -363,6 +395,7 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
         if (change.type() == GadgetPlayState.ChangeType.SUCCEEDED || change.type() == GadgetPlayState.ChangeType.TIMED_OUT
                 || change.type() == GadgetPlayState.ChangeType.CANCELLED) invitation.finish();
         var round = change.round();
+        if (change.type() == GadgetPlayState.ChangeType.SUCCEEDED) openRewards(change);
         for (var player : scene.getPlayers()) {
             var ownLevel = round.participantWorldLevels().get(player.getUid());
             if (ownLevel == null) continue;
@@ -395,6 +428,159 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
     }
 
     public static Position mainPosition() { return new Position(2347, 283.898f, -1735.401f); }
+
+    public static ScenePoint rewardPosition(SceneGroup group, int configId) {
+        if (group == null || group.getBindings() == null) throw new IllegalStateException("MP reward group missing");
+        var point = ScriptLoader.getSerializer().toList(ScenePoint.class, group.getBindings().get("points")).stream()
+                .filter(item -> item.config_id == configId).findFirst()
+                .orElseThrow(() -> new IllegalStateException("MP reward point missing: " + group.id + "/" + configId));
+        if (point.pos == null || point.rot == null) throw new IllegalStateException("MP reward point position missing");
+        return point;
+    }
+
+    private void openRewards(GadgetPlayState.Change change) {
+        try {
+            var data = GameData.getMpPlayGroupDataMap().get(1);
+            var gadgetData = GameData.getGadgetDataMap().get(REWARD_GADGET);
+            if (data == null || data.getResinCost() <= 0 || gadgetData == null
+                    || gadgetData.getType() != EntityType.MpPlayRewardPoint || !scheduleCurrent())
+                throw new IllegalStateException("Crucible reward resources unavailable");
+            var group = definitions.get(data.getRewardGroupId());
+            var position = rewardPosition(group, data.getRewardConfigId());
+            var members = new HashMap<Integer, CrucibleRewards.Reward>();
+            for (var player : scene.getPlayers()) {
+                var level = change.round().participantWorldLevels().get(player.getUid());
+                if (level == null || departedRoundMembers.contains(player.getUid())
+                        || player.getSceneLoadState() != Player.SceneLoadState.LOADED
+                        || player.getServer().getPlayerByUid(player.getUid()) != player) continue;
+                var drop = data.rewardForWorldLevel(level);
+                if (!GameData.getDropTableDataMap().containsKey(drop.getDropId()))
+                    throw new IllegalStateException("Crucible reward drop missing: " + drop.getDropId());
+                members.put(player.getUid(), new CrucibleRewards.Reward(level, drop.getDropId()));
+            }
+            if (members.isEmpty()) return;
+            var ticket = new CrucibleRewards.Ticket(change.round().scheduleId(), change.round().sceneTicket(), change.roundSerial());
+            if (!rewards.open(ticket, data.getResinCost(), members)) return;
+            removeRewardPoint();
+            rewardPoint = new EntityGadget(scene, REWARD_GADGET, new Position(position.pos), new Position(position.rot));
+            rewardPoint.setGroupId(group.id); rewardPoint.setBlockId(group.block_id);
+            rewardPoint.setConfigId(position.config_id); rewardPoint.buildContent();
+            scene.addEntity(rewardPoint);
+        } catch (RuntimeException exception) {
+            closeRewards();
+            Grasscutter.getLogger().error("Could not open Crucible rewards for schedule {} round {}",
+                    change.round().scheduleId(), change.roundSerial(), exception);
+        }
+    }
+
+    public MpPlayRewardInfo rewardInfo(EntityGadget gadget) {
+        synchronized (scene) {
+            if (gadget != rewardPoint) return MpPlayRewardInfo.getDefaultInstance();
+            var info = rewards.snapshot();
+            return MpPlayRewardInfo.newBuilder().setResin(info.resin())
+                    .addAllRemainUidList(info.remaining()).addAllQualifyUidList(info.qualified()).build();
+        }
+    }
+
+    public static boolean withinRewardDistance(Position player, Position point) {
+        double x = player.getX() - point.getX(), y = player.getY() - point.getY(), z = player.getZ() - point.getZ();
+        return x * x + y * y + z * z <= 100;
+    }
+
+    public void claimReward(Player player, EntityGadget gadget, GadgetInteractReq request) {
+        synchronized (scene) {
+            int retcode;
+            var ticket = rewards.ticket();
+            if (gadget != rewardPoint || scene.getEntities().get(gadget.getId()) != gadget
+                    || request.getGadgetEntityId() != gadget.getId()
+                    || request.getGadgetId() != 0 && request.getGadgetId() != gadget.getGadgetId())
+                retcode = Retcode.RET_GADGET_NOT_EXIST_VALUE;
+            else if (ticket == null || !scheduleCurrent() || !lifecycle.isCurrent(ticket.sceneTicket())
+                    || ticket.scheduleId() != lifecycle.scheduleId() || ticket.roundSerial() != currentRoundSerial())
+                retcode = Retcode.RET_MP_PLAY_NOT_ACTIVE_VALUE;
+            else if (player.getScene() != scene || !scene.getPlayers().contains(player)
+                    || player.getSceneLoadState() != Player.SceneLoadState.LOADED
+                    || player.getServer().getPlayerByUid(player.getUid()) != player)
+                retcode = Retcode.RET_MP_PLAY_REWARD_NO_QUALIFICATION_VALUE;
+            else if (!withinRewardDistance(player.getPosition(), gadget.getPosition())) retcode = Retcode.RET_DISTANCE_LONG_VALUE;
+            else if (request.getOpType() == InterOpType.InterOpType_INTER_OP_START) {
+                retcode = rewardRetcode(rewards.preview(ticket, player.getUid()));
+                if (retcode == 0 && emu.grasscutter.config.Configuration.GAME_OPTIONS.resinOptions.resinUsage
+                        && player.getProperty(PlayerProperty.PROP_PLAYER_RESIN) < rewards.snapshot().resin())
+                    retcode = Retcode.RET_RESIN_NOT_ENOUGH_VALUE;
+            } else if (request.getOpType() != InterOpType.InterOpType_INTER_OP_FINISH
+                    || request.getResinCostType() != ResinCostType.ResinCostType_NONE
+                    && request.getResinCostType() != ResinCostType.ResinCostType_NORMAL)
+                retcode = Retcode.RET_FORBIDDEN_VALUE;
+            else {
+                try {
+                    int cost = rewards.snapshot().resin();
+                    retcode = rewardRetcode(rewards.claim(ticket, player.getUid(), reward -> deliverReward(player, reward, cost)));
+                } catch (RuntimeException exception) {
+                    retcode = Retcode.RET_SVR_ERROR_VALUE;
+                    Grasscutter.getLogger().error("Crucible reward delivery failed; claim consumed to prevent replay: uid {} ticket {}",
+                            player.getUid(), ticket, exception);
+                }
+            }
+            player.sendPacket(new PacketGadgetInteractRsp(gadget, InteractType.InteractType_INTERACT_MP_PLAY_REWARD,
+                    request.getOpType() == InterOpType.UNRECOGNIZED ? null : request.getOpType(), retcode));
+            refreshRewardPoint();
+        }
+    }
+
+    private CrucibleRewards.Result deliverReward(Player player, CrucibleRewards.Reward reward, int cost) {
+        List<GameItem> items;
+        try { items = player.getServer().getDropSystem().handleDungeonRewardDrop(reward.dropId(), false); }
+        catch (RuntimeException exception) {
+            Grasscutter.getLogger().error("Invalid Crucible drop {}", reward.dropId(), exception);
+            return CrucibleRewards.Result.INVALID_REWARD;
+        }
+        var inventory = player.getInventory();
+        synchronized (inventory) {
+            var valid = CrucibleRewardDelivery.validate(items, inventory::getInventoryTab);
+            if (valid != CrucibleRewards.Result.OK) return valid;
+        }
+        // Do not hold the inventory monitor while taking the resin monitor.
+        if (!player.getResinManager().useResin(cost)) return CrucibleRewards.Result.NOT_ENOUGH_RESIN;
+        CrucibleRewards.Result valid;
+        synchronized (inventory) {
+            valid = CrucibleRewardDelivery.validate(items, inventory::getInventoryTab);
+            if (valid == CrucibleRewards.Result.OK) inventory.addItems(items, ActionReason.MpPlayTakeReward);
+        }
+        if (valid != CrucibleRewards.Result.OK) {
+            // Inventory could fill between preflight and debit; no items were granted, so refund safely.
+            player.getResinManager().addResin(cost);
+            return valid;
+        }
+        player.sendPacket(new PacketGadgetAutoPickDropInfoNotify(items));
+        return CrucibleRewards.Result.OK;
+    }
+
+    private static int rewardRetcode(CrucibleRewards.Result result) {
+        return switch (result) {
+            case OK -> 0;
+            case STALE -> Retcode.RET_MP_PLAY_NOT_ACTIVE_VALUE;
+            case NO_QUALIFICATION -> Retcode.RET_MP_PLAY_REWARD_NO_QUALIFICATION_VALUE;
+            case ALREADY_TAKEN -> Retcode.RET_MP_PLAY_REWARD_HAS_TAKEN_VALUE;
+            case PREVIEW_REQUIRED -> Retcode.RET_FORBIDDEN_VALUE;
+            case BUSY -> Retcode.RET_FREQUENT_VALUE;
+            case NOT_ENOUGH_RESIN -> Retcode.RET_RESIN_NOT_ENOUGH_VALUE;
+            case INVENTORY_FULL -> Retcode.RET_ITEM_EXCEED_LIMIT_VALUE;
+            case INVALID_REWARD -> Retcode.RET_NOT_FOUND_CONFIG_VALUE;
+        };
+    }
+
+    private void refreshRewardPoint() {
+        if (rewardPoint == null) return;
+        if (!rewards.hasRemaining()) removeRewardPoint();
+        else scene.updateEntity(rewardPoint, VisionType.VisionType_VISION_REFRESH);
+    }
+    private void removeRewardPoint() {
+        var point = rewardPoint;
+        rewardPoint = null;
+        if (point != null && scene.getEntities().get(point.getId()) == point) scene.removeEntity(point);
+    }
+    private void closeRewards() { rewards.clear(); removeRewardPoint(); }
 
     /** The historical activity block is absent; attach its group to the actual map block here. */
     public static SceneGroup mainGroup(Collection<SceneBlock> blocks) {
@@ -443,6 +629,8 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
 
     @Override public void unload() {
         cancelInvitation(false);
+        closeRewards();
+        departedRoundMembers.clear();
         roundGadget = null;
         var manager = scene.getScriptManager();
         RuntimeException failure = null;

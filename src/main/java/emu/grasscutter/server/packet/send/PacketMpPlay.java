@@ -22,8 +22,11 @@ public final class PacketMpPlay extends BasePacket {
                 .setMpPlayId(id).setIsSkipMatch(skipMatch).setRetcode(retcode).build());
     }
     public static PacketMpPlay ownerInvite(int id, int seconds) {
+        return ownerInvite(id, seconds, false);
+    }
+    public static PacketMpPlay ownerInvite(int id, int seconds, boolean remainingReward) {
         return new PacketMpPlay(PacketOpcodes.MpPlayOwnerInviteNotify, MpPlayOwnerInviteNotify.newBuilder()
-                .setMpPlayId(id).setCd(seconds).build());
+                .setMpPlayId(id).setCd(seconds).setIsRemainReward(remainingReward).build());
     }
     public static PacketMpPlay guestReplyResponse(int id, int retcode) {
         return new PacketMpPlay(PacketOpcodes.MpPlayGuestReplyInviteRsp, MpPlayGuestReplyInviteRsp.newBuilder()

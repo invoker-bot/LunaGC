@@ -13,12 +13,35 @@ import emu.grasscutter.net.proto.InteractTypeOuterClass.InteractType;
 import emu.grasscutter.net.proto.MpPlayRewardInfoOuterClass.MpPlayRewardInfo;
 import emu.grasscutter.net.proto.ResinCostTypeOuterClass.ResinCostType;
 import emu.grasscutter.net.proto.SceneGadgetInfoOuterClass.SceneGadgetInfo;
+import emu.grasscutter.net.proto.MpPlayOwnerInviteNotifyOuterClass.MpPlayOwnerInviteNotify;
+import emu.grasscutter.server.packet.send.PacketGadgetInteractRsp;
+import emu.grasscutter.server.packet.send.PacketMpPlay;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /** Independent tags from the local 7.1 native writers/readers; no gameplay claim is made here. */
 class CrucibleRewardProtocolTest {
+    @Test void nativeRewardResponseKeepsPreviewAndFinishSeparateAndInvitationWarnsAboutRemainingRewards() throws Exception {
+        var preview = new PacketGadgetInteractRsp(0x40001001, 70330039,
+                InteractType.InteractType_INTERACT_MP_PLAY_REWARD, InterOpType.InterOpType_INTER_OP_START, 660);
+        var previewFields = UnknownFieldSet.parseFrom(preview.getData());
+        assertEquals(List.of(1L), previewFields.getField(10).getVarintList());
+        assertEquals(List.of(6L), previewFields.getField(11).getVarintList());
+        assertEquals(List.of(660L), previewFields.getField(13).getVarintList());
+        assertEquals(List.of(0x40001001L), previewFields.getField(15).getVarintList());
+        var finish = GadgetInteractRsp.parseFrom(new PacketGadgetInteractRsp(0x40001001, 70330039,
+                InteractType.InteractType_INTERACT_MP_PLAY_REWARD, InterOpType.InterOpType_INTER_OP_FINISH, 0).getData());
+        assertEquals(0, finish.getRetcode());
+        assertEquals(InterOpType.InterOpType_INTER_OP_FINISH, finish.getOpType());
+        var invite = PacketMpPlay.ownerInvite(1, 30, true);
+        assertTrue(MpPlayOwnerInviteNotify.parseFrom(invite.getData()).getIsRemainReward());
+        assertEquals(List.of(1L), UnknownFieldSet.parseFrom(invite.getData()).getField(6).getVarintList());
+        assertFalse(MpPlayOwnerInviteNotify.parseFrom(PacketMpPlay.ownerInvite(1, 30).getData()).getIsRemainReward());
+        var ownerWarning = UnknownFieldSet.parseFrom(PacketMpPlay.ownerCheck(1, true, 1220, 10001).getData());
+        assertEquals(List.of(10001L), ownerWarning.getField(1).getVarintList());
+        assertEquals(List.of(1220L), ownerWarning.getField(2).getVarintList());
+    }
     @Test void interactionRequestRecognizesAllNativeFieldsWithoutInventedPlaceholderTags() throws Exception {
         var bytes = new ByteArrayOutputStream();
         var wire = CodedOutputStream.newInstance(bytes);

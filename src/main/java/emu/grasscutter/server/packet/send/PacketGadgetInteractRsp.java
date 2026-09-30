@@ -14,13 +14,22 @@ public class PacketGadgetInteractRsp extends BasePacket {
 
     public PacketGadgetInteractRsp(
             EntityBaseGadget gadget, InteractType interact, InterOpType opType) {
+        this(gadget, interact, opType, 0);
+    }
+
+    public PacketGadgetInteractRsp(EntityBaseGadget gadget, InteractType interact, InterOpType opType, int retcode) {
+        this(gadget.getId(), gadget.getGadgetId(), interact, opType, retcode);
+    }
+
+    public PacketGadgetInteractRsp(int entityId, int gadgetId, InteractType interact, InterOpType opType, int retcode) {
         super(PacketOpcodes.GadgetInteractRsp);
 
         var proto =
                 GadgetInteractRsp.newBuilder()
-                        .setGadgetEntityId(gadget.getId())
+                        .setGadgetEntityId(entityId)
                         .setInteractType(interact)
-                        .setGadgetId(gadget.getGadgetId());
+                        .setGadgetId(gadgetId)
+                        .setRetcode(retcode);
 
         if (opType != null) {
             proto.setOpType(opType);

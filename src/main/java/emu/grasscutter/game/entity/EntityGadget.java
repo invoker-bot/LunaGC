@@ -346,6 +346,7 @@ public class EntityGadget extends EntityBaseGadget {
                     case GatherObject -> new GadgetGatherObject(this);
                     case Worktop, SealGadget -> new GadgetWorktop(this);
                     case RewardStatue -> new GadgetRewardStatue(this);
+                    case MpPlayRewardPoint -> new GadgetMpPlayReward(this);
                     case Chest -> new GadgetChest(this);
                     case Gadget -> new GadgetObject(this);
                     default -> null;
