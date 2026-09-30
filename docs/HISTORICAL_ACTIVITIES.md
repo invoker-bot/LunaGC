@@ -65,6 +65,17 @@
 [gi-stringliteral](https://github.com/kuma-dayo/gi-stringliteral/tree/1008fd7db28dcbc55729d5bb6b3a585dab86cf8b)
 从本次客户端恢复 86,108 条加密字符串，包含烘炉界面和 MP play 资源名称。
 字符串恢复尚未得到上述缺失消息的字段定义；完整元数据、序列化代码和协议字段仍需继续核实。
+随后根据本次可执行文件的类型名称读取函数，恢复了 88,904 个类型的名称和命名空间，
+包括 `MonoActivityCrucible` 与 `MonoCrucibleEndPage`。协议类名仍被混淆，
+类型名称不等于消息结构；字段编号和包号对应关系尚未从这份类型表中恢复。
+
+```powershell
+python tools/extract_client_type_names.py 'C:\Users\InvokerBot\AppData\Local\hoyo\hk4e\versions\current'
+```
+
+该工具只读取客户端；内置偏移与解码常量严格绑定本次 exe 和元数据的 SHA-256，
+其他构建会被拒绝，避免更新后套用旧偏移。输出默认保存在被忽略的
+`local/activity-research/client-type-names.json`，客户端文件及类型名称表不随仓库或镜像发布。
 
 ## 数据来源和更新
 
