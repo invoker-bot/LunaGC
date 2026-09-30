@@ -150,6 +150,8 @@ public final class GmHandler implements Router {
 
     /** The pseudo-revision id used for the working-tree copy of the banner table. */
     private static final String WORKING_REVISION = "working";
+    private static final String ARCHIVE_REVISION = "archive";
+    private static final String BANNER_ARCHIVE_RESOURCE = "/gm/banner-history.json";
 
     /** scheduleIds at or above this mark disabled "official archive" rows rather than live banners. */
     private static final int ARCHIVE_SCHEDULE_ID_BASE = 90000;
@@ -626,8 +628,9 @@ public final class GmHandler implements Router {
         int scheduleId;
         try {
             scheduleId = parsed.get("scheduleId").getAsInt();
+            if (scheduleId < 0) throw new IllegalArgumentException("unassigned schedule id");
         } catch (Exception e) {
-            ctx.status(400).json(Map.of("retcode", 400, "message", "'scheduleId' is not a number"));
+            ctx.status(400).json(Map.of("retcode", 400, "message", "'scheduleId' must be a non-negative number"));
             return;
         }
 
@@ -731,6 +734,8 @@ public final class GmHandler implements Router {
         try {
             if (WORKING_REVISION.equals(commit)) {
                 source = readBannerTable(file);
+            } else if (ARCHIVE_REVISION.equals(commit)) {
+                source = readArchiveBannerTable(file);
             } else {
                 // Same repo-root path resolution as the history walk.
                 source = readBannerTableFromGit(dataDir, commit, repoRelativeBannerPath(dataDir));
@@ -881,8 +886,12 @@ public final class GmHandler implements Router {
         return true;
     }
 
-    /** The banner table on disk, as raw JSON: the console edits rows it does not model. */
+    /** Prefer editable JSON; a fresh runtime can still use the bundled TSJ defaults. */
     private static JsonArray readBannerTable(Path file) throws Exception {
+        if (!Files.exists(file)) {
+            var defaults = emu.grasscutter.data.DataLoader.loadTableToList("Banners", GachaBanner.class);
+            return JsonUtils.toJson(defaults == null ? List.of() : defaults).getAsJsonArray();
+        }
         try (var reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             return JsonUtils.loadToClass(reader, JsonArray.class);
         }
@@ -930,7 +939,7 @@ public final class GmHandler implements Router {
      * the working copy: they share {@link #WORKING_REVISION} as their commit (so re-running one
      * resolves the same way as re-running a working-copy row) but are not the working copy itself.
      */
-    private record HistoryTable(
+    record HistoryTable(
             String commit, String date, String subject, List<GachaBanner> banners, boolean archive) {}
 
     /**
@@ -1001,11 +1010,7 @@ public final class GmHandler implements Router {
             revisions.add(revision);
         }
 
-        // The working copy stays on top -- it is the table the operator is editing, so burying it
-        // under dozens of revisions would make the live state invisible. The archive pseudo-revisions
-        // share its commit but carry the archive flag, so they drop out of the pin and fall in with
-        // the git revisions by the month their version opened on the official server. Everything else
-        // behind that sorts newest commit first, which is already a sane order.
+        // Keep the current configuration on top, then sort archives and commits by version.
         revisions.sort(
                 (a, b) -> {
                     boolean aWorking = Boolean.TRUE.equals(a.get("working")) && !Boolean.TRUE.equals(a.get("archive"));
@@ -1028,20 +1033,17 @@ public final class GmHandler implements Router {
      * touched {@code Banners.json} after that contributes the table as it stood in that commit.
      */
     private static List<HistoryTable> loadBannerHistory() throws Exception {
-        Path file = FileUtils.getDataPath(BANNERS_FILE);
-        Path dataDir = file.getParent();
+        return loadBannerHistory(FileUtils.getDataPath(BANNERS_FILE));
+    }
 
-        // git show reads <rev>:<path> against the repository root, so resolve the data directory's
-        // place in the tree once and reuse it for every revision.
-        String rootPath = repoRelativeBannerPath(dataDir);
+    static List<HistoryTable> loadBannerHistory(Path file) throws Exception {
+        Path dataDir = file.getParent();
 
         var tables = new ArrayList<HistoryTable>();
         var seen = new HashSet<String>();
 
-        // The working copy holds two kinds of rows side by side: the live banners the operator
-        // edits, and the disabled archive rows that record what ran on the official server. Split
-        // them here, at the Json level, because the archive version lives in the comment string --
-        // a field GachaBanner does not keep.
+        // Separate live rows from disabled archive templates. The archive version lives in the
+        // comment string, which GachaBanner does not keep.
         var workingRows = new ArrayList<GachaBanner>();
         var archiveByVersion = new TreeMap<String, List<GachaBanner>>(GmHandler::compareVersions);
         for (JsonElement el : readBannerTable(file)) {
@@ -1054,13 +1056,16 @@ public final class GmHandler implements Router {
                 continue; // A row this build cannot map is left out, same as for a git revision.
             }
             if (banner == null) continue;
-            if (isArchiveRow(obj, banner)) {
-                archiveByVersion
-                        .computeIfAbsent(archiveRowVersion(obj, banner), k -> new ArrayList<>())
-                        .add(banner);
-            } else {
-                workingRows.add(banner);
-            }
+            if (!isArchiveRow(obj, banner)) workingRows.add(banner);
+        }
+        // The bundled catalogue also works for existing Docker volumes with an older live table.
+        // Reading it never changes that table or the currently enabled banners.
+        for (JsonElement el : readArchiveBannerTable(file)) {
+            JsonObject obj = el.getAsJsonObject();
+            var banner = JsonUtils.decode(el, GachaBanner.class);
+            archiveByVersion
+                    .computeIfAbsent(archiveRowVersion(obj, banner), k -> new ArrayList<>())
+                    .add(banner);
         }
 
         // The table the operator is looking at right now, so a live edit sits at the top of the list
@@ -1073,7 +1078,7 @@ public final class GmHandler implements Router {
             addHistoryRevision(
                     tables,
                     seen,
-                    WORKING_REVISION,
+                    ARCHIVE_REVISION,
                     "",
                     "官服归档 · Version " + entry.getKey(),
                     entry.getValue(),
@@ -1084,7 +1089,16 @@ public final class GmHandler implements Router {
         // record on one line, so one read of the stream is the whole log.
         // -z NUL-terminates each commit's record, and %x1f separates the fields inside one, so a
         // split on NUL yields whole records instead of the individual fields git wrote between them.
-        String log = git(dataDir, "log", "-z", "--format=%H%x1f%cs%x1f%s", "--", BANNERS_FILE);
+        String rootPath;
+        String log;
+        try {
+            rootPath = repoRelativeBannerPath(dataDir);
+            log = git(dataDir, "log", "-z", "--format=%H%x1f%cs%x1f%s", "--", BANNERS_FILE);
+        } catch (Exception e) {
+            // Git is optional in a runtime image. Keep the current table and bundled archive.
+            Grasscutter.getLogger().debug("Banner commit history is unavailable: {}", e.getMessage());
+            return tables;
+        }
         for (String record : log.split("\u0000")) {
             if (record.isBlank()) continue;
             String[] parts = record.split("\u001f", 3);
@@ -1111,6 +1125,25 @@ public final class GmHandler implements Router {
         return tables;
     }
 
+    /** Local archive edits override bundled templates without changing enabled live rows. */
+    static JsonArray readArchiveBannerTable(Path file) throws Exception {
+        var bundled = JsonUtils.decode(
+                new String(FileUtils.readResource(BANNER_ARCHIVE_RESOURCE), StandardCharsets.UTF_8),
+                JsonArray.class);
+        var rows = new LinkedHashMap<Integer, JsonObject>();
+        for (var table : List.of(bundled, readBannerTable(file))) {
+            for (var el : table) {
+                if (!el.isJsonObject()) continue;
+                var obj = el.getAsJsonObject();
+                var banner = JsonUtils.decode(el, GachaBanner.class);
+                if (banner != null && isArchiveRow(obj, banner)) rows.put(banner.getScheduleId(), obj);
+            }
+        }
+        var result = new JsonArray();
+        rows.values().forEach(result::add);
+        return result;
+    }
+
     /** Parses a raw table and appends it, unless an earlier revision already had the identical rows. */
     private static void addHistoryRevision(
             List<HistoryTable> tables,
@@ -1134,8 +1167,8 @@ public final class GmHandler implements Router {
 
     /**
      * Appends a decoded table, unless an earlier revision already had the identical rows. Archive
-     * revisions keep {@code WORKING_REVISION} as their commit, because that is where their rows live
-     * and {@link #rerunBannerRow} copies them out of the working copy.
+     * revisions use {@code ARCHIVE_REVISION} so re-runs resolve the bundled and local templates
+     * without requiring Git in the runtime image.
      */
     private static void addHistoryRevision(
             List<HistoryTable> tables,

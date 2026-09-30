@@ -78,7 +78,7 @@
 
   /* Tabs */
   .tabs { display: flex; gap: 4px; margin-bottom: 12px; border-bottom: 1px solid var(--line);
-          padding-bottom: 8px; }
+          padding-bottom: 8px; flex-wrap: wrap; }
   .tab { background: transparent; color: var(--dim); border: 1px solid transparent;
          border-radius: 6px 6px 0 0; padding: 6px 14px; }
   .tab:hover { background: var(--panel2); color: var(--text); }
@@ -99,7 +99,7 @@
   .item input[type="number"] { width: 74px; font-family: var(--mono); padding: 4px 6px; }
   .item button { padding: 4px 10px; font-size: 12.5px; }
   .pager { display: flex; align-items: center; gap: 10px; margin-top: 10px; color: var(--dim);
-           font-size: 12.5px; }
+           font-size: 12.5px; flex-wrap: wrap; margin-bottom: 10px; }
   .pager button { padding: 4px 12px; font-size: 12.5px; }
 
   /* Banners */
@@ -127,7 +127,10 @@
   .hrev-body > .banner { margin-bottom: 8px; }
   .hrev-body > .banner:last-child { margin-bottom: 0; }
 
-  @media (max-width: 900px) { main { grid-template-columns: 1fr; height: auto; } }
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; height: auto; }
+    main > section:first-child { max-height: 260px; }
+  }
 </style>
 </head>
 <body>
@@ -163,7 +166,6 @@
     <div class="tabs">
       <button class="tab sel" data-tab="cmd">命令</button>
       <button class="tab" data-tab="items">物品</button>
-      <button class="tab" data-tab="banners">卡池</button>
       <button class="tab" data-tab="history">历史卡池</button>
       <button class="tab" data-tab="activities">往期活动</button>
     </div>
@@ -205,23 +207,23 @@
       </div>
     </div>
 
-    <div class="pane" id="pane-banners">
-      <h2>卡池 <button id="bannerRefresh" class="ghost" style="padding:3px 10px;font-size:12px">刷新</button></h2>
-      <div style="margin-bottom:10px;color:var(--dim);font-size:12px">
-        开关直接改写 <span style="font-family:var(--mono)">data/Banners.json</span> 并立即重载卡池系统。
-        「已加载」表示卡池在服务器内存中，「生效中」表示客户端祈愿界面会展示它。
-      </div>
-      <div id="bannerList"><span class="empty">加载中…</span></div>
-    </div>
-
     <div class="pane" id="pane-history">
       <h2>历史卡池 <button id="historyRefresh" class="ghost" style="padding:3px 10px;font-size:12px">刷新</button></h2>
       <div style="margin-bottom:10px;color:var(--dim);font-size:12px">
-        列出 <span style="font-family:var(--mono)">data/Banners.json</span> 在 git 中的每一次改动，按官服版本顺序排列。
-        「官服约 YYYY-MM」是该版本在官服开池的月份（数据文件本身不记录时间）。
-        「复刻此卡池」会把该卡池复制进当前卡池表并开启 30 天。
+        当前配置和历史归档统一列出，历史按版本从新到旧排列。可管理当前卡池开关，或复刻历史卡池 30 天。
+        「生效中」表示客户端祈愿界面会展示它；历史月份为近似时间，归档仍待逐期核实。
       </div>
+      <div class="row" style="margin-bottom:10px">
+        <input id="historyQ" placeholder="搜索版本、角色、武器或卡池 ID" style="flex:1;min-width:180px" aria-label="搜索历史卡池">
+        <select id="historyFilter" aria-label="卡池筛选">
+          <option value="all">全部卡池</option><option value="current">当前配置</option>
+          <option value="active">生效中</option><option value="history">历史归档</option>
+        </select>
+      </div>
+      <p id="historySummary" style="color:var(--dim);font-size:12px" role="status"></p>
+      <div class="pager" id="historyPagerTop" aria-label="历史卡池分页"></div>
       <div id="historyList"><span class="empty">加载中…</span></div>
+      <div class="pager" id="historyPagerBottom" aria-label="历史卡池底部分页"></div>
     </div>
 
     <div class="pane" id="pane-activities">
@@ -243,7 +245,9 @@
         </select>
       </div>
       <p id="activitySummary" style="color:var(--dim);font-size:12px" role="status"></p>
+      <div class="pager" id="activityPagerTop" aria-label="往期活动分页"></div>
       <div id="activityList"><span class="empty">加载中…</span></div>
+      <div class="pager" id="activityPagerBottom" aria-label="往期活动底部分页"></div>
     </div>
 
     <h2>输出</h2>
@@ -423,7 +427,6 @@ document.querySelectorAll(".tab").forEach(t => {
     document.querySelectorAll(".tab").forEach(x => x.classList.toggle("sel", x === t));
     document.querySelectorAll(".pane").forEach(p => p.classList.toggle("sel", p.id === "pane-" + t.dataset.tab));
     if (t.dataset.tab === "items") ensureItems();
-    if (t.dataset.tab === "banners") loadBanners();
     if (t.dataset.tab === "history") loadHistory();
     if (t.dataset.tab === "activities") loadActivities();
   };
@@ -522,6 +525,50 @@ $("itemType").onchange = () => searchItems(0);
 $("pgPrev").onclick = () => searchItems(Math.max(0, itemState.offset - ITEM_PAGE));
 $("pgNext").onclick = () => searchItems(itemState.offset + ITEM_PAGE);
 
+// --- catalogue pagination ---------------------------------------------
+function pageRows(rows, state, prefix, render) {
+  const pages = Math.max(1, Math.ceil(rows.length / state.size));
+  state.page = Math.max(0, Math.min(state.page, pages - 1));
+  const offset = state.page * state.size;
+  const visible = rows.slice(offset, offset + state.size);
+  for (const suffix of ["Top", "Bottom"]) {
+    const pager = $(prefix + "Pager" + suffix);
+    pager.textContent = "";
+    const add = (text, page, disabled) => {
+      const button = document.createElement("button");
+      button.className = "ghost";
+      button.textContent = text;
+      button.disabled = disabled;
+      button.onclick = () => {
+        state.page = page;
+        render();
+        $(prefix + "PagerTop").scrollIntoView({ block: "start" });
+      };
+      pager.appendChild(button);
+    };
+    add("首页", 0, state.page === 0);
+    add("上一页", state.page - 1, state.page === 0);
+    const info = document.createElement("span");
+    info.setAttribute("role", "status");
+    info.textContent = `第 ${state.page + 1} / ${pages} 页 · ${rows.length ? offset + 1 : 0}-${offset + visible.length} / 共 ${rows.length} 条`;
+    pager.appendChild(info);
+    add("下一页", state.page + 1, state.page === pages - 1);
+    add("末页", pages - 1, state.page === pages - 1);
+    const size = document.createElement("select");
+    size.setAttribute("aria-label", prefix === "history" ? "历史卡池每页条数" : "往期活动每页条数");
+    for (const count of [10, 20, 50]) {
+      const option = document.createElement("option");
+      option.value = String(count);
+      option.textContent = `每页 ${count} 条`;
+      size.appendChild(option);
+    }
+    size.value = String(state.size);
+    size.onchange = () => { state.size = Number(size.value); state.page = 0; render(); };
+    pager.appendChild(size);
+  }
+  return visible;
+}
+
 // --- banners ----------------------------------------------------------
 const BANNER_TYPES = {
   STANDARD: "常驻", WEAPON: "武器", CHARACTER: "角色",
@@ -543,20 +590,6 @@ function fmtUp(items, fallbackIds) {
   return (fallbackIds || []).join(" ");
 }
 
-function loadBanners() {
-  const list = $("bannerList");
-  list.innerHTML = '<span class="empty"><span class="spin"></span>加载中…</span>';
-  api("/gm/api/banners").then(r => {
-    if (!r.ok) { list.textContent = "失败: " + JSON.stringify(r.json); return; }
-    const banners = r.json.banners || [];
-    list.textContent = "";
-    if (!banners.length) { list.innerHTML = '<span class="empty">没有配置卡池。</span>'; return; }
-    for (const b of banners) {
-      list.appendChild(renderBanner(b));
-    }
-  }).catch(e => { if (e.message !== "403") list.textContent = "无法连接服务器"; });
-}
-
 function renderBanner(b, opts) {
   opts = opts || {};
   const el = document.createElement("div");
@@ -575,7 +608,7 @@ function renderBanner(b, opts) {
 
   el.innerHTML = `
     <div class="hd">
-      <span class="sid">#${b.scheduleId}</span>
+      <span class="sid">${b.scheduleId < 0 ? "未分配 ID" : "#" + b.scheduleId}</span>
       <span class="badge">${esc(BANNER_TYPES[b.bannerType] || b.bannerType)}</span>
       <span class="gt">gachaType ${b.gachaType} · 消耗 ${esc(String(cost))}</span>
       ${badges.join("")}
@@ -586,6 +619,13 @@ function renderBanner(b, opts) {
     <div class="ops"></div>`;
 
   const ops = el.querySelector(".ops");
+  if (b.scheduleId < 0) {
+    const note = document.createElement("span");
+    note.className = "empty";
+    note.textContent = "旧配置缺少卡池 ID，请从历史归档选择对应卡池复刻。";
+    ops.appendChild(note);
+    return el;
+  }
   if (opts.rerun) {
     const btn = document.createElement("button");
     btn.textContent = "复刻此卡池";
@@ -622,28 +662,61 @@ function flipBanner(scheduleId, action, rowEl) {
     out(`卡池 #${scheduleId} 已${action === "enable" ? "启用" : "禁用"}`
         + (r.json.loaded ? "，已重载进卡池系统。" : "，已从卡池系统移除。"));
     // The file changed, so every other row's "loaded" may have shifted too.
-    loadBanners();
+    loadHistory();
   }).catch(e => { if (e.message !== "403") out("请求失败: " + e, "err"); })
   .finally(() => { btn.disabled = false; });
 }
 
-$("bannerRefresh").onclick = loadBanners;
-
 // --- banner history ----------------------------------------------------
-// One revision per git commit that touched data/Banners.json. The server has already sorted
-// them into official-server order, so the list reads oldest-last as you scroll down.
-function loadHistory() {
+let currentBanners = [], historyRevisions = [];
+const historyPage = { page: 0, size: 20 };
+let historyRequest = 0;
+async function loadHistory() {
+  const request = ++historyRequest;
+  $("historySummary").textContent = "读取卡池目录…";
+  try {
+    const [current, history] = await Promise.all([api("/gm/api/banners"), api("/gm/api/banners/history")]);
+    if (request !== historyRequest) return;
+    if (!current.ok || !history.ok) throw new Error("读取失败");
+    currentBanners = (current.json.banners || []).sort((a, b) =>
+      Number(b.active) - Number(a.active)
+      || Number(a.scheduleId < 0) - Number(b.scheduleId < 0)
+      || a.scheduleId - b.scheduleId);
+    historyRevisions = (history.json.revisions || []).filter(r => !r.working || r.archive);
+    renderHistory();
+  } catch (e) {
+    if (request === historyRequest && e.message !== "403") $("historySummary").textContent = "加载失败：" + e.message;
+  }
+}
+
+function renderHistory() {
+  const needle = $("historyQ").value.trim().toLowerCase();
+  const filter = $("historyFilter").value;
+  const current = { current: true, banners: currentBanners, bannerCount: currentBanners.length };
+  const entries = [current, ...historyRevisions].flatMap(rev => (rev.banners || []).map(b => ({ rev, b })));
+  const rows = entries.filter(({ rev, b }) => {
+    if (filter === "current" && !rev.current) return false;
+    if (filter === "active" && (!rev.current || !b.active)) return false;
+    if (filter === "history" && rev.current) return false;
+    return !needle || [rev.current ? "当前配置" : rev.version, rev.subject, b.scheduleId,
+      BANNER_TYPES[b.bannerType], b.phase, fmtUp(b.rateUpItems4Names, b.rateUpItems4),
+      fmtUp(b.rateUpItems5Names, b.rateUpItems5)].join(" ").toLowerCase().includes(needle);
+  });
+  $("historySummary").textContent = `匹配 ${rows.length} 条；当前配置 ${currentBanners.length} 个，`
+    + `${currentBanners.filter(b => b.active).length} 个生效中，历史记录 ${entries.length - currentBanners.length} 个。`;
+  const visible = pageRows(rows, historyPage, "history", renderHistory);
   const list = $("historyList");
-  list.innerHTML = '<span class="empty"><span class="spin"></span>读取 git 历史中…</span>';
-  api("/gm/api/banners/history").then(r => {
-    if (!r.ok) { list.textContent = "失败: " + JSON.stringify(r.json); return; }
-    const revisions = r.json.revisions || [];
-    list.textContent = "";
-    if (!revisions.length) { list.innerHTML = '<span class="empty">没有历史卡池。</span>'; return; }
-    for (const rev of revisions) {
-      list.appendChild(renderHistoryRevision(rev));
+  list.textContent = "";
+  if (!visible.length) { list.innerHTML = '<span class="empty">没有符合条件的卡池。</span>'; return; }
+  // Paginate individual banners; even a large revision cannot expand one page without a bound.
+  let group;
+  for (const { rev, b } of visible) {
+    if (!group || group.rev !== rev) {
+      group = { rev, element: renderHistoryRevision(rev) };
+      list.appendChild(group.element);
     }
-  }).catch(e => { if (e.message !== "403") list.textContent = "无法连接服务器"; });
+    group.element.querySelector(".hrev-body").appendChild(renderBanner(b, rev.current ? {} : { rerun: true, commit: rev.commit }));
+  }
 }
 
 function renderHistoryRevision(rev) {
@@ -653,10 +726,10 @@ function renderHistoryRevision(rev) {
   // The annotation the operator asked for: which version this table belongs to, and roughly when
   // that version opened on the official server. The data files carry no schedule of their own,
   // so the label is the only clue to the order these banners ran in.
-  const version = rev.version
+  const version = rev.current ? "当前配置" : rev.version
     ? `${esc(rev.version)}${rev.officialStart ? ` · 官服约 ${esc(rev.officialStart)} 开池` : ""}`
     : "未标注版本";
-  const when = rev.working && !rev.archive
+  const when = rev.current ? "可启用或禁用" : rev.working && !rev.archive
     ? "当前工作区（尚未提交）"
     : rev.archive
       ? "官服历史归档（随版本整理，未随提交记录）"
@@ -667,14 +740,10 @@ function renderHistoryRevision(rev) {
       <span class="badge">${version}</span>
       <span class="gt">${when}</span>
       <span class="dim">${esc(rev.subject || "")}</span>
-      <span class="dim">${rev.bannerCount} 个卡池</span>
+      <span class="dim">共 ${rev.bannerCount} 个卡池</span>
     </div>
     <div class="hrev-body"></div>`;
 
-  const body = el.querySelector(".hrev-body");
-  for (const b of (rev.banners || [])) {
-    body.appendChild(renderBanner(b, { rerun: true, commit: rev.commit }));
-  }
   return el;
 }
 
@@ -699,9 +768,12 @@ function rerunBanner(scheduleId, commit, rowEl) {
 }
 
 $("historyRefresh").onclick = loadHistory;
+$("historyQ").oninput = () => { historyPage.page = 0; renderHistory(); };
+$("historyFilter").onchange = () => { historyPage.page = 0; renderHistory(); };
 
 // --- historical activities ---------------------------------------------
 let activities = [];
+const activityPage = { page: 0, size: 20 };
 function loadActivities() {
   $("activitySummary").textContent = "读取活动目录…";
   api("/gm/api/activities").then(r => {
@@ -723,8 +795,9 @@ function renderActivities() {
     + `${activities.filter(a => a.officialBeginTime).length} 条有历史时间，${activities.filter(a => a.active).length} 条已开启。按发布时间由早到晚。`;
   const list = $("activityList");
   list.textContent = "";
-  if (!rows.length) { list.innerHTML = '<span class="empty">没有符合条件的活动。</span>'; return; }
-  for (const a of rows) {
+  const visible = pageRows(rows, activityPage, "activity", renderActivities);
+  if (!visible.length) { list.innerHTML = '<span class="empty">没有符合条件的活动。</span>'; return; }
+  for (const a of visible) {
     const el = document.createElement("div");
     el.className = "banner";
     const official = a.officialBeginTime
@@ -773,8 +846,8 @@ async function changeActivity(activity, action, row) {
   }
 }
 $("activityRefresh").onclick = loadActivities;
-$("activityQ").oninput = renderActivities;
-$("activityFilter").onchange = renderActivities;
+$("activityQ").oninput = () => { activityPage.page = 0; renderActivities(); };
+$("activityFilter").onchange = () => { activityPage.page = 0; renderActivities(); };
 
 // Boot: a bookmarked URL may carry ?token=. The server may also have no token configured at
 // all (this repo's config ships an empty accessToken), so probe first and only ask for a
