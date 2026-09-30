@@ -62,7 +62,7 @@ public final class HistoricalActivityService {
             row.put("restorationNote", event.getActivityId() == 5001
                     ? "已接入场景、13 项任务、7.1 通知、整队匹配、个人树脂领奖及 " + titleCount + " 项结算称号；完整多人挑战与称号显示待实机验证"
                     : event.getActivityId() == 5003 ? "已加载 " + salesmanDays + " 天材料、" + salesmanRewardCount
-                        + " 组首期奖励，已接入七处立本、每日对话、凌晨 4 点换日、材料提交与持久化开匣机会；开匣发奖与客户端完整流程待验证"
+                        + " 组首期奖励，已接入七处立本、每日对话、凌晨 4 点换日、材料提交与持久化开匣机会；开匣发奖仍在接入，客户端完整流程待验证"
                     : !resource ? "本资源版本缺少活动记录，暂不能开启"
                     : !event.hasKnownType() ? "活动类型编号尚未核实，暂不能开启"
                     : "可管理活动排期；专属玩法尚未完成客户端验证");
