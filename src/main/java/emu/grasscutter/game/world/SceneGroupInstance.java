@@ -76,4 +76,14 @@ public final class SceneGroupInstance {
     public void save() {
         DatabaseHelper.saveGroupInstance(this);
     }
+
+    /** Activity scenes recreate their round state on mount, independently of watcher progress. */
+    public void reset() {
+        targetSuiteId = 0;
+        activeSuiteId = 0;
+        lastTimeRefreshed = 0;
+        deadEntities.clear();
+        cachedGadgetStates.clear();
+        cachedVariables.clear();
+    }
 }

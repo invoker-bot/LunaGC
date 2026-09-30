@@ -74,7 +74,20 @@ public class EntityController {
         return callControllerScriptFunc(entity, funcName, arg1, arg2, LuaValue.NIL);
     }
 
-    private synchronized LuaValue callControllerScriptFunc(
+    private LuaValue callControllerScriptFunc(
+            GameEntity entity, String funcName, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
+        var activity = entity.getScene().getCrucibleSceneController();
+        if (!activity.owns(entity.getGroupId()))
+            return invokeController(entity, funcName, arg1, arg2, arg3);
+        var result = new LuaValue[] { LuaValue.valueOf(-1) };
+        activity.runIfCurrent(activity.getLifecycle().ticket(), () -> {
+            if (entity.getScene().getEntities().get(entity.getId()) == entity)
+                result[0] = invokeController(entity, funcName, arg1, arg2, arg3);
+        });
+        return result[0];
+    }
+
+    private synchronized LuaValue invokeController(
             GameEntity entity, String funcName, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
         LuaValue funcLua = null;
         if (funcName != null && !funcName.isEmpty()) {

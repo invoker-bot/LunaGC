@@ -29,6 +29,7 @@ public final class GadgetPlayState {
     }
 
     public synchronized int getProgress() { return progress; }
+    public synchronized boolean isActive() { return active; }
 
     public synchronized boolean start(SceneGadgetCrucibleConfig config, long now) {
         var validated = config.validatedStages();

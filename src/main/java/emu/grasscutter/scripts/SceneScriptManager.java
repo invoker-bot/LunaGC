@@ -54,6 +54,7 @@ public class SceneScriptManager {
     private final Map<String, AtomicInteger> triggerInvocations;
     private final Map<Integer, EntityRegion> regions; // <EntityId-Region>
     private final Map<Integer, SceneGroup> sceneGroups;
+    private final Map<Integer, SceneGroup> localGroups = new ConcurrentHashMap<>();
     private final Map<Integer, SceneGroupInstance> sceneGroupsInstances;
     private final Map<Integer, SceneGroupInstance> cachedSceneGroupsInstances;
     private ScriptMonsterTideService scriptMonsterTideService;
@@ -398,22 +399,13 @@ public class SceneScriptManager {
 
     // TODO optimize
     public SceneGroup getGroupById(int groupId) {
-        for (var block : getBlocks().values()) {
-            this.getScene().loadBlock(block);
-            if (block.groups == null) continue;
-
-            var group = block.groups.get(groupId);
-            if (group == null) {
-                continue;
-            }
-
-            if (!this.sceneGroupsInstances.containsKey(groupId)) {
-                this.getScene().onLoadGroup(List.of(group));
-                this.getScene().onRegisterGroups();
-            }
-            return group;
+        if (!scene.getCrucibleSceneController().allows(groupId)) return null;
+        var group = findGroupById(groupId);
+        if (group != null && !this.sceneGroupsInstances.containsKey(groupId)) {
+            this.getScene().onLoadGroup(List.of(group));
+            this.getScene().onRegisterGroups();
         }
-        return null;
+        return group;
     }
 
     /**
@@ -423,7 +415,9 @@ public class SceneScriptManager {
      * inside the load path therefore re-entered the load for the group being loaded, and every
      * monster and chest in it was created twice.
      */
-    private SceneGroup findGroupById(int groupId) {
+    public SceneGroup findGroupById(int groupId) {
+        var local = localGroups.get(groupId);
+        if (local != null) return local;
         for (var block : getBlocks().values()) {
             this.getScene().loadBlock(block);
             if (block.groups == null) continue;
@@ -433,6 +427,13 @@ public class SceneScriptManager {
         }
         return null;
     }
+
+    /** Per-world definitions are never inserted into cached SceneMeta or the static group grid. */
+    public void registerLocalGroups(Collection<SceneGroup> groups) {
+        groups.forEach(group -> localGroups.put(group.id, group));
+    }
+
+    public void unregisterLocalGroups(Collection<Integer> ids) { ids.forEach(localGroups::remove); }
 
     public SceneGroupInstance getGroupInstanceById(int groupId) {
         return sceneGroupsInstances.getOrDefault(groupId, null);
@@ -705,10 +706,11 @@ public class SceneScriptManager {
     }
 
     public void unregisterGroup(SceneGroup group) {
+        cancelGroupTimers(group.id);
         this.sceneGroups.remove(group.id);
-        this.sceneGroupsInstances.values().removeIf(i -> i.getLuaGroup().equals(group));
+        this.sceneGroupsInstances.values().removeIf(i -> i.getLuaGroup() == group);
         this.cachedSceneGroupsInstances.values().stream()
-                .filter(i -> i.getLuaGroup().equals(group))
+                .filter(i -> i.getLuaGroup() == group)
                 .forEach(s -> s.setCached(true));
     }
 
@@ -889,10 +891,11 @@ public class SceneScriptManager {
          * not get it. e.g. CallEvent -> set -> ScriptLib.xxx -> CallEvent -> set -> remove -> NPE ->
          * (remove) So we use thread pool to clean the stack to avoid this new issue.
          */
-        return eventExecutor.submit(() -> this.realCallEvent(params));
+        long activityTicket = scene.getCrucibleSceneController().getLifecycle().ticket();
+        return eventExecutor.submit(() -> this.realCallEvent(params, activityTicket));
     }
 
-    private void realCallEvent(@Nonnull ScriptArgs params) {
+    private void realCallEvent(@Nonnull ScriptArgs params, long activityTicket) {
         try {
             ScriptLoader.getScriptLib().setSceneScriptManager(this);
 
@@ -918,7 +921,15 @@ public class SceneScriptManager {
                     };
 
             for (SceneTrigger trigger : relevantTriggers) {
-                handleEventForTrigger(params, trigger);
+                var activity = scene.getCrucibleSceneController();
+                if (activity.owns(trigger.currentGroup.id)) {
+                    activity.runIfCurrent(activityTicket, () -> {
+                        if ((eventType == EventType.EVENT_ENTER_REGION || eventType == EventType.EVENT_LEAVE_REGION)
+                                && params.source_eid != 0 && !regions.containsKey(params.source_eid)) return;
+                        if (sceneGroups.get(trigger.currentGroup.id) == trigger.currentGroup)
+                            handleEventForTrigger(params, trigger);
+                    });
+                } else handleEventForTrigger(params, trigger);
             }
         } catch (Throwable throwable) {
             Grasscutter.getLogger()
@@ -1071,6 +1082,7 @@ public class SceneScriptManager {
     }
 
     public EntityGadget createGadget(int groupId, int blockId, SceneGadget g, int state) {
+        if (g == null || !allowsActivityEntity(groupId, g.group)) return null;
         if (g.isOneoff) {
             var hasEntity =
                     getScene().getEntities().values().stream()
@@ -1110,6 +1122,7 @@ public class SceneScriptManager {
     public EntityMonster createMonsterByConfigIdByPos(
             SceneGroup group, int configId, Position pos, Position rot) {
         if (group == null || group.monsters == null) return null;
+        if (!allowsActivityEntity(group.id, group)) return null;
 
         var monster = group.monsters.get(configId);
         if (monster == null) {
@@ -1143,7 +1156,7 @@ public class SceneScriptManager {
     }
 
     public EntityMonster createMonster(int groupId, int blockId, SceneMonster monster) {
-        if (monster == null) {
+        if (monster == null || !allowsActivityEntity(groupId, monster.group)) {
             return null;
         }
 
@@ -1281,16 +1294,20 @@ public class SceneScriptManager {
                                 groupID,
                                 trigger.getName());
                 this.cancelGroupTimerEvent(groupID, source);
+                var activity = scene.getCrucibleSceneController();
+                long activityTicket = activity.getLifecycle().ticket();
                 var taskIdentifier =
                         Grasscutter.getGameServer()
                                 .getScheduler()
                                 .scheduleDelayedRepeatingTask(
-                                        () ->
-                                                callEvent(
-                                                        new ScriptArgs(groupID, EVENT_TIMER_EVENT).setEventSource(source)),
+                                        () -> {
+                                            Runnable callback = () -> callEvent(new ScriptArgs(groupID, EVENT_TIMER_EVENT).setEventSource(source));
+                                            if (activity.owns(groupID)) activity.runIfCurrent(activityTicket, callback);
+                                            else callback.run();
+                                        },
                                         (int) time,
                                         (int) time);
-                var groupTasks = activeGroupTimers.computeIfAbsent(groupID, k -> new HashSet<>());
+                var groupTasks = activeGroupTimers.computeIfAbsent(groupID, k -> ConcurrentHashMap.newKeySet());
                 groupTasks.add(new Pair<>(source, taskIdentifier));
             }
         }
@@ -1313,6 +1330,18 @@ public class SceneScriptManager {
         Grasscutter.getLogger()
                 .warn("trying to cancel a timer that's not active {} {}", groupID, source);
         return 0;
+    }
+
+    public void cancelGroupTimers(int groupId) {
+        var timers = activeGroupTimers.remove(groupId);
+        if (timers != null) timers.forEach(timer ->
+                Grasscutter.getGameServer().getScheduler().cancelTask(timer.component2()));
+    }
+
+    private boolean allowsActivityEntity(int groupId, SceneGroup group) {
+        var activity = scene.getCrucibleSceneController();
+        return !activity.owns(groupId)
+                || (activity.allows(groupId) && sceneGroups.get(groupId) == group);
     }
 
     // todo use killed monsters instead of spawned entites for check?

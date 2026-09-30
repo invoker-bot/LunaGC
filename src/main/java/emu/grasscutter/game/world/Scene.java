@@ -11,6 +11,7 @@ import emu.grasscutter.data.excels.monster.MonsterData;
 import emu.grasscutter.data.excels.scene.SceneData;
 import emu.grasscutter.data.excels.world.WorldLevelData;
 import emu.grasscutter.data.server.Grid;
+import emu.grasscutter.game.activity.crucible.CrucibleSceneController;
 import emu.grasscutter.game.avatar.Avatar;
 import emu.grasscutter.game.dungeons.DungeonManager;
 import emu.grasscutter.game.dungeons.DungeonSettleListener;
@@ -70,6 +71,7 @@ public class Scene {
     private Set<SpawnDataEntry.GridBlockId> loadedGridBlocks;
     @Getter @Setter private boolean dontDestroyWhenEmpty;
     @Getter private final SceneScriptManager scriptManager;
+    @Getter private final CrucibleSceneController crucibleSceneController;
     @Getter @Setter private WorldChallenge challenge;
     @Getter private List<DungeonSettleListener> dungeonSettleListeners;
     @Getter @Setter private int prevScene;
@@ -107,6 +109,7 @@ public class Scene {
         this.loadedGridBlocks = new HashSet<>();
         this.npcBornEntrySet = ConcurrentHashMap.newKeySet();
         this.scriptManager = new SceneScriptManager(this);
+        this.crucibleSceneController = new CrucibleSceneController(this);
         this.blossomManager = new BlossomManager(this);
         this.unlockedForces = new HashSet<>();
         this.sceneEntity = new EntityScene(this);
@@ -248,6 +251,7 @@ public class Scene {
                 .forEach(entityVehicle -> this.removeEntity(entityVehicle, VisionType.VisionType_VISION_REMOVE));
 
         if (this.getPlayerCount() <= 0 && !this.dontDestroyWhenEmpty) {
+            this.crucibleSceneController.close();
             this.getScriptManager().onDestroy();
             this.getWorld().deregisterScene(this);
         }
@@ -652,7 +656,10 @@ public class Scene {
                     // monsters and gadgets against the scripted copies, and nothing cleaned the
                     // extras up: checkSpawns owns the removal pass, and it stops running the
                     // moment checkGroups takes over.
-                    if (this.getScriptManager().isInit()) this.checkGroups();
+                    if (this.getScriptManager().isInit()) {
+                        this.crucibleSceneController.update(nowMs);
+                        this.checkGroups();
+                    }
                     else if (this.getScriptManager().isInitAttempted()) this.checkSpawns();
                 });
         }
@@ -990,10 +997,12 @@ public class Scene {
                 this.players.stream()
                         .map(this::getPlayerActiveGroups)
                         .flatMap(Collection::stream)
+                        .filter(id -> !crucibleSceneController.owns(id))
                         .collect(Collectors.toSet());
 
         for (var group : this.loadedGroups) {
-            if (!visible.contains(group.id) && !group.dynamic_load && !group.dontUnload)
+            if (!visible.contains(group.id) && !group.dynamic_load && !group.dontUnload
+                    && !crucibleSceneController.owns(group.id))
                 unloadGroup(scriptManager.getBlocks().get(group.block_id), group.id);
         }
 
@@ -1019,7 +1028,7 @@ public class Scene {
 
     public void onLoadBlock(SceneBlock block, List<Player> players) {
         this.getScriptManager().loadBlockFromScript(block);
-        scriptManager.getLoadedGroupSetPerBlock().put(block.id, new HashSet<>());
+        scriptManager.getLoadedGroupSetPerBlock().computeIfAbsent(block.id, id -> ConcurrentHashMap.newKeySet());
 
         Grasscutter.getLogger().trace("Scene {} block {} loaded.", this.getId(), block.id);
     }
@@ -1115,12 +1124,13 @@ public class Scene {
                 .forEach(getScriptManager()::registerRegion);
     }
 
-    public void onLoadGroup(List<SceneGroup> groups) {
+    public synchronized void onLoadGroup(List<SceneGroup> groups) {
         if (groups == null || groups.isEmpty()) {
             return;
         }
 
         for (var group : groups) {
+            if (!crucibleSceneController.allows(group.id)) continue;
             if (this.loadedGroups.contains(group)) continue;
 
             this.getScriptManager().loadGroupFromScript(group);
@@ -1131,6 +1141,7 @@ public class Scene {
 
         var entities = new ArrayList<GameEntity>();
         for (var group : groups) {
+            if (!crucibleSceneController.allows(group.id)) continue;
             if (this.loadedGroups.contains(group)) continue;
 
             if (group.init_config == null) {
@@ -1157,7 +1168,14 @@ public class Scene {
         Grasscutter.getLogger().trace("Scene {} loaded {} group(s)", this.getId(), groups.size());
     }
 
-    public void unloadGroup(SceneBlock block, int group_id) {
+    public synchronized void unloadGroup(SceneBlock block, int group_id) {
+        var group = loadedGroups.stream().filter(item -> item.id == group_id).findFirst().orElse(null);
+        if (group == null && block != null && block.groups != null) group = block.groups.get(group_id);
+        if (group != null) unloadGroup(block, group);
+    }
+
+    public synchronized void unloadGroup(SceneBlock block, SceneGroup group) {
+        int group_id = group.id;
         // Callers resolve the block via getBlocks().get(...), which yields null for a group whose
         // block was never loaded (dynamic groups in particular). Nothing below can run without it.
         if (block == null) {
@@ -1177,13 +1195,7 @@ public class Scene {
                     new PacketSceneEntityDisappearNotify(toRemove, VisionType.VisionType_VISION_REMOVE));
         }
 
-        // block.groups stays null until the block is actually loaded from script.
-        var group = block.groups == null ? null : block.groups.get(group_id);
-        if (group == null) {
-            Grasscutter.getLogger()
-                    .debug("unloadGroup: group {} is not part of block {}", group_id, block.id);
-            return;
-        }
+        getScriptManager().cancelGroupTimers(group_id);
         if (group.triggers != null) {
             group.triggers.values().forEach(getScriptManager()::deregisterTrigger);
         }
