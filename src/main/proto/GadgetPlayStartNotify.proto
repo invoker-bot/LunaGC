@@ -1,0 +1,10 @@
+// Verified against the supplied 7.1.0 client; see docs/CRUCIBLE_PROTOCOL.md.
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GadgetPlayStartNotifyOuterClass";
+
+message GadgetPlayStartNotify {
+  uint32 entity_id = 3;
+  uint32 play_type = 5;
+  uint32 start_time = 15;
+}

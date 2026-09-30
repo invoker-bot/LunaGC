@@ -1,0 +1,149 @@
+package io.grasscutter;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.google.protobuf.CodedOutputStream;
+import com.google.protobuf.UnknownFieldSet;
+import emu.grasscutter.game.activity.crucible.GadgetPlayState;
+import emu.grasscutter.net.proto.GadgetPlayStartNotifyOuterClass.GadgetPlayStartNotify;
+import emu.grasscutter.net.proto.GadgetPlayDataNotifyOuterClass.GadgetPlayDataNotify;
+import emu.grasscutter.net.proto.GadgetPlayStopNotifyOuterClass.GadgetPlayStopNotify;
+import emu.grasscutter.net.proto.GadgetPlayUidOpNotifyOuterClass.GadgetPlayUidOpNotify;
+import emu.grasscutter.net.proto.GadgetPlayUidInfoOuterClass.GadgetPlayUidInfo;
+import emu.grasscutter.net.proto.MpPlayPrepareNotifyOuterClass.MpPlayPrepareNotify;
+import emu.grasscutter.scripts.data.SceneGadgetCrucibleConfig;
+import emu.grasscutter.server.packet.send.*;
+import java.io.ByteArrayOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+
+/** Tags independently observed in the supplied client's native protobuf readers. */
+class CrucibleProtocolTest {
+    @Test void verifiedClientSchemasExistWithTheObservedTags() throws Exception {
+        var schemas = Map.of(
+                "GadgetPlayStartNotify", Map.of("entity_id", 3, "play_type", 5, "start_time", 15),
+                "GadgetPlayDataNotify", Map.of("entity_id", 6, "play_type", 9, "progress", 10),
+                "GadgetPlayStopNotify", Map.of("cost_time", 1, "uid_info_list", 2, "entity_id", 4,
+                        "is_success", 10, "score", 11, "play_type", 12),
+                "GadgetPlayUidOpNotify", Map.of("op_name", 1, "uid_list", 5, "entity_id", 7,
+                        "param_list", 11, "play_type", 13, "op", 15),
+                "MpPlayPrepareNotify", Map.of("mp_play_id", 1, "prepare_end_time", 11),
+                "GadgetPlayUidInfo", Map.of("icon", 2, "uid", 3, "profile_picture", 5,
+                        "score", 7, "op", 9, "online_id", 10, "nickname", 11));
+        for (var schema : schemas.entrySet()) {
+            var file = Path.of("src/main/proto", schema.getKey() + ".proto");
+            assertTrue(Files.exists(file), "Missing verified schema: " + schema.getKey());
+            var text = Files.readString(file);
+            for (var field : schema.getValue().entrySet())
+                assertTrue(text.matches("(?s).*\\b" + field.getKey() + "\\s*=\\s*" + field.getValue() + "\\s*;.*"),
+                        schema.getKey() + "." + field.getKey() + " must match the native reader");
+        }
+    }
+
+    @Test void notificationsUseTheClientPacketIdGettersAndScalarTags() throws Exception {
+        var start = new PacketGadgetPlayStartNotify(1, 1000);
+        assertEquals(29148, start.getOpcode());
+        assertEquals(1, rawField(start.getData(), 3));
+        assertEquals(1, rawField(start.getData(), 5));
+        assertEquals(1000, rawField(start.getData(), 15));
+        assertEquals(1000, GadgetPlayStartNotify.parseFrom(start.getData()).getStartTime());
+
+        var data = new PacketGadgetPlayDataNotify(1, 35000);
+        assertEquals(20094, data.getOpcode());
+        assertEquals(1, rawField(data.getData(), 6));
+        assertEquals(1, rawField(data.getData(), 9));
+        assertEquals(35000, rawField(data.getData(), 10));
+        assertEquals(35000, GadgetPlayDataNotify.parseFrom(data.getData()).getProgress());
+
+        var prepare = new PacketMpPlayPrepareNotify(1, 1020);
+        assertEquals(21654, prepare.getOpcode());
+        assertEquals(1, rawField(prepare.getData(), 1));
+        assertEquals(1020, rawField(prepare.getData(), 11));
+        assertEquals(1020, MpPlayPrepareNotify.parseFrom(prepare.getData()).getPrepareEndTime());
+    }
+
+    @Test void playerOperationsAcceptBothNativeRepeatedEncodings() throws Exception {
+        var packet = new PacketGadgetPlayUidOpNotify(1, List.of(10001, 10002), 2,
+                "random_user", List.of(2, 1000, 60));
+        assertEquals(28806, packet.getOpcode());
+        var packed = GadgetPlayUidOpNotify.parseFrom(packet.getData());
+        assertEquals(List.of(10001, 10002), packed.getUidListList());
+        assertEquals(List.of(2, 1000, 60), packed.getParamListList());
+        assertEquals(2, rawField(packet.getData(), 15));
+        assertEquals(1, rawField(packet.getData(), 7));
+        assertEquals(1, rawField(packet.getData(), 13));
+        assertEquals("random_user", UnknownFieldSet.parseFrom(packet.getData())
+                .getField(1).getLengthDelimitedList().get(0).toStringUtf8());
+        var bytes = new ByteArrayOutputStream();
+        var wire = CodedOutputStream.newInstance(bytes);
+        wire.writeString(1, "random_user");
+        wire.writeUInt32(5, 10001); wire.writeUInt32(5, 10002);
+        wire.writeUInt32(7, 1);
+        wire.writeUInt32(11, 2); wire.writeUInt32(11, 1000); wire.writeUInt32(11, 60);
+        wire.writeUInt32(13, 1); wire.writeUInt32(15, 2);
+        wire.flush();
+        assertEquals(packed, GadgetPlayUidOpNotify.parseFrom(bytes.toByteArray()));
+    }
+
+    @Test void queuedProgressAndSettlementKeepTheirOwnRoundSnapshot() throws Exception {
+        var state = new GadgetPlayState();
+        var config = config();
+        state.start(config, 1000, new GadgetPlayState.Round(5001005, 42, 8, Map.of(10001, 8)));
+        state.tick(1003);
+        state.setRoundUidValue(10001, "Fire", 300, 1004);
+        var first = state.addProgress(300, 1004).stream()
+                .filter(change -> change.type() == GadgetPlayState.ChangeType.PROGRESS_CHANGED).findFirst().orElseThrow();
+        state.setRoundUidValue(10001, "Fire", 1000, 1005);
+        state.addProgress(700, 1005);
+        var cancelled = state.stop(1006).get(0);
+        assertEquals(3, cancelled.costTime());
+        assertEquals(1000, cancelled.progress());
+        assertEquals(Map.of(10001, 1000), cancelled.totalScores());
+        assertThrows(UnsupportedOperationException.class, () -> cancelled.totalScores().put(10002, 1));
+        state.start(config, 1100);
+        assertEquals(300, first.progress());
+        assertEquals(Map.of(10001, 300), first.totalScores());
+        assertEquals(5001005, cancelled.round().scheduleId());
+
+        var member = GadgetPlayUidInfo.newBuilder().setUid(10001).setNickname("Traveller").setScore(1000).build();
+        var stop = new PacketGadgetPlayStopNotify(1, cancelled, List.of(member));
+        assertEquals(25650, stop.getOpcode());
+        assertEquals(3, rawField(stop.getData(), 1));
+        assertEquals(1, rawField(stop.getData(), 4));
+        assertEquals(1000, rawField(stop.getData(), 11));
+        assertEquals(1, rawField(stop.getData(), 12));
+        var settlement = GadgetPlayStopNotify.parseFrom(stop.getData());
+        assertFalse(settlement.getIsSuccess());
+        assertEquals(List.of(member), settlement.getUidInfoListList());
+        var nested = UnknownFieldSet.parseFrom(member.toByteArray());
+        assertEquals(10001, nested.getField(3).getVarintList().get(0));
+        assertEquals(1000, nested.getField(7).getVarintList().get(0));
+        assertEquals("Traveller", nested.getField(11).getLengthDelimitedList().get(0).toStringUtf8());
+    }
+
+    @Test void cancellationBeforeCountdownAndDelayedTimeoutReportBoundedTimes() {
+        var state = new GadgetPlayState();
+        state.start(config(), 1000);
+        assertEquals(0, state.stop(1001).get(0).costTime());
+        state.start(config(), 1100);
+        var timeout = state.tick(3000).stream()
+                .filter(change -> change.type() == GadgetPlayState.ChangeType.TIMED_OUT).findFirst().orElseThrow();
+        assertEquals(900, timeout.costTime());
+        assertEquals(0, timeout.remainingTime());
+        assertTrue(state.tick(3001).isEmpty());
+    }
+
+    private static long rawField(byte[] data, int number) throws Exception {
+        return UnknownFieldSet.parseFrom(data).getField(number).getVarintList().get(0);
+    }
+
+    private static SceneGadgetCrucibleConfig config() {
+        var config = new SceneGadgetCrucibleConfig();
+        config.duration = 900; config.start_cd = 3; config.mp_play_id = 1;
+        config.progress_stage = List.of(0, 5000, 20000, 35000);
+        return config;
+    }
+}

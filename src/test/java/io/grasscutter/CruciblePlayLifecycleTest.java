@@ -64,10 +64,11 @@ class CruciblePlayLifecycleTest {
         assertEquals(ChangeType.STARTED, state.tick(1003).get(0).type());
         assertTrue(state.tick(1003).isEmpty(), "Countdown completes once");
         var stage1 = state.addProgress(5000, 1004);
-        assertEquals(1, stage1.get(0).stage());
-        assertEquals(0, stage1.get(0).previousStage());
+        var stageChange = stage1.stream().filter(change -> change.type() == ChangeType.STAGE_CHANGED).findFirst().orElseThrow();
+        assertEquals(1, stageChange.stage());
+        assertEquals(0, stageChange.previousStage());
         var remaining = state.addProgress(40000, 1005);
-        assertEquals(List.of(ChangeType.STAGE_CHANGED, ChangeType.STAGE_CHANGED, ChangeType.SUCCEEDED),
+        assertEquals(List.of(ChangeType.PROGRESS_CHANGED, ChangeType.STAGE_CHANGED, ChangeType.STAGE_CHANGED, ChangeType.SUCCEEDED),
                 remaining.stream().map(GadgetPlayState.Change::type).toList());
         assertEquals(35000, state.getProgress());
         assertTrue(state.addProgress(300, 1006).isEmpty());

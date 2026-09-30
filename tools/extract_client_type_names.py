@@ -2,8 +2,9 @@
 """Read type names and optional member tables from the supplied 7.1.0 client.
 
 This profile is tied to the exact executable and metadata SHA-256 hashes below.
-It recovers names, field type references and method addresses, not a verified
-protobuf schema, packet associations or a complete dump.cs.
+It recovers names, field type references, method addresses and optional literal
+packet ID getters, not a complete protobuf schema or dump.cs. Message names and
+wire fields still require verification.
 The source client files are never modified.
 """
 
@@ -124,12 +125,15 @@ def recover_types(binary: bytes, metadata: bytes) -> tuple[list[dict], dict]:
 
 
 def recover_members(binary: bytes, metadata: bytes, records: list[dict], report: dict,
-                    *, fields: bool, methods: bool) -> None:
+                    *, fields: bool, methods: bool, packet_ids: bool = False) -> None:
     """Recover the tables read by Class::SetupFields and Class::SetupMethods.
 
-    Generic/array payloads remain raw indexes. Native addresses identify methods
-    for further static analysis; they do not identify network commands.
+    Generic/array payloads remain raw indexes. An optional packet ID comes only
+    from the observed literal-return getter; it does not recover a message name
+    or protobuf fields. Duplicate IDs across types are preserved.
     """
+    if packet_ids and not methods:
+        raise ValueError("Packet ID extraction requires method metadata")
     header = pe_file_offset(binary, HEADER_VA, BODY_OFFSET)
     type_base = int(report["typeOffset"], 16)
     names = MetadataNames(metadata, int(report["stringDataBase"], 16))
@@ -201,11 +205,28 @@ def recover_members(binary: bytes, metadata: bytes, records: list[dict], report:
                                         "nameIndex": hex(name_index), "address": hex(address),
                                         "parameterCount": (metadata[entry + 0x18] - key + 0x8C) & 0xFF})
             method_total += count
+            if packet_ids:
+                getters = [method for method in item["methods"]
+                           if method["name"] == "AEGNNPENLNM"
+                           and method["parameterCount"] == 0 and method["address"] != "0x0"]
+                if len(getters) > 1:
+                    raise ValueError(f"Ambiguous packet ID getter for type {item['index']}")
+                if getters:
+                    address = int(getters[0]["address"], 16)
+                    offset = pe_file_offset(binary, address, 5)
+                    code = binary[offset:offset + 5]
+                    # mov ax, imm16; ret. Reject every other instruction shape.
+                    if code[:2] == b"\x66\xb8" and code[4] == 0xC3:
+                        item["packetId"] = struct.unpack_from("<H", code, 2)[0]
+                        item["packetIdGetter"] = hex(address)
     if fields:
         report.update(fieldOffset=hex(field_base), fieldCount=field_total,
                       typeReferenceCount=reference_count)
     if methods:
         report.update(methodOffset=hex(method_base), methodCount=method_total)
+    if packet_ids:
+        ids = [item["packetId"] for item in records if "packetId" in item]
+        report.update(packetIdCount=len(ids), uniquePacketIdCount=len(set(ids)))
 
 
 def main() -> None:
@@ -216,7 +237,11 @@ def main() -> None:
                         help="Include field names, attributes and type reference records")
     parser.add_argument("--include-methods", action="store_true",
                         help="Include method names, native addresses and parameter counts")
+    parser.add_argument("--include-packet-ids", action="store_true",
+                        help="Include literal packet ID getters; requires --include-methods")
     args = parser.parse_args()
+    if args.include_packet_ids and not args.include_methods:
+        parser.error("--include-packet-ids requires --include-methods")
     default_name = ("client-type-metadata.json" if args.include_fields or args.include_methods
                     else "client-type-names.json")
     output = (args.output or Path("local/activity-research") / default_name).resolve()
@@ -229,11 +254,12 @@ def main() -> None:
     records, report = recover_types(binary, metadata)
     if args.include_fields or args.include_methods:
         recover_members(binary, metadata, records, report,
-                        fields=args.include_fields, methods=args.include_methods)
+                        fields=args.include_fields, methods=args.include_methods,
+                        packet_ids=args.include_packet_ids)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(records, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({**report, "output": str(output),
-                      "scope": "Metadata tables only; protobuf schemas and packet associations remain unverified."}))
+                      "scope": "Metadata and optional literal packet IDs; message names and protobuf fields require verification."}))
 
 
 if __name__ == "__main__":

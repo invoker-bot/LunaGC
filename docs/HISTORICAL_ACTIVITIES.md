@@ -53,10 +53,15 @@
 活动的旧场景或旧挑战任务不会进入新轮次。跨组清场按 Lua 指定的 `group_id` 查找目标实体。
 这些验证覆盖服务器逻辑，尚未在游戏客户端中运行完整挑战。
 
-**尚未达到完整可玩状态**：还需接入
-队友邀请、加成点名、实时客户端通知和结算奖励。
-7.1 中相关 `GadgetPlay*` / `MpPlay*` 消息的包号已存在，但本项目缺少对应的已核实消息结构，
-需要进一步协议资料或客户端抓包。页面标记为「还原中」，后续活动标记为「待还原」。
+已从用户提供的客户端核对并补入开始、进度、玩家操作、结束、玩家结束信息和多人准备的六个消息结构。
+倒计时、每次实际进度变化、原 Lua 的点名操作，以及成功/超时/取消/卸载的结束通知已接入发包。
+通知使用本轮不可变的进度、个人累计成绩和耗时快照；重开不会改变旧轮次的通知内容。
+开局时保存参与者昵称与头像，离场后仍可保留本轮结束信息。
+已核对的包号与读取分支详见 [烘炉协议核对](CRUCIBLE_PROTOCOL.md)。
+
+**尚未达到完整可玩状态**：还需接入队友邀请与准备状态机、核对玩家结算称号、接入结算奖励，
+并在客户端中验证完整挑战、点名效果和结算界面。多人准备消息已有定义和发包类，状态机尚未接入。
+页面标记为「还原中」，后续活动标记为「待还原」。
 已有 `ExecuteGadgetLuaReq/Rsp` 的包号也尚未核实，仍保留负数占位；内部 Lua 调用已接入。
 
 当前使用用户确认已更新的 7.1.0 客户端进行分析。辅助 JSON 与 `config.ini` 可能残留旧值，
@@ -72,20 +77,25 @@
 名称均通过 UTF-8 与控制字符检查；非零方法地址位于 PE 文件支持的区间。
 字段类型输出包括基础类型、属性及类/值类型的定义索引；泛型和数组的负载保留原始索引，
 尚未恢复完整的泛型参数或方法签名。
-部分混淆类的解析代码已观察到 protobuf 标签读取分支；
-字段编号与具体消息、包号的对应关系仍待核实，提取结果不能直接当作可用的 `.proto`。
+随后从客户端直接返回包号的函数恢复了 4,923 个类型的编号，其中有 4,919 个不同编号。
+烘炉的五个外层通知包号与项目已有 7.1 表一致，字段通过原生 protobuf 读取分支交叉核对。
+其他混淆消息的名称和字段仍需逐项核实，完整提取结果不能直接当作可用的 `.proto`。
 
 ```powershell
 python tools/extract_client_type_names.py 'C:\Users\InvokerBot\AppData\Local\hoyo\hk4e\versions\current'
 
 # 同时提取字段与方法，默认输出 client-type-metadata.json
 python tools/extract_client_type_names.py 'C:\Users\InvokerBot\AppData\Local\hoyo\hk4e\versions\current' --include-fields --include-methods
+
+# 包号返回函数可选导出，需要同时提取方法
+python tools/extract_client_type_names.py 'C:\Users\InvokerBot\AppData\Local\hoyo\hk4e\versions\current' --include-fields --include-methods --include-packet-ids
 ```
 
 该工具只读取客户端；内置偏移与解码常量严格绑定本次 exe 和元数据的 SHA-256，
 其他构建会被拒绝，避免更新后套用旧偏移。输出默认保存在被忽略的
 `local/activity-research/client-type-names.json`；带字段或方法选项时默认保存为同目录的
-`client-type-metadata.json`。两个选项也可单独使用；`--output` 可指定分析结果路径，
+`client-type-metadata.json`。字段和方法选项可单独使用；包号选项要求同时启用方法选项。
+工具保留同一编号的多个类型，不自动替换项目的包号表。`--output` 可指定分析结果路径，
 客户端目录内的输出会被拒绝。客户端文件和提取出的元数据不随仓库或镜像发布。
 
 ## 数据来源和更新

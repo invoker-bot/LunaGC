@@ -7,15 +7,16 @@ import java.util.*;
 
 /** Per-gadget state consumed by the original Crucible.lua; never shared between scene instances. */
 public final class GadgetPlayState {
-    public enum ChangeType { STARTED, SCORED, STAGE_CHANGED, SUCCEEDED, TIMED_OUT, CANCELLED }
+    public enum ChangeType { STARTED, SCORED, PROGRESS_CHANGED, STAGE_CHANGED, SUCCEEDED, TIMED_OUT, CANCELLED }
     public record Round(int scheduleId, long sceneTicket, int battleWorldLevel,
                         Map<Integer, Integer> participantWorldLevels) {
         public static final Round NONE = new Round(0, 0, 0, Map.of());
         public Round { participantWorldLevels = Map.copyOf(participantWorldLevels); }
     }
     public record Change(ChangeType type, int previousStage, int stage, Round round,
-                         long roundSerial, int remainingTime, Map<Integer, Integer> scores) {
-        public Change { scores = Map.copyOf(scores); }
+                         long roundSerial, int remainingTime, Map<Integer, Integer> scores,
+                         int progress, int costTime, Map<Integer, Integer> totalScores) {
+        public Change { scores = Map.copyOf(scores); totalScores = Map.copyOf(totalScores); }
     }
 
     private final Map<Integer, Map<String, Integer>> values = new HashMap<>();
@@ -30,6 +31,7 @@ public final class GadgetPlayState {
     private long countdownBegin;
     private long battleBegin;
     private long deadline;
+    private int duration;
     private boolean active;
     private boolean running;
 
@@ -46,6 +48,7 @@ public final class GadgetPlayState {
     public synchronized boolean isRunningAt(long now) { return active && now >= battleBegin && now < deadline; }
     public synchronized Round getRound() { return round; }
     public synchronized long getRoundSerial() { return roundSerial; }
+    public synchronized int getStartTime() { return (int) countdownBegin; }
 
     public synchronized boolean recordMonsterKill(int entityId, int uid, long now) {
         return entityId > 0 && isRunningAt(now) && round.participantWorldLevels().containsKey(uid)
@@ -77,6 +80,7 @@ public final class GadgetPlayState {
         countdownBegin = now;
         battleBegin = Math.addExact(now, config.start_cd);
         deadline = Math.addExact(battleBegin, config.duration);
+        duration = config.duration;
         active = true;
         running = false;
         return true;
@@ -111,8 +115,11 @@ public final class GadgetPlayState {
             });
             if (!scores.isEmpty()) changes.add(change(ChangeType.SCORED, stage, stage, now, scores));
         }
+        int previousProgress = progress;
         progress = (int) Math.min(stages.get(stages.size() - 1),
                 Math.max(stages.get(stage), (long) progress + delta));
+        if (progress != previousProgress)
+            changes.add(change(ChangeType.PROGRESS_CHANGED, stage, stage, now, Map.of()));
         while (stage + 1 < stages.size() && progress >= stages.get(stage + 1)) {
             int previous = stage++;
             changes.add(change(ChangeType.STAGE_CHANGED, previous, stage, now, Map.of()));
@@ -125,16 +132,20 @@ public final class GadgetPlayState {
         return changes;
     }
 
-    public synchronized List<Change> stop() {
+    public synchronized List<Change> stop() { return stop(System.currentTimeMillis() / 1000); }
+
+    public synchronized List<Change> stop(long now) {
         if (!active) return List.of();
         active = false;
         running = false;
-        return List.of(change(ChangeType.CANCELLED, stage, stage, deadline, Map.of()));
+        return List.of(change(ChangeType.CANCELLED, stage, stage, now, Map.of()));
     }
 
     private Change change(ChangeType type, int previous, int next, long now, Map<Integer, Integer> scores) {
         int remaining = (int) Math.max(0L, Math.min(Integer.MAX_VALUE, deadline - now));
-        return new Change(type, previous, next, round, roundSerial, remaining, scores);
+        int elapsed = (int) Math.max(0L, Math.min(duration, now - battleBegin));
+        return new Change(type, previous, next, round, roundSerial, remaining, scores,
+                progress, elapsed, creditedScores);
     }
 
     public synchronized int getStageBeginProgress() {

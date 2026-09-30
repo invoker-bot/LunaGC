@@ -19,8 +19,10 @@ import emu.grasscutter.net.proto.EntityAuthorityInfoOuterClass.EntityAuthorityIn
 import emu.grasscutter.net.proto.EntityClientDataOuterClass.EntityClientData;
 import emu.grasscutter.net.proto.EntityRendererChangedInfoOuterClass.EntityRendererChangedInfo;
 import emu.grasscutter.net.proto.GadgetInteractReqOuterClass.GadgetInteractReq;
+import emu.grasscutter.net.proto.GadgetPlayUidInfoOuterClass.GadgetPlayUidInfo;
 import emu.grasscutter.net.proto.MotionInfoOuterClass.MotionInfo;
 import emu.grasscutter.net.proto.PropPairOuterClass.PropPair;
+import emu.grasscutter.net.proto.ProfilePictureOuterClass.ProfilePicture;
 import emu.grasscutter.net.proto.ProtEntityTypeOuterClass.ProtEntityType;
 import emu.grasscutter.net.proto.SceneEntityAiInfoOuterClass.SceneEntityAiInfo;
 import emu.grasscutter.net.proto.SceneEntityInfoOuterClass.SceneEntityInfo;
@@ -58,6 +60,7 @@ public class EntityGadget extends EntityBaseGadget {
     @Getter private GadgetContent content;
     @Getter(lazy = true) private final GadgetPlayState gadgetPlayState = new GadgetPlayState();
     @Getter(lazy = true) private final Queue<GadgetPlayState.Change> pendingPlayChanges = new ConcurrentLinkedQueue<>();
+    @Getter(lazy = true) private final Map<Integer, GadgetPlayUidInfo> playParticipantProfiles = new HashMap<>();
     private final AtomicBoolean dispatchingPlayChanges = new AtomicBoolean();
     private volatile Future<?> playStopCallback;
 
@@ -185,6 +188,16 @@ public class EntityGadget extends EntityBaseGadget {
             var round = activity.owns(getGroupId()) ? activity.captureRound(this) : GadgetPlayState.Round.NONE;
             if (round == null || !getGadgetPlayState().start(metaGadget.crucible_config,
                     System.currentTimeMillis() / 1000, round)) return false;
+            var profiles = getPlayParticipantProfiles();
+            profiles.clear();
+            for (var player : getScene().getPlayers()) {
+                if (round.scheduleId() != 0 && !round.participantWorldLevels().containsKey(player.getUid())) continue;
+                profiles.put(player.getUid(), GadgetPlayUidInfo.newBuilder().setUid(player.getUid())
+                        .setNickname(player.getNickname()).setIcon(player.getHeadImage())
+                        .setProfilePicture(ProfilePicture.newBuilder().setAvatarId(player.getHeadImage())).build());
+            }
+            // The client adds start_cd itself, so announce the beginning of the countdown.
+            getScene().broadcastPacket(new PacketGadgetPlayStartNotify(getId(), getGadgetPlayState().getStartTime()));
             getScene().getScriptManager().callEvent(new ScriptArgs(getGroupId(),
                     EventType.EVENT_GADGET_PLAY_START_CD, getConfigId()));
             updateGadgetPlay(state -> state.tick(System.currentTimeMillis() / 1000));
@@ -196,6 +209,39 @@ public class EntityGadget extends EntityBaseGadget {
     }
 
     public void stopGadgetPlay() { updateGadgetPlay(GadgetPlayState::stop); }
+
+    /** Unloading invalidates the script ticket first; still tell clients the round was cancelled. */
+    public void cancelGadgetPlayForUnload() {
+        for (var change : getGadgetPlayState().stop())
+            getScene().broadcastPacket(new PacketGadgetPlayStopNotify(getId(), change, settlementMembers(change)));
+    }
+
+    public boolean gadgetPlayUidOp(List<Integer> uids, int op, String name, List<Integer> params) {
+        synchronized (getScene()) {
+            var play = getGadgetPlayState();
+            if (metaGadget == null || metaGadget.crucible_config == null || op < 0 || name == null || name.isEmpty()
+                    || getScene().getEntities().get(getId()) != this
+                    || !play.isRunningAt(System.currentTimeMillis() / 1000)) return false;
+            var members = play.getRound().participantWorldLevels();
+            var present = new HashSet<Integer>();
+            getScene().getPlayers().forEach(player -> present.add(player.getUid()));
+            var selected = uids.stream().filter(uid -> uid > 0 && present.contains(uid)
+                            && (play.getRound().scheduleId() == 0 || members.containsKey(uid)))
+                    .distinct().toList();
+            if (selected.isEmpty()) return false;
+            getScene().broadcastPacket(new PacketGadgetPlayUidOpNotify(getId(), selected, op, name, params));
+            return true;
+        }
+    }
+
+    private List<GadgetPlayUidInfo> settlementMembers(GadgetPlayState.Change change) {
+        var uids = new TreeSet<>(change.round().participantWorldLevels().keySet());
+        uids.addAll(change.totalScores().keySet());
+        if (change.round().scheduleId() == 0) uids.addAll(getPlayParticipantProfiles().keySet());
+        return uids.stream().map(uid -> getPlayParticipantProfiles()
+                .getOrDefault(uid, GadgetPlayUidInfo.newBuilder().setUid(uid).build()).toBuilder()
+                .setScore(change.totalScores().getOrDefault(uid, 0)).build()).toList();
+    }
 
     private void updateGadgetPlay(Function<GadgetPlayState, List<GadgetPlayState.Change>> update) {
         var play = getGadgetPlayState();
@@ -226,15 +272,19 @@ public class EntityGadget extends EntityBaseGadget {
     private void dispatchPlayCallback(GadgetPlayState.Change change) {
         switch (change.type()) {
             case SCORED -> { }
+            case PROGRESS_CHANGED -> getScene().broadcastPacket(new PacketGadgetPlayDataNotify(getId(), change.progress()));
             case STARTED -> getScene().getScriptManager().callEvent(new ScriptArgs(getGroupId(),
                     EventType.EVENT_GADGET_PLAY_START, getConfigId()));
             case STAGE_CHANGED -> {
                 if (getEntityController() != null) getEntityController().onPlayStageChange(this,
                         change.previousStage(), change.stage(), getGadgetPlayState().getFinalStage());
             }
-            case SUCCEEDED, TIMED_OUT, CANCELLED -> playStopCallback = getScene().getScriptManager().callEvent(
-                    new ScriptArgs(getGroupId(), EventType.EVENT_GADGET_PLAY_STOP, getConfigId(), 1)
-                            .setParam3(change.type() == GadgetPlayState.ChangeType.SUCCEEDED ? 1 : 0));
+            case SUCCEEDED, TIMED_OUT, CANCELLED -> {
+                getScene().broadcastPacket(new PacketGadgetPlayStopNotify(getId(), change, settlementMembers(change)));
+                playStopCallback = getScene().getScriptManager().callEvent(
+                        new ScriptArgs(getGroupId(), EventType.EVENT_GADGET_PLAY_STOP, getConfigId(), 1)
+                                .setParam3(change.type() == GadgetPlayState.ChangeType.SUCCEEDED ? 1 : 0));
+            }
         }
     }
 

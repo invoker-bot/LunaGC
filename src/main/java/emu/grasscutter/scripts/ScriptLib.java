@@ -596,8 +596,13 @@ public class ScriptLib {
     }
 
     public int GadgetPlayUidOp(int groupId, int configId, LuaTable uids, int op, String name, LuaTable args) {
-        logger.debug("[LUA] GadgetPlayUidOp {} requires a verified 7.1 notification schema", name);
-        return -1;
+        var gadget = playGadget(groupId, configId);
+        if (gadget == null) return -1;
+        var selected = new ArrayList<Integer>();
+        var params = new ArrayList<Integer>();
+        for (int index = 1; index <= uids.length(); index++) selected.add(uids.get(index).checkint());
+        for (int index = 1; index <= args.length(); index++) params.add(args.get(index).checkint());
+        return gadget.gadgetPlayUidOp(selected, op, name, params) ? 0 : -1;
     }
 
     public int StartGadgetPlay(int groupId, int configId) {

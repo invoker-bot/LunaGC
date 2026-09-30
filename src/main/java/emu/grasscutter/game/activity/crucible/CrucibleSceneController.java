@@ -182,7 +182,7 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
             try {
                 scene.getEntities().values().stream().filter(entity -> entity.getGroupId() == group.id)
                         .filter(EntityGadget.class::isInstance).map(EntityGadget.class::cast)
-                        .forEach(gadget -> gadget.getGadgetPlayState().stop());
+                        .forEach(EntityGadget::cancelGadgetPlayForUnload);
                 scene.unloadGroup(manager.getBlocks().get(group.block_id), group);
             } catch (RuntimeException exception) {
                 if (failure == null) failure = exception; else failure.addSuppressed(exception);
