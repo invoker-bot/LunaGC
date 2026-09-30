@@ -6,6 +6,7 @@ import emu.grasscutter.data.common.ItemParamData;
 import emu.grasscutter.data.excels.activity.ActivityWatcherData;
 import emu.grasscutter.database.DatabaseHelper;
 import emu.grasscutter.game.inventory.GameItem;
+import emu.grasscutter.game.activity.salesman.SalesmanSchedule;
 import emu.grasscutter.game.player.Player;
 import emu.grasscutter.game.props.ActionReason;
 import emu.grasscutter.net.proto.ActivityWatcherInfoOuterClass;
@@ -37,8 +38,12 @@ public class PlayerActivityData {
     }
 
     public void save() {
-        DatabaseHelper.savePlayerActivityData(this);
+        // Initial/replay saves must not leave an old Salesman document queued while its ID is reused.
+        if (activityId == SalesmanSchedule.ACTIVITY_ID) saveSync();
+        else DatabaseHelper.savePlayerActivityData(this);
     }
+
+    public void saveSync() { DatabaseHelper.saveGameSync(this); }
 
     public synchronized void addWatcherProgress(int watcherId) {
         addWatcherProgress(watcherId, 1);

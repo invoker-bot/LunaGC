@@ -40,7 +40,7 @@ public final class SalesmanActivityHandler extends ActivityHandler {
         catch (RuntimeException invalid) { return List.of(); }
         var conditions = new ArrayList<Integer>();
         if (SalesmanSchedule.canDeliver(data, config, rank, now)) conditions.add(5003001);
-        if (progress.remainingChances() > 0) conditions.add(5003002);
+        if (progress.canTakeReward()) conditions.add(5003002);
         if (!progress.hasTalked(Math.min(day, 7))) conditions.add(5003100 + Math.min(day, 7));
         return List.copyOf(conditions);
     }

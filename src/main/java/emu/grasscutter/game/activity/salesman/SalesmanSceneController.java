@@ -89,7 +89,7 @@ public final class SalesmanSceneController {
         synchronized (manager) {
             var item = config();
             var data = manager.getPlayerActivityDataMap().get(SalesmanSchedule.ACTIVITY_ID);
-            int result = SalesmanTalk.complete(data, item, talkId, player.getLevel(), now, data == null ? () -> {} : data::save);
+            int result = SalesmanTalk.complete(data, item, talkId, player.getLevel(), now, data == null ? () -> {} : data::saveSync);
             if (result == 0) {
                 player.sendPacket(new PacketActivityInfoNotify(manager.getInfoProtoByActivityId(SalesmanSchedule.ACTIVITY_ID)));
                 manager.triggerActivityConditions();

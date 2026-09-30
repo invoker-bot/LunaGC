@@ -21,7 +21,7 @@ public final class SalesmanDelivery {
             SalesmanProgress progress;
             try { progress = SalesmanSchedule.progress(data); }
             catch (RuntimeException invalid) { return Retcode.RET_SVR_ERROR_VALUE; }
-            if (progress.pendingDeliveryDay() != 0) return Retcode.RET_SVR_ERROR_VALUE;
+            if (progress.pendingDeliveryDay() != 0 || progress.hasPendingReward()) return Retcode.RET_SVR_ERROR_VALUE;
             if (progress.deliveredDays().contains(day)) return Retcode.RET_SALESMAN_ALREADY_DELIVERED_VALUE;
             var daily = SalesmanSchedule.daily(config, now);
             if (daily == null || daily.getCostItemList().isEmpty()) return Retcode.RET_SVR_ERROR_VALUE;

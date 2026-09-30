@@ -10,6 +10,7 @@ import emu.grasscutter.net.proto.SalesmanTakeRewardRspOuterClass.SalesmanTakeRew
 import emu.grasscutter.net.proto.SalesmanDeliverItemReqOuterClass.SalesmanDeliverItemReq;
 import emu.grasscutter.net.proto.SalesmanDeliverItemRspOuterClass.SalesmanDeliverItemRsp;
 import emu.grasscutter.server.packet.send.PacketSalesmanDeliverItemRsp;
+import emu.grasscutter.server.packet.send.PacketSalesmanTakeRewardRsp;
 import emu.grasscutter.net.proto.SalesmanStatusTypeOuterClass.SalesmanStatusType;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
@@ -60,5 +61,16 @@ class SalesmanProtocolTest {
         var entry=UnknownFieldSet.parseFrom(wire.getField(4).getLengthDelimitedList().get(0));
         assertEquals(List.of(3L),entry.getField(1).getVarintList());
         assertEquals(List.of(470001L),entry.getField(2).getVarintList());
+    }
+    @Test void rewardPacketEchoesNativeScheduleAndPositionWithoutAdvertisingAFailedGrant() throws Exception {
+        var packet = new PacketSalesmanTakeRewardRsp(5003010, 7, 470007, 0);
+        assertEquals(29368, packet.getOpcode());
+        var wire = UnknownFieldSet.parseFrom(packet.getData());
+        assertEquals(Set.of(2,10,15), wire.asMap().keySet());
+        assertEquals(List.of(5003010L), wire.getField(2).getVarintList());
+        assertEquals(List.of(470007L), wire.getField(10).getVarintList());
+        assertEquals(List.of(7L), wire.getField(15).getVarintList());
+        var failure = SalesmanTakeRewardRsp.parseFrom(new PacketSalesmanTakeRewardRsp(5003010, -1, 470007, -1).getData());
+        assertEquals(-1, failure.getRetcode()); assertEquals(-1, failure.getPosition()); assertEquals(0, failure.getRewardId());
     }
 }

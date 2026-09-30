@@ -3,6 +3,9 @@ package emu.grasscutter.database;
 import static com.mongodb.client.model.Filters.eq;
 
 import com.mongodb.MongoWriteException;
+import com.mongodb.WriteConcern;
+import dev.morphia.InsertOneOptions;
+import dev.morphia.DeleteOptions;
 
 import dev.morphia.query.*;
 import dev.morphia.query.experimental.filters.Filters;
@@ -57,7 +60,24 @@ public final class DatabaseHelper {
      * @param object The object to save.
      */
     public static void saveGameAsync(Object object) {
-        DatabaseHelper.eventExecutor.submit(() -> saveWithRetry(object));
+        DatabaseHelper.eventExecutor.submit(() -> {
+            synchronized (object) {
+                // A queued stack save must respect a subsequent removal instead of recreating it.
+                if (object instanceof GameItem item && item.getCount() <= 0)
+                    DatabaseManager.getGameDatastore().delete(item);
+                else saveWithRetry(object);
+            }
+        });
+    }
+
+    /** Acknowledged writes for economic reservations; errors must reach the caller. */
+    public static void saveGameSync(Object object) {
+        synchronized (object) {
+            var concern = WriteConcern.MAJORITY.withJournal(true);
+            if (object instanceof GameItem item && item.getCount() <= 0)
+                DatabaseManager.getGameDatastore().delete(item, new DeleteOptions().writeConcern(concern));
+            else DatabaseManager.getGameDatastore().save(object, new InsertOneOptions().writeConcern(concern));
+        }
     }
 
     /**
@@ -422,7 +442,9 @@ public final class DatabaseHelper {
     }
 
     public static void deleteItem(GameItem item) {
-        DatabaseHelper.asyncOperation(() -> DatabaseManager.getGameDatastore().delete(item));
+        DatabaseHelper.asyncOperation(() -> {
+            synchronized (item) { DatabaseManager.getGameDatastore().delete(item); }
+        });
     }
 
     /**

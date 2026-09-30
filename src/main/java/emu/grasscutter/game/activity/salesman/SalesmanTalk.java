@@ -31,7 +31,7 @@ public final class SalesmanTalk {
             }
             if (!progress.hasTalked(day)) return Retcode.RET_NOT_CURRENT_TALK_VALUE;
             boolean canDeliver = SalesmanSchedule.canDeliver(data, config, rank, now);
-            boolean canReward = progress.remainingChances() > 0;
+            boolean canReward = progress.canTakeReward();
             boolean allowed = switch (talkId) {
                 case 4100109 -> canDeliver;
                 case 4100111 -> !canDeliver;

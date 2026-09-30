@@ -32,7 +32,7 @@ public final class HandlerSalesmanDeliverItemReq extends PacketHandler {
                         if (scene == null || !scene.getSalesmanSceneController().canInteract(player, now)
                             || !SalesmanSchedule.progress(data).hasTalked(day)) result = Retcode.RET_NOT_CURRENT_TALK_VALUE;
                         else result = SalesmanDelivery.deliver(data, handler.getActivityConfigItem(), player.getLevel(),
-                            now, costs -> player.getInventory().payItems(costs, 1, ActionReason.SalesmanDeliverItem), data::save);
+                            now, costs -> SalesmanRewardDelivery.pay(player, costs), data::saveSync);
                     }
                 } catch (RuntimeException failed) {
                     Grasscutter.getLogger().error("Salesman delivery failed for UID {} schedule {}; check pending activity progress before retrying",

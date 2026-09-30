@@ -48,7 +48,7 @@ public final class SalesmanSchedule {
                 || data.getActivityId() != ACTIVITY_ID || data.getScheduleId() != config.getScheduleId()) return false;
         var daily = daily(config, now);
         if (daily == null || daily.getCostItemList().isEmpty()) return false;
-        try { var progress = progress(data); return progress.pendingDeliveryDay() == 0 && !progress.deliveredDays().contains(day); }
+        try { var progress = progress(data); return progress.pendingDeliveryDay() == 0 && !progress.hasPendingReward() && !progress.deliveredDays().contains(day); }
         catch (RuntimeException invalid) { return false; }
     }
 
@@ -62,6 +62,6 @@ public final class SalesmanSchedule {
         }
         var rewards = new HashSet<Integer>(source.getNormalRewardIdList());
         rewards.addAll(source.getSpecialRewardIdList());
-        return rewards.size() == 7 && rewards.stream().allMatch(id -> GameData.getRewardDataMap().containsKey(id.intValue()));
+        return rewards.size() == 7 && SalesmanRewards.resourcesAvailable(source);
     }
 }
