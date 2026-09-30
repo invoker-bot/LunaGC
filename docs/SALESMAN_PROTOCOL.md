@@ -42,6 +42,14 @@ tag 120 写入 `+0x18`（position，字段 15）。客户端返回码字段为 i
 及 [SalesmanDeliverItemRsp](https://github.com/Hiro420/3.5_protos/blob/d42eec84da01b1b28abb40d8565fbbcb306a8969/deobfuscated/SalesmanDeliverItemRsp.proto)；
 旧包号和旧 tag 不沿用。
 
+提交回包名称还通过本次客户端的明文事件枚举交叉核对：类型 62730 中
+`SalesmanDeliverItemRsp`（字段 306076）的原始默认值是 801。
+类型 69706 的处理器发送事件 801，与该枚举直接对应；
+领奖处理器发送 800，对应同一枚举的 `SalesManTakeRewardRsp`（字段 306075）。
+因此提交回包的名称已由同一客户端的事件表确认，不再仅依靠字段形状推断。
+活动枚举 22062 的 `NEW_ACTIVITY_SALESMAN` / `NEW_ACTIVITY_SALESMAN_MP`
+默认值分别为 3 / 1205，保持首期与后续版的类型区分。
+
 ## 详情
 
 | 原生字段 / 服务端名 | 字段号 | 类型 | 对象偏移 |
