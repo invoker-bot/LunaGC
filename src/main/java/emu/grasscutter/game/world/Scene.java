@@ -12,6 +12,8 @@ import emu.grasscutter.data.excels.scene.SceneData;
 import emu.grasscutter.data.excels.world.WorldLevelData;
 import emu.grasscutter.data.server.Grid;
 import emu.grasscutter.game.activity.crucible.CrucibleSceneController;
+import emu.grasscutter.game.activity.salesman.SalesmanSceneController;
+import emu.grasscutter.game.activity.salesman.SalesmanNpcScene;
 import emu.grasscutter.game.avatar.Avatar;
 import emu.grasscutter.game.dungeons.DungeonManager;
 import emu.grasscutter.game.dungeons.DungeonSettleListener;
@@ -72,6 +74,7 @@ public class Scene {
     @Getter @Setter private boolean dontDestroyWhenEmpty;
     @Getter private final SceneScriptManager scriptManager;
     @Getter private final CrucibleSceneController crucibleSceneController;
+    @Getter private final SalesmanSceneController salesmanSceneController;
     @Getter @Setter private WorldChallenge challenge;
     @Getter private List<DungeonSettleListener> dungeonSettleListeners;
     @Getter @Setter private int prevScene;
@@ -110,6 +113,7 @@ public class Scene {
         this.npcBornEntrySet = ConcurrentHashMap.newKeySet();
         this.scheduler = new ServerTaskScheduler();
         this.crucibleSceneController = new CrucibleSceneController(this);
+        this.salesmanSceneController = new SalesmanSceneController(this);
         this.scriptManager = new SceneScriptManager(this);
         this.blossomManager = new BlossomManager(this);
         this.unlockedForces = new HashSet<>();
@@ -236,6 +240,7 @@ public class Scene {
         }
 
         this.crucibleSceneController.onPlayerLeaving(player);
+        this.salesmanSceneController.onPlayerLeaving(player);
         getPlayers().remove(player);
         player.setScene(null);
 
@@ -253,6 +258,7 @@ public class Scene {
 
         if (this.getPlayerCount() <= 0 && !this.dontDestroyWhenEmpty) {
             this.crucibleSceneController.close();
+            this.salesmanSceneController.close();
             this.getScriptManager().onDestroy();
             this.getWorld().deregisterScene(this);
         }
@@ -648,6 +654,7 @@ public class Scene {
         var nowMs = System.currentTimeMillis();
         if (nowMs - this.lastStreamCheck >= 500L) {
             this.lastStreamCheck = nowMs;
+            stage("the Salesman NPC suites", () -> this.salesmanSceneController.update(nowMs));
             stage(
                 "loading groups",
                 () -> {
@@ -1299,6 +1306,7 @@ public class Scene {
     }
 
     public void loadNpcForPlayerEnter(Player player) {
+        this.salesmanSceneController.updatePlayer(player, System.currentTimeMillis());
         this.npcBornEntrySet.addAll(loadNpcForPlayer(player));
     }
 
@@ -1316,7 +1324,8 @@ public class Scene {
                         Grasscutter.getConfig().server.game.loadEntitiesForPlayerRange);
 
         var sceneNpcBornCanidates =
-                npcList.stream().filter(i -> !this.npcBornEntrySet.contains(i)).toList();
+                npcList.stream().filter(i -> i.getGroupId() != SalesmanNpcScene.GROUP_ID)
+                        .filter(i -> !this.npcBornEntrySet.contains(i)).toList();
 
         List<SceneNpcBornEntry> sceneNpcBornEntries = new ArrayList<>();
         sceneNpcBornCanidates.forEach(

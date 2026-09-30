@@ -22,6 +22,7 @@ class SalesmanActivityTest {
     }
     @BeforeEach void resources() throws Exception {
         var gson=new Gson(); var root=Path.of("resources/ExcelBinOutput");
+        GameData.getSceneNpcBornData().put(3,gson.fromJson(Files.readString(Path.of("resources/BinOutput/Scene/SceneNpcBorn/scene3_npcborn.json")),emu.grasscutter.data.binout.SceneNpcBornData.class));
         for (var row:gson.fromJson(Files.readString(root.resolve("ActivitySalesmanExcelConfigData.json")),SalesmanData[].class)) GameData.getSalesmanDataMap().put(row.getId(),row);
         for (var row:gson.fromJson(Files.readString(root.resolve("ActivitySalesmanDailyExcelConfigData.json")),SalesmanDailyData[].class)) {row.onLoad();GameData.getSalesmanDailyDataMap().put(row.getId(),row);}
         for (var row:gson.fromJson(Files.readString(root.resolve("RewardExcelConfigData.json")),RewardData[].class)) if(row.getId()>=470001&&row.getId()<=470007) {row.onLoad();GameData.getRewardDataMap().put(row.getId(),row);}
@@ -30,6 +31,7 @@ class SalesmanActivityTest {
     }
     @AfterEach void cleanup() {
         GameData.getSalesmanDataMap().clear(); GameData.getSalesmanDailyDataMap().clear(); GameData.getActivityDataMap().remove(5003);
+        GameData.getSceneNpcBornData().remove(3);
         for(int id=470001;id<=470007;id++) GameData.getRewardDataMap().remove(id);
     }
     @Test void configurationInstallsDedicatedHandlerAndRejectsMissingRewardsBeforePublish() {
@@ -59,5 +61,28 @@ class SalesmanActivityTest {
         saved.setScheduleId(5003010); handler.onInitPlayerActivityData(saved);
         assertTrue(SalesmanSchedule.progress(saved).deliveredDays().isEmpty());
         assertEquals(SalesmanStatusType.SALESMAN_STATUS_NONE,SalesmanActivityHandler.detail(saved,config,NOW).getStatus());
+    }
+
+    @Test void replayConditionsFollowCurrentIntroductionAndUnusedChancesWithoutAQuestDocument() {
+        var config=config(5003009);
+        var data=PlayerActivityData.of().activityId(5003).scheduleId(5003009).detail("{}").build();
+        assertEquals(List.of(5003001,5003101),SalesmanActivityHandler.conditions(data,config,12,NOW));
+        var progress=SalesmanSchedule.progress(data); progress.talk(1); data.setDetail(progress);
+        assertEquals(List.of(5003001),SalesmanActivityHandler.conditions(data,config,12,NOW));
+        progress.deliver(1); data.setDetail(progress);
+        assertEquals(List.of(5003002),SalesmanActivityHandler.conditions(data,config,12,NOW));
+        long tomorrow=Instant.parse("2026-09-30T20:00:00Z").toEpochMilli();
+        assertEquals(List.of(5003001,5003002,5003102),SalesmanActivityHandler.conditions(data,config,12,tomorrow));
+        assertTrue(SalesmanActivityHandler.conditions(data,config,11,NOW).isEmpty());
+        config.setDisabled(true); assertTrue(SalesmanActivityHandler.conditions(data,config,12,NOW).isEmpty());
+        config.setDisabled(false); data.setScheduleId(5003010);
+        assertTrue(SalesmanActivityHandler.conditions(data,config,12,NOW).isEmpty());
+    }
+
+    @Test void configurationRejectsIncompleteNpcSuitesBeforePublishing() {
+        GameData.getSceneNpcBornData().get(3).getBornPosList().removeIf(entry -> entry.getGroupId()==305003001
+                && entry.getSuiteIdList().equals(List.of(7)));
+        assertFalse(emu.grasscutter.game.activity.salesman.SalesmanNpcScene.resourcesAvailable());
+        assertThrows(IllegalArgumentException.class,()->ActivityManager.prepareConfiguration(List.of(config(5003009))));
     }
 }

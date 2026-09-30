@@ -3,6 +3,7 @@ package emu.grasscutter.game.activity.condition;
 import emu.grasscutter.Grasscutter;
 import emu.grasscutter.data.excels.activity.ActivityCondExcelConfigData;
 import emu.grasscutter.game.activity.*;
+import emu.grasscutter.game.activity.salesman.SalesmanActivityHandler;
 import emu.grasscutter.game.activity.condition.all.UnknownActivityConditionHandler;
 import emu.grasscutter.game.quest.enums.LogicType;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -54,6 +55,10 @@ public class BasicActivityConditionExecutor implements ActivityConditionExecutor
             return false;
         }
         ActivityConfigItem activityConfig = activityConfigItemMap.get(activity.getActivityId());
+        if (activityConfig != null && activityConfig.getActivityHandler() instanceof SalesmanActivityHandler) {
+            return activity.getPlayer() != null && SalesmanActivityHandler.conditions(activity, activityConfig,
+                    activity.getPlayer().getLevel(), System.currentTimeMillis()).contains(activityCondId);
+        }
         List<BooleanSupplier> predicates =
                 condData.getCond().stream()
                         .map(

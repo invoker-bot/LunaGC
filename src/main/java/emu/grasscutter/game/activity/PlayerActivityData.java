@@ -65,6 +65,9 @@ public class PlayerActivityData {
         this.detail = JsonUtils.encode(detail);
     }
 
+    /** Restore an already serialized detail after an uncommitted change, without double encoding. */
+    public void setDetailJson(String detail) { this.detail = detail; }
+
     public synchronized int takeWatcherReward(int watcherId) {
         if (player == null || !player.getActivityManager().isActivityActive(activityId)
                 || player.getActivityManager().getPlayerActivityDataMap().get(activityId) != this) {

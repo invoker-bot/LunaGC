@@ -22,8 +22,18 @@ public final class HandlerSalesmanDeliverItemReq extends PacketHandler {
             if (handler != null && handler.getActivityConfigItem().getScheduleId() == request.getScheduleId()) {
                 var data = manager.getPlayerActivityDataMap().get(SalesmanSchedule.ACTIVITY_ID);
                 if (data != null) try {
-                    result = SalesmanDelivery.deliver(data, handler.getActivityConfigItem(), player.getLevel(),
-                            System.currentTimeMillis(), costs -> player.getInventory().payItems(costs, 1, ActionReason.SalesmanDeliverItem), data::save);
+                    var scene = player.getScene();
+                    long now = System.currentTimeMillis();
+                    int day = SalesmanSchedule.dayIndex(handler.getActivityConfigItem(), now);
+                    if (day < 1 || day > 7) result = Retcode.RET_ACTIVITY_CLOSE_VALUE;
+                    else if (player.getLevel() < 12) result = Retcode.RET_PLAYER_LEVEL_LESS_THAN_VALUE;
+                    else {
+                        if (scene != null) scene.getSalesmanSceneController().updatePlayer(player, now);
+                        if (scene == null || !scene.getSalesmanSceneController().canInteract(player, now)
+                            || !SalesmanSchedule.progress(data).hasTalked(day)) result = Retcode.RET_NOT_CURRENT_TALK_VALUE;
+                        else result = SalesmanDelivery.deliver(data, handler.getActivityConfigItem(), player.getLevel(),
+                            now, costs -> player.getInventory().payItems(costs, 1, ActionReason.SalesmanDeliverItem), data::save);
+                    }
                 } catch (RuntimeException failed) {
                     Grasscutter.getLogger().error("Salesman delivery failed for UID {} schedule {}; check pending activity progress before retrying",
                             player.getUid(), request.getScheduleId(), failed);

@@ -6,6 +6,9 @@ import static emu.grasscutter.game.quest.enums.QuestContent.*;
 import emu.grasscutter.data.GameData;
 import emu.grasscutter.data.binout.MainQuestData.TalkData;
 import emu.grasscutter.game.player.*;
+import emu.grasscutter.Grasscutter;
+import emu.grasscutter.game.activity.salesman.*;
+import emu.grasscutter.net.proto.RetcodeOuterClass.Retcode;
 import emu.grasscutter.server.event.player.PlayerNpcTalkEvent;
 import lombok.NonNull;
 
@@ -60,5 +63,28 @@ public final class TalkManager extends BasePlayerManager {
         if (mainQuest == null) return;
 
         mainQuest.getTalks().put(talkId, new TalkData(talkId, ""));
+    }
+
+    /** Activity 5003 has no main quest document; its seven introductions belong to replay progress. */
+    public int triggerSalesmanTalk(int talkId, int npcEntityId) {
+        var player = getPlayer();
+        var talk = GameData.getTalkConfigDataMap().get(talkId);
+        if (!SalesmanTalk.isSalesmanTalk(talkId) || talk == null || talk.getQuestId() != SalesmanSchedule.ACTIVITY_ID
+                || talk.getNpcId() == null || !talk.getNpcId().contains(SalesmanNpcScene.NPC_ID)) return Retcode.RET_NOT_CURRENT_TALK_VALUE;
+        if (!new PlayerNpcTalkEvent(player, talk, talkId, npcEntityId).call()) return Retcode.RET_FAIL_VALUE;
+        if (player.getScene() == null) return Retcode.RET_NOT_CURRENT_TALK_VALUE;
+        try {
+            int result = player.getScene().getSalesmanSceneController().completeTalk(player, talkId, System.currentTimeMillis());
+            if (result == 0) {
+                var quests = player.getQuestManager();
+                quests.queueEvent(QUEST_CONTENT_COMPLETE_ANY_TALK, talkId);
+                quests.queueEvent(QUEST_CONTENT_COMPLETE_TALK, talkId);
+                quests.queueEvent(QUEST_COND_COMPLETE_TALK, talkId);
+            }
+            return result;
+        } catch (RuntimeException failed) {
+            Grasscutter.getLogger().error("Salesman talk failed for UID {} talk {}", player.getUid(), talkId, failed);
+            return Retcode.RET_SVR_ERROR_VALUE;
+        }
     }
 }
