@@ -4,7 +4,7 @@ import java.util.*;
 
 /** Consent and preparation for one world's Crucible, with immutable round membership. */
 public final class CrucibleInvitation {
-    public enum Phase { IDLE, INVITING, PREPARING, STARTING, BATTLE }
+    public enum Phase { IDLE, INVITING, MATCHING, PREPARING, STARTING, BATTLE }
     public enum Reply { INVALID, ACCEPTED, ALL_AGREED, REJECTED, TIMED_OUT }
     public enum Event { PREPARE, BATTLE, INTERRUPT }
     public record Context(int scheduleId, long sceneTicket, int ownerUid, Map<Integer, Integer> members) {
@@ -18,6 +18,7 @@ public final class CrucibleInvitation {
     private long inviteDeadline;
     private long prepareDeadline;
     private int prepareSeconds;
+    private boolean matching;
 
     public synchronized Phase phase() { return phase; }
     public synchronized Context context() { return context; }
@@ -36,6 +37,10 @@ public final class CrucibleInvitation {
     }
 
     public synchronized boolean start(Context next, long now, int inviteSeconds, int prepareSeconds) {
+        return start(next, now, inviteSeconds, prepareSeconds, true);
+    }
+
+    public synchronized boolean start(Context next, long now, int inviteSeconds, int prepareSeconds, boolean skipMatch) {
         if (phase != Phase.IDLE) return false;
         Objects.requireNonNull(next);
         if (next.scheduleId() <= 0 || next.ownerUid() <= 0 || next.members().isEmpty()
@@ -51,6 +56,7 @@ public final class CrucibleInvitation {
         agreed.add(next.ownerUid());
         inviteDeadline = deadline;
         this.prepareSeconds = prepareSeconds;
+        matching = !skipMatch;
         phase = Phase.INVITING;
         if (next.members().size() == 1) prepare(now);
         return true;
@@ -70,13 +76,27 @@ public final class CrucibleInvitation {
     }
 
     private void prepare(long now) {
+        if (matching) {
+            inviteDeadline = Math.addExact(now, 300);
+            prepareDeadline = 0;
+            phase = Phase.MATCHING;
+            return;
+        }
         prepareDeadline = Math.addExact(now, prepareSeconds);
         phase = Phase.PREPARING;
     }
 
     public synchronized boolean expire(long now) {
-        if (phase != Phase.INVITING || now < inviteDeadline) return false;
+        if (phase != Phase.INVITING && phase != Phase.MATCHING || now < inviteDeadline) return false;
         cancel();
+        return true;
+    }
+
+    /** Matchmaking already obtained consent from every participant before merging worlds. */
+    public synchronized boolean startPrepared(Context next, long now, int prepareSeconds) {
+        if (!start(next, now, 1, prepareSeconds, true)) return false;
+        agreed.addAll(next.members().keySet());
+        prepare(now);
         return true;
     }
 

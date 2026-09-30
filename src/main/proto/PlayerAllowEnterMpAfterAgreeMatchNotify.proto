@@ -1,0 +1,7 @@
+// Fields used by MP_PLAY, recovered from the supplied 7.1 native client; see docs/CRUCIBLE_PROTOCOL.md.
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PlayerAllowEnterMpAfterAgreeMatchNotifyOuterClass";
+message PlayerAllowEnterMpAfterAgreeMatchNotify {
+  uint32 target_uid = 10;
+}

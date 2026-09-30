@@ -14,6 +14,7 @@ import emu.grasscutter.data.excels.activity.ActivityData;
 import emu.grasscutter.data.excels.activity.ActivityShopData;
 import emu.grasscutter.data.excels.activity.ActivityWatcherData;
 import emu.grasscutter.data.excels.activity.MpPlayGroupData;
+import emu.grasscutter.data.excels.activity.MpPlayMatchData;
 import emu.grasscutter.data.excels.avatar.*;
 import emu.grasscutter.data.excels.codex.*;
 import emu.grasscutter.data.excels.dungeon.*;
@@ -127,6 +128,9 @@ public final class GameData {
 
     @Getter
     private static final Int2ObjectMap<MpPlayGroupData> mpPlayGroupDataMap = new Int2ObjectOpenHashMap<>();
+
+    @Getter
+    private static final Int2ObjectMap<MpPlayMatchData> mpPlayMatchDataMap = new Int2ObjectOpenHashMap<>();
 
     @Getter
     private static final Int2ObjectMap<ActivityShopData> activityShopDataMap =

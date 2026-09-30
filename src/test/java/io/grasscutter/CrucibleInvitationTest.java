@@ -12,6 +12,22 @@ import org.junit.jupiter.api.Test;
 class CrucibleInvitationTest {
     private static Context team() { return new Context(5001005, 42, 10001, Map.of(10001, 8, 10002, 6)); }
 
+    @Test void matchingConsentCannotTriggerLocalPreparationBeforeWorldsAreMerged() {
+        var invitation = new CrucibleInvitation();
+        invitation.start(team(), 1000, 30, 20, false);
+        assertEquals(Reply.ALL_AGREED, invitation.reply(10002, true, 1001));
+        assertEquals(Phase.MATCHING, invitation.phase());
+        assertEquals(0, invitation.prepareEndTime());
+        assertFalse(invitation.beginBattle(2000));
+        assertFalse(invitation.acceptsEvent(invitation.serial(), Event.PREPARE));
+        assertFalse(invitation.expire(1300));
+        assertTrue(invitation.expire(1301));
+        assertTrue(invitation.startPrepared(team(), 2000, 20));
+        assertEquals(Phase.PREPARING, invitation.phase());
+        assertEquals(2020, invitation.prepareEndTime());
+        assertTrue(invitation.beginBattle(2020));
+    }
+
     @Test void guestsMustConsentAndTheRosterCannotChangeMidPreparation() {
         var invitation = new CrucibleInvitation();
         assertTrue(invitation.start(team(), 1000, 30, 20));

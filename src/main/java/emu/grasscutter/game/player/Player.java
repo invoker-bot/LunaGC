@@ -1533,6 +1533,8 @@ public class Player implements PlayerHook, FieldFetch {
     public void onLogout() {
         try {
 
+            this.getServer().getCrucibleMatchSystem().cancel(this);
+
             this.getServer().getChatSystem().clearHistoryOnLogout(this);
 
             getStaminaManager().stopSustainedStaminaHandler();

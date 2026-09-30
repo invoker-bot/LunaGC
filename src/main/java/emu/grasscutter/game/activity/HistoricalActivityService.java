@@ -43,7 +43,7 @@ public final class HistoricalActivityService {
             row.put("endTime", config == null ? 0 : config.getEndTime().getTime() / 1000);
             row.put("restoration", event.getActivityId() == 5001 ? "还原中" : "待还原");
             row.put("restorationNote", event.getActivityId() == 5001
-                    ? "已接入场景、13 项任务、7.1 提交通知及当前世界邀请/准备/中断；跨世界匹配、奖励和完整客户端挑战待适配与验证"
+                    ? "已接入场景、13 项任务、7.1 通知、邀请/准备/中断及跨世界整队匹配；多人实机、奖励和完整客户端挑战待适配与验证"
                     : !resource ? "本资源版本缺少活动记录，暂不能开启"
                     : !event.hasKnownType() ? "活动类型编号尚未核实，暂不能开启"
                     : "可管理活动排期；专属玩法尚未完成客户端验证");

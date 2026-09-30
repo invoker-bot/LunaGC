@@ -24,6 +24,11 @@ public class MultiplayerSystem extends BaseGameSystem {
             return;
         }
 
+        if (getServer().getCrucibleMatchSystem().isReserved(player) || getServer().getCrucibleMatchSystem().isReserved(target)) {
+            player.sendPacket(new PacketPlayerApplyEnterMpResultNotify(target, false, ReasonOuterClass.Reason.Reason_HOST_IN_MATCH));
+            return;
+        }
+
         if (player.getWorld().isMultiplayer()) {
             return;
         }
@@ -42,6 +47,12 @@ public class MultiplayerSystem extends BaseGameSystem {
     }
 
     public void applyEnterMpReply(Player hostPlayer, int applyUid, boolean isAgreed) {
+        synchronized (getServer().getCrucibleMatchSystem()) {
+            applyEnterMpReplyLocked(hostPlayer, applyUid, isAgreed);
+        }
+    }
+
+    private void applyEnterMpReplyLocked(Player hostPlayer, int applyUid, boolean isAgreed) {
 
         CoopRequest request = hostPlayer.getCoopRequests().get(applyUid);
         if (request == null || request.isExpired()) {
@@ -50,6 +61,11 @@ public class MultiplayerSystem extends BaseGameSystem {
 
         Player requester = request.getRequester();
         hostPlayer.getCoopRequests().remove(applyUid);
+
+        if (getServer().getCrucibleMatchSystem().isReserved(requester) || getServer().getCrucibleMatchSystem().isReserved(hostPlayer)) {
+            requester.sendPacket(new PacketPlayerApplyEnterMpResultNotify(hostPlayer, false, ReasonOuterClass.Reason.Reason_HOST_IN_MATCH));
+            return;
+        }
 
         if (requester.getWorld().isMultiplayer()) {
             request.getRequester().sendPacket(new PacketPlayerApplyEnterMpResultNotify(hostPlayer, false, ReasonOuterClass.Reason.Reason_PLAYER_CANNOT_ENTER_MP));
@@ -83,6 +99,14 @@ public class MultiplayerSystem extends BaseGameSystem {
     }
 
     public boolean leaveCoop(Player player) {
+        synchronized (getServer().getCrucibleMatchSystem()) {
+            return leaveCoopLocked(player);
+        }
+    }
+
+    private boolean leaveCoopLocked(Player player) {
+
+        getServer().getCrucibleMatchSystem().cancel(player);
 
         if (player.getCurHomeWorld().isInHome(player)) {
             return false;
@@ -108,6 +132,12 @@ public class MultiplayerSystem extends BaseGameSystem {
     }
 
     public boolean kickPlayer(Player player, int targetUid) {
+        synchronized (getServer().getCrucibleMatchSystem()) {
+            return kickPlayerLocked(player, targetUid);
+        }
+    }
+
+    private boolean kickPlayerLocked(Player player, int targetUid) {
 
         if (!player.getWorld().isMultiplayer() || player.getWorld().getHost() != player) {
             return false;
@@ -118,6 +148,8 @@ public class MultiplayerSystem extends BaseGameSystem {
         if (victim == null || victim == player) {
             return false;
         }
+
+        getServer().getCrucibleMatchSystem().cancel(victim);
 
         if (victim.getSceneLoadState() != SceneLoadState.LOADED) {
             return false;

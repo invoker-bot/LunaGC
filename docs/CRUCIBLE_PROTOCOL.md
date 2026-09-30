@@ -94,6 +94,63 @@
 现有 `GameSession.send` 会拦截未恢复编号的包，提交请求的服务端处理不依赖该响应。
 这尚不能证明客户端完整交互已正常，仍需实机核对。
 
+## 跨世界匹配
+
+以下 13 条匹配消息补入 MP_PLAY 使用的字段。新增确认消息以房主/队员的调用方向命名；
+未识别的嵌套消息和其他玩法专用字段保留为 protobuf unknown fields。
+
+| 消息 | 类型索引 | 包号 | 包号函数 | 读 / 写函数 |
+| --- | ---: | ---: | --- | --- |
+| `PlayerStartMatchReq` | 62090 | 25847 | `0x1474e2f70` | 写 `0x1474e22f0` |
+| `PlayerStartMatchRsp` | 37967 | 1006 | `0x148397700` | 读 `0x148397900` |
+| `PlayerCancelMatchReq` | 57322 | 7618 | `0x153dce490` | 写 `0x153dce260` |
+| `PlayerCancelMatchRsp` | 17808 | 24288 | `0x147b45f00` | 读 `0x147b45ff0` |
+| `PlayerMatchInfoNotify` | 39689 | 28008 | `0x14804d4f0` | 读 `0x14804db60` |
+| `PlayerMatchSuccNotify` | 31068 | 29718 | `0x152c871b0` | 读 `0x152c86d80` |
+| `PlayerMatchStopNotify` | 35152 | 20667 | `0x151a892e0` | 读 `0x151a88f30` |
+| `PlayerMatchAgreedResultNotify` | 65542 | 6439 | `0x15194a510` | 读 `0x15194a520` |
+| `PlayerConfirmMatchReq` | 17694 | 3359 | `0x14a1eafe0` | 写 `0x14a1eb0f0` |
+| `PlayerConfirmMatchRsp` | 77102 | 2735 | `0x1537e9540` | 读 `0x1537e95d0` |
+| `PlayerGuestConfirmMatchReq` | 84979 | 21621 | `0x14f0d1fa0` | 写 `0x14f0d1da0` |
+| `PlayerGuestConfirmMatchRsp` | 71280 | 27953 | `0x15400fa50` | 读 `0x15400f5c0` |
+| `PlayerAllowEnterMpAfterAgreeMatchNotify` | 64758 | 24608 | `0x14c0593c0` | 写 `0x14c059480` |
+
+| 消息 | 字段编号 |
+| --- | --- |
+| StartReq | `match_param_list` 2；`mp_play_id` 7；`match_id` 8；`dungeon_id` 11；`match_type` 12 |
+| StartRsp | `retcode` 3；`match_type` 4；`dungeon_id` 8；`match_id` 11；`mp_play_id` 15 |
+| CancelReq / Rsp | 请求 `match_type` 15；响应 `match_type` 10、`retcode` 12 |
+| InfoNotify | `match_id` 1；`mp_play_id` 2；`match_type` 3；`host_uid` 6；`match_param_list` 8；`dungeon_id` 12 |
+| SuccNotify | `match_type` 1；`mp_play_id` 4；`confirm_end_time` 6；`host_uid` 10；`dungeon_id` 13 |
+| StopNotify | `reason` 1；`match_type` 4；`host_uid` 6 |
+| AgreedResultNotify | `reason` 9；`target_uid` 10；`match_type` 15 |
+| Own-world ConfirmReq / Rsp | 请求 `match_type` 2、`is_agreed` 12；响应 `match_type` 5、`match_id` 6、`is_agreed` 9、`retcode` 13 |
+| Guest ConfirmReq / Rsp | 请求 `is_agreed` 7、`match_type` 11；响应 `match_id` 1、`is_agreed` 4、`retcode` 7、`match_type` 11 |
+| AllowEnterNotify | `target_uid` 10 |
+
+`StartReq.match_param_list` 的编码器在 `0x1474e2f40` 用标签 18 初始化。
+额外嵌套消息的写入标签为连续两字节 `8a 6e`，即字段 1761；不能把它拆成两个字段。
+`InfoNotify.match_param_list` 接受标签 64 / 66（非压缩 / 压缩）。
+`StopNotify` 在 `0x151a88f70` 旋转标签后使用跳转表 `0x151a8906c`，
+表项 1、4、6 分别写入对象 `+0x20`、`+0x18`、`+0x1c`。
+
+确认入口 `0x14f74bda0` 调用 `0x14c289ca0`：比较当前玩家 UID 与当前世界房主 UID，
+在他人的世界时调用 `0x14f7210d0`（类指针 `0x1457ed018`，21621），
+在自己的世界时调用 `0x14f72e9d0`（`0x1457e55e8`，3359）。
+GCG 匹配成功分支 `0x14f73d410` 的确认发送同样使用 3359；
+对应 2735 的响应处理函数 `0x14f744400` 保留 GCG 成功状态更新，另一个响应处理函数 `0x14f744970` 不含该分支。
+响应与调用方向的配对据此还原，仍需多人客户端核验。
+
+`SuccNotify` 处理函数 `0x14f720220` 将对象 `+0x34` 放入弹窗截止时间；GCG 分支用当前服务器 epoch 秒比较同一字段。
+`AgreedResultNotify` 处理函数 `0x14f744f70` 在 reason = 0 时把 `target_uid` 传给 `0x14f72dd60`，
+后者发送类指针 `0x1457ed550` 对应的 24608。因此入队许可是客户端发往服务端的消息，不能当作服务器通知广播。
+
+类型 33880 的枚举名称包含 MpPlay；MP 页面按钮的玩法 2 分支进入房主检查及邀请。
+`StopNotify.reason` 使用历史 [MatchReason](https://github.com/Hiro420/3.5_protos/blob/d42eec84da01b1b28abb40d8565fbbcb306a8969/deobfuscated/MatchReason.proto)
+的值域；本地枚举名称完全对应，客户端停止处理函数在 reason = 3 时进入超时提示。
+其他原因值尚未逐项提取原生常量，使用 uint32 保留 wire 值，不将该枚举宣称为完整的 7.1 常量导出。
+成功结果 reason = 0 已由上述处理分支核对；失败枚举不是 StopNotify 的同一类型。
+
 ## 字段编号
 
 表中偏移是客户端对象的字段存储偏移。标签值为 `field_number * 8 + wire_type`。
@@ -132,7 +189,11 @@
 - 邀请等待 30 秒，拒绝或超时发送失败结果；准备阶段的队员离场、加载状态变化或越出半径会广播中断，
   执行原 Lua 中断事件。旧邀请序号使迟到的准备和开战事件失效，旧中断也不能重新启用下一次准备的主炉。
   房主离开正在进行的挑战会取消本轮。活动卸载同样取消邀请和准备。
-- 当前只支持 `is_skip_match = true` 的本世界队伍；跨世界匹配请求返回 `RET_MP_MATCH_PLAY_NOT_OPEN`。
+- `is_skip_match = false` 时，邀请同意后进入跨世界匹配；仅处理 MP_PLAY 1，其他玩法返回未开放。
+  固定队伍以 2–4 人合并，每名玩家再次确认匹配并发送目标房主的入队许可后，由服务器主循环转移世界。
+  世界等级、玩家对象身份、排期、邀请代次与队伍成员在等待期间重复验证；
+  全部成员加载场景后才接入原 Lua 准备。拒绝、取消、掉线和各阶段超时释放整个匹配。
+  普通联机的接受、退出和踢人操作与匹配转移串行，防止正常组队在匹配转移中改变成员。
   尚未提供挑战结算奖励，邀请通知的 `is_remain_reward` 使用默认值 false。
 - `ExecuteGadgetLuaReq` 的烘炉入口检查安装中的主炉、当前活动排期、场景代次、
   玩家在场、本轮参与资格与挑战时限。`param3` 必须属于发送玩家的队伍实体，
@@ -142,7 +203,7 @@
 测试先验证缺失消息会失败，再核对所有字段编号、实际发包的包号和字节，
 覆盖 repeated 的两种编码、重开后的旧快照、取消、延迟超时及现有 Lua / 场景回归。
 这些结果确认服务端行为和消息编码；邀请弹窗、准备及完整客户端挑战、点名效果、
-结算称号和体力奖励仍需实机验证，跨世界匹配与结算奖励仍待接入。
+结算称号和体力奖励仍需实机验证；跨世界匹配已接入服务端，匹配弹窗、确认配对、合队和准备仍待多人实机验证，结算奖励仍待接入。
 
 ## 重复提取包号
 

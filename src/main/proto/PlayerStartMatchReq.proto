@@ -1,0 +1,12 @@
+// Fields used by MP_PLAY, recovered from the supplied 7.1 native client; see docs/CRUCIBLE_PROTOCOL.md.
+syntax = "proto3";
+import "MatchType.proto";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PlayerStartMatchReqOuterClass";
+message PlayerStartMatchReq {
+  repeated uint32 match_param_list = 2;
+  uint32 mp_play_id = 7;
+  uint32 match_id = 8;
+  uint32 dungeon_id = 11;
+  recovered.p_MatchType.MatchType match_type = 12;
+}

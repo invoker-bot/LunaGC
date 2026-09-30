@@ -100,8 +100,10 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
         if (invitation.phase() != CrucibleInvitation.Phase.IDLE || !gadget.canStartGadgetPlay()
                 || interruptCallback != null && !interruptCallback.isDone())
             return new Check(Retcode.RET_MP_IN_MP_PLAY_BATTLE, 0);
-        // Cross-world matchmaking is a separate protocol; never start locally for a match request.
-        if (!skipMatch) return new Check(Retcode.RET_MP_MATCH_PLAY_NOT_OPEN, 0);
+        var match = GameData.getMpPlayMatchDataMap().get(1);
+        if (!skipMatch && (match == null || !match.isAutoMatch() || !"MP_PLAY_CRUCIBLE".equals(match.getPlayType())
+                || match.getMinPlayers() != 2 || match.getMaxPlayers() != 4))
+            return new Check(Retcode.RET_MP_MATCH_PLAY_NOT_OPEN, 0);
         if (members.isEmpty() || members.size() > 4 || !members.contains(owner))
             return new Check(Retcode.RET_MP_WORLD_IS_FULL, 0);
         for (var member : members) {
@@ -127,9 +129,10 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
             var members = new HashMap<Integer, Integer>();
             for (var member : players) members.put(member.getUid(), member.getWorldLevel());
             invitation.start(new CrucibleInvitation.Context(lifecycle.scheduleId(), lifecycle.ticket(), owner.getUid(), members),
-                    System.currentTimeMillis() / 1000, INVITE_SECONDS, GameData.getMpPlayGroupDataMap().get(1).getPrepareTime());
+                    System.currentTimeMillis() / 1000, INVITE_SECONDS, GameData.getMpPlayGroupDataMap().get(1).getPrepareTime(), skipMatch);
             prepareCallback = battleCallback = null;
             if (invitation.phase() == CrucibleInvitation.Phase.PREPARING) beginPreparation();
+            else if (invitation.phase() == CrucibleInvitation.Phase.MATCHING) sendToMembers(PacketMpPlay.inviteResult(1, true));
             else sendToMembers(PacketMpPlay.ownerInvite(1, INVITE_SECONDS));
         }
     }
@@ -159,7 +162,73 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
             if (reply != CrucibleInvitation.Reply.TIMED_OUT) sendToMembers(PacketMpPlay.guestReply(1, guest.getUid(), agree));
             if (reply == CrucibleInvitation.Reply.REJECTED || reply == CrucibleInvitation.Reply.TIMED_OUT)
                 sendToMembers(PacketMpPlay.inviteResult(1, false));
-            else if (reply == CrucibleInvitation.Reply.ALL_AGREED) beginPreparation();
+            else if (reply == CrucibleInvitation.Reply.ALL_AGREED) {
+                if (invitation.phase() == CrucibleInvitation.Phase.MATCHING) sendToMembers(PacketMpPlay.inviteResult(1, true));
+                else beginPreparation();
+            }
+        }
+    }
+
+    public record MatchingTeam(Scene source, CrucibleInvitation.Context context, long serial, List<Player> players) {
+        public MatchingTeam { players = List.copyOf(players); }
+    }
+
+    /** Direct solo matchmaking is allowed; a party must have completed the invitation first. */
+    public MatchingTeam matchingTeam(Player owner, int playId) {
+        return matchingTeam(owner, playId, true);
+    }
+
+    public MatchingTeam matchingTeam(Player owner, int playId, boolean directSolo) {
+        synchronized (scene) {
+            var players = List.copyOf(scene.getWorld().getPlayers());
+            if (directSolo && invitation.phase() == CrucibleInvitation.Phase.IDLE && players.size() == 1
+                    && checkOwner(owner, playId, false, players).retcode() == 0) {
+                invitation.start(new CrucibleInvitation.Context(lifecycle.scheduleId(), lifecycle.ticket(), owner.getUid(),
+                        Map.of(owner.getUid(), owner.getWorldLevel())), System.currentTimeMillis() / 1000,
+                        INVITE_SECONDS, GameData.getMpPlayGroupDataMap().get(1).getPrepareTime(), false);
+            }
+            var context = invitation.context();
+            if (playId != 1 || owner != scene.getWorld().getHost() || context == null
+                    || invitation.phase() != CrucibleInvitation.Phase.MATCHING || context.ownerUid() != owner.getUid()) return null;
+            var snapshot = new MatchingTeam(scene, context, invitation.serial(), players);
+            return isMatching(snapshot) ? snapshot : null;
+        }
+    }
+
+    public boolean isMatching(MatchingTeam team) {
+        synchronized (scene) {
+            var gadget = mainGadget();
+            return team.source() == scene && invitation.isCurrent(team.serial())
+                    && invitation.phase() == CrucibleInvitation.Phase.MATCHING && invitation.context().equals(team.context())
+                    && lifecycle.isCurrent(team.context().sceneTicket()) && scheduleCurrent()
+                    && scene.getWorld().getHost().getUid() == team.context().ownerUid()
+                    && scene.getWorld().getWorldLevel() == team.context().members().get(team.context().ownerUid())
+                    && gadget != null && gadget.canStartGadgetPlay()
+                    && List.copyOf(scene.getWorld().getPlayers()).size() == team.players().size()
+                    && team.players().stream().allMatch(player -> team.context().members().containsKey(player.getUid())
+                            && player.getWorldLevel() == team.context().members().get(player.getUid())
+                            && checkMember(player).retcode() == 0);
+        }
+    }
+
+    /** Does not call matchmaking under the scene lock; the server tick observes invalidation. */
+    public void releaseMatching(long serial) {
+        synchronized (scene) {
+            if (invitation.isCurrent(serial) && invitation.phase() == CrucibleInvitation.Phase.MATCHING) invitation.cancel();
+        }
+    }
+
+    public boolean startMatchedPreparation(Player owner, int scheduleId, List<Player> players) {
+        synchronized (scene) {
+            if (scheduleId != lifecycle.scheduleId() || checkOwner(owner, 1, true, players).retcode() != 0
+                    || !new HashSet<>(scene.getWorld().getPlayers()).equals(new HashSet<>(players))) return false;
+            var members = new HashMap<Integer, Integer>();
+            players.forEach(player -> members.put(player.getUid(), player.getWorldLevel()));
+            if (!invitation.startPrepared(new CrucibleInvitation.Context(scheduleId, lifecycle.ticket(), owner.getUid(), members),
+                    System.currentTimeMillis() / 1000, GameData.getMpPlayGroupDataMap().get(1).getPrepareTime())) return false;
+            prepareCallback = battleCallback = null;
+            beginPreparation();
+            return true;
         }
     }
 
@@ -198,7 +267,7 @@ public final class CrucibleSceneController implements CrucibleSceneLifecycle.Gro
         var phase = invitation.phase();
         if (!invitation.cancel()) return;
         if (phase == CrucibleInvitation.Phase.INVITING) sendToMembers(PacketMpPlay.inviteResult(1, false));
-        else if (phase != CrucibleInvitation.Phase.BATTLE) {
+        else if (phase != CrucibleInvitation.Phase.BATTLE && phase != CrucibleInvitation.Phase.MATCHING) {
             scene.broadcastPacket(PacketMpPlay.interrupt(1));
             if (script && lifecycle.isMounted()) interruptCallback = scene.getScriptManager()
                     .callEvent(new ScriptArgs(MAIN_GROUP, EventType.EVENT_MP_PLAY_PREPARE_INTERRUPT, 1));

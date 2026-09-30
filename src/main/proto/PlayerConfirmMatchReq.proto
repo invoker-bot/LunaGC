@@ -1,0 +1,9 @@
+// Fields used by MP_PLAY, recovered from the supplied 7.1 native client; see docs/CRUCIBLE_PROTOCOL.md.
+syntax = "proto3";
+import "MatchType.proto";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PlayerConfirmMatchReqOuterClass";
+message PlayerConfirmMatchReq {
+  recovered.p_MatchType.MatchType match_type = 2;
+  bool is_agreed = 12;
+}

@@ -7,6 +7,7 @@ import emu.grasscutter.*;
 import emu.grasscutter.Grasscutter.ServerRunMode;
 import emu.grasscutter.database.DatabaseHelper;
 import emu.grasscutter.game.Account;
+import emu.grasscutter.game.activity.crucible.CrucibleMatchSystem;
 import emu.grasscutter.game.battlepass.BattlePassSystem;
 import emu.grasscutter.game.chat.ChatSystem;
 import emu.grasscutter.game.chat.ChatSystemHandler;
@@ -68,6 +69,7 @@ public final class GameServer extends KcpServer implements Iterable<Player> {
     private final GachaSystem gachaSystem;
     private final ShopSystem shopSystem;
     private final MultiplayerSystem multiplayerSystem;
+    private final CrucibleMatchSystem crucibleMatchSystem;
     private final HomeWorldMPSystem homeWorldMPSystem;
     private final DungeonSystem dungeonSystem;
     private final ExpeditionSystem expeditionSystem;
@@ -117,6 +119,7 @@ public final class GameServer extends KcpServer implements Iterable<Player> {
             this.gachaSystem = null;
             this.shopSystem = null;
             this.multiplayerSystem = null;
+            this.crucibleMatchSystem = null;
             this.homeWorldMPSystem = null;
             this.dungeonSystem = null;
             this.expeditionSystem = null;
@@ -166,6 +169,7 @@ public final class GameServer extends KcpServer implements Iterable<Player> {
         this.gachaSystem = new GachaSystem(this);
         this.shopSystem = new ShopSystem(this);
         this.multiplayerSystem = new MultiplayerSystem(this);
+        this.crucibleMatchSystem = new CrucibleMatchSystem(this);
         this.homeWorldMPSystem = new HomeWorldMPSystem(this);
         this.dungeonSystem = new DungeonSystem(this);
         this.dropSystem = new DropSystem(this);
@@ -316,6 +320,12 @@ public final class GameServer extends KcpServer implements Iterable<Player> {
                         return false;
                     }
                 });
+
+        try {
+            this.crucibleMatchSystem.onTick();
+        } catch (Throwable e) {
+            Grasscutter.getLogger().error("Crucible matchmaking threw while ticking.", e);
+        }
 
         this.players
                 .values()

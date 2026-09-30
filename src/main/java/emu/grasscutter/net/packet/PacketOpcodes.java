@@ -1256,6 +1256,12 @@ public final class PacketOpcodes {
     public static final int PlayerApplyEnterMpAfterMatchAgreedNotify = 3244;
     public static final int PlayerCancelMatchReq = 7618;
     public static final int PlayerCancelMatchRsp = 24288;
+    // Supplied 7.1 native getters and owner/guest dispatch; see docs/CRUCIBLE_PROTOCOL.md.
+    public static final int PlayerConfirmMatchReq = 3359;
+    public static final int PlayerConfirmMatchRsp = 2735;
+    public static final int PlayerGuestConfirmMatchReq = 21621;
+    public static final int PlayerGuestConfirmMatchRsp = 27953;
+    public static final int PlayerAllowEnterMpAfterAgreeMatchNotify = 24608;
     public static final int PlayerCompoundMaterialBoostRsp = 21535;
     public static final int PlayerDeathZoneNotify = -245;
     public static final int PlayerEyePointStateNotify = 4530;
