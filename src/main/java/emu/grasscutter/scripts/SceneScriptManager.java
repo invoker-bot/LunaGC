@@ -59,6 +59,7 @@ public class SceneScriptManager {
     private final Map<Integer, SceneGroupInstance> cachedSceneGroupsInstances;
     private ScriptMonsterTideService scriptMonsterTideService;
     private ScriptMonsterSpawnService scriptMonsterSpawnService;
+    private final ScriptMonsterSpawnQueue monsterSpawnQueue;
     /** blockid - loaded groupSet */
     private final Map<Integer, Set<SceneGroup>> loadedGroupSetPerBlock;
 
@@ -79,6 +80,7 @@ public class SceneScriptManager {
 
     public SceneScriptManager(Scene scene) {
         this.scene = scene;
+        this.monsterSpawnQueue = new ScriptMonsterSpawnQueue(scene, scene.getScheduler());
         this.currentTriggers = new ConcurrentHashMap<>();
         this.ongoingTriggers = ConcurrentHashMap.newKeySet();
         this.triggersByGroupScene = new ConcurrentHashMap<>();
@@ -267,6 +269,7 @@ public class SceneScriptManager {
         }
 
         groupInstance.setTargetSuiteId(0);
+        cancelGroupMonsterSpawns(group.id);
 
         if (prevSuiteData != null) {
             removeGroupSuite(group, prevSuiteData);
@@ -706,6 +709,7 @@ public class SceneScriptManager {
     }
 
     public void unregisterGroup(SceneGroup group) {
+        cancelGroupMonsterSpawns(group.id);
         cancelGroupTimers(group.id);
         this.sceneGroups.remove(group.id);
         this.sceneGroupsInstances.values().removeIf(i -> i.getLuaGroup() == group);
@@ -833,6 +837,7 @@ public class SceneScriptManager {
     }
 
     public void removeGroupSuite(SceneGroup group, SceneSuite suite) {
+        cancelGroupMonsterSpawns(group.id);
         deregisterTrigger(suite.sceneTriggers);
         removeMonstersInGroup(group, suite);
         removeGadgetsInGroup(group, suite);
@@ -841,6 +846,7 @@ public class SceneScriptManager {
     }
 
     public void killGroupSuite(SceneGroup group, SceneSuite suite) {
+        cancelGroupMonsterSpawns(group.id);
         deregisterTrigger(suite.sceneTriggers);
 
         killMonstersInGroup(group, suite);
@@ -863,14 +869,32 @@ public class SceneScriptManager {
     }
 
     public void spawnMonstersByConfigId(SceneGroup group, int configId, int delayTime) {
-        // TODO delay
+        var activity = scene.getCrucibleSceneController();
+        long ticket = activity.getLifecycle().ticket();
+        long round = activity.currentRoundSerial();
+        monsterSpawnQueue.spawn(group.id, delayTime, () -> {
+            if (sceneGroups.get(group.id) != group) return;
+            if (activity.owns(group.id) && delayTime > 0) {
+                activity.runIfCurrent(ticket, round, () -> {
+                    if (activity.isRoundActive(round)) spawnMonsterNow(group, configId);
+                });
+            } else spawnMonsterNow(group, configId);
+        });
+    }
+
+    public void cancelGroupMonsterSpawns(int groupId) {
+        monsterSpawnQueue.cancelGroup(groupId);
+    }
+
+    private void spawnMonsterNow(SceneGroup group, int configId) {
         var entity = scene.getEntityByConfigId(configId, group.id);
         if (entity != null && entity.getGroupId() == group.id) {
             Grasscutter.getLogger()
                     .debug("entity already exists failed in group {} with config {}", group.id, configId);
             return;
         }
-        entity = createMonster(group.id, group.block_id, group.monsters.get(configId));
+        var monster = group.monsters == null ? null : group.monsters.get(configId);
+        entity = monster == null ? null : createMonster(group.id, group.block_id, monster);
         if (entity != null) {
             getScene().addEntity(entity);
         } else {

@@ -108,12 +108,12 @@ public class Scene {
         this.loadedGroups = ConcurrentHashMap.newKeySet();
         this.loadedGridBlocks = new HashSet<>();
         this.npcBornEntrySet = ConcurrentHashMap.newKeySet();
+        this.scheduler = new ServerTaskScheduler();
         this.crucibleSceneController = new CrucibleSceneController(this);
         this.scriptManager = new SceneScriptManager(this);
         this.blossomManager = new BlossomManager(this);
         this.unlockedForces = new HashSet<>();
         this.sceneEntity = new EntityScene(this);
-        this.scheduler = new ServerTaskScheduler();
     }
 
     public int getId() {

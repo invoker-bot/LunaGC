@@ -132,11 +132,11 @@ public class ScriptLib {
         }
 
         targets.forEach(o -> {
-            var entity = getSceneScriptManager().getScene().getEntityByConfigId(o.config_id, getCurrentGroup().get().id);
+            var entity = sceneScriptManager.getScene().getEntityByConfigId(o.config_id, group.id);
             if (entity == null) {
                 return;
             }
-            getSceneScriptManager().getScene().killEntity(entity, 0);
+            sceneScriptManager.getScene().killEntity(entity, 0);
         });
         return 0;
     }
@@ -156,11 +156,11 @@ public class ScriptLib {
         }
 
         for (int cfgId : targets) {
-            var entity = getSceneScriptManager().getScene().getEntityByConfigId(cfgId, getCurrentGroup().get().id);
+            var entity = sceneScriptManager.getScene().getEntityByConfigId(cfgId, group.id);
             if (entity == null || cfgId == 0) {
                 continue;
             }
-            getSceneScriptManager().getScene().killEntity(entity, 0);
+            sceneScriptManager.getScene().killEntity(entity, 0);
         }
         return 0;
     }
@@ -997,8 +997,11 @@ public class ScriptLib {
         }
         if (killPolicyId != -1) {
             var killPolicy = GroupKillPolicy.values()[killPolicyId];
+            if (killPolicy == GROUP_KILL_MONSTER || killPolicy == GROUP_KILL_ALL)
+                sceneManager.cancelGroupMonsterSpawns(group.id);
             return killGroupEntityWithPolicy(sceneManager, group, killPolicy);
         }
+        if (var1.get("monsters").length() > 0) sceneManager.cancelGroupMonsterSpawns(group.id);
         return killGroupEntityWithTable(sceneManager, group, var1);
     }
 

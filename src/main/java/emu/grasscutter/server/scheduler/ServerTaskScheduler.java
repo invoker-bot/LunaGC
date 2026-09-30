@@ -1,6 +1,7 @@
 package emu.grasscutter.server.scheduler;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A class to manage all time-based tasks scheduled on the server. This handles both synchronous and
@@ -15,7 +16,7 @@ public final class ServerTaskScheduler {
     private final ConcurrentHashMap<Integer, AsyncServerTask> asyncTasks = new ConcurrentHashMap<>();
 
     /* The ID assigned to the next runnable. */
-    private int nextTaskId = 0;
+    private final AtomicInteger nextTaskId = new AtomicInteger();
 
     /**
      * Ran every server tick. Attempts to run all scheduled tasks. This method is synchronous and will
@@ -93,7 +94,7 @@ public final class ServerTaskScheduler {
      */
     public int scheduleAsyncTask(Runnable runnable) {
         // Get the next task ID.
-        var taskId = this.nextTaskId++;
+        var taskId = this.nextTaskId.getAndIncrement();
         // Create a new task.
         this.asyncTasks.put(taskId, new AsyncServerTask(runnable, taskId));
         // Return the task ID.
@@ -142,7 +143,7 @@ public final class ServerTaskScheduler {
      */
     public int scheduleDelayedRepeatingTask(Runnable runnable, int period, int delay) {
         // Get the next task ID.
-        var taskId = this.nextTaskId++;
+        var taskId = this.nextTaskId.getAndIncrement();
         // Create a new task.
         this.tasks.put(taskId, new ServerTask(runnable, taskId, period, delay));
         // Return the task ID.

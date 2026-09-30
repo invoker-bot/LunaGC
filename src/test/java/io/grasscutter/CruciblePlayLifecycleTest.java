@@ -10,6 +10,8 @@ import emu.grasscutter.scripts.ScriptLib;
 import emu.grasscutter.scripts.constants.EventType;
 import emu.grasscutter.scripts.data.*;
 import emu.grasscutter.scripts.serializer.LuaSerializer;
+import emu.grasscutter.scripts.service.ScriptMonsterSpawnQueue;
+import emu.grasscutter.server.scheduler.ServerTaskScheduler;
 import java.util.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
@@ -73,6 +75,30 @@ class CruciblePlayLifecycleTest {
         assertTrue(state.start(originalConfig(), 1100));
         assertEquals(0, state.getProgress());
         assertEquals(0, state.getUidValue(10001, "Fire"));
+    }
+
+    @Test void originalDeathCallbacksWaitBeforeRespawningAndStageCleanupCancelsTheRemainder() {
+        var globals = originalMainGroup();
+        var scheduler = new ServerTaskScheduler();
+        var queue = new ScriptMonsterSpawnQueue(new Object(), scheduler);
+        var spawned = new ArrayList<Integer>();
+        var lib = new LuaTable();
+        bind(lib, "CreateMonster", args -> {
+            var request = args.arg(2);
+            int configId = request.get("config_id").toint();
+            queue.spawn(305001001, request.get("delay_time").toint(), () -> spawned.add(configId));
+            return LuaValue.ZERO;
+        });
+        globals.set("ScriptLib", lib);
+        assertEquals(0, globals.get("action_EVENT_ANY_MONSTER_DIE_1004").call(LuaValue.NIL, new LuaTable()).toint());
+        assertEquals(0, globals.get("action_EVENT_ANY_MONSTER_DIE_1016").call(LuaValue.NIL, new LuaTable()).toint());
+        for (int i = 0; i < 4; i++) scheduler.runTasks();
+        assertTrue(spawned.isEmpty());
+        scheduler.runTasks();
+        assertEquals(List.of(1039), spawned);
+        queue.cancelGroup(305001001);
+        for (int i = 0; i < 10; i++) scheduler.runTasks();
+        assertEquals(List.of(1039), spawned, "The pending ten-second respawn belongs to the old stage");
     }
 
     @Test void deadlineRejectsLateScoreAndTimeoutAndCancellationFireOnce() {
