@@ -4,6 +4,7 @@ option java_package = "emu.grasscutter.net.proto";
 option java_outer_classname = "MpPlayRewardInfoOuterClass";
 
 message MpPlayRewardInfo {
+	// Local 7.1 type 80753 / reader 0x14b5c8ea0; nested SceneGadgetInfo content 42.
 	uint32 resin = 1;
 	repeated uint32 remain_uid_list = 2;
 	repeated uint32 qualify_uid_list = 3;

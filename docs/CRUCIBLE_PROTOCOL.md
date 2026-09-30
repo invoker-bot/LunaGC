@@ -94,6 +94,46 @@
 现有 `GameSession.send` 会拦截未恢复编号的包，提交请求的服务端处理不依赖该响应。
 这尚不能证明客户端完整交互已正常，仍需实机核对。
 
+### 奖励交互协议
+
+奖励实体的嵌套协议和通用交互消息已经核对；树脂扣除、领取资格和奖励掉落仍未接入。
+以下身份通过本地包号函数、枚举字段类型和场景实体的嵌套读取分支关联。
+
+| 消息 | 类型索引 / 混淆名 | 包号 / 读取或写入方法 |
+| --- | --- | --- |
+| `GadgetInteractReq` | 25686 / `DLKHFKHOJAB` | 5765 / 写 `0x14f662a90`，包号函数 `0x14f663880` |
+| `GadgetInteractRsp` | 34877 / `PPGGOBPDLKA` | 881 / 读 `0x14b9d9bc0`，包号函数 `0x14b9d9bb0` |
+| `MpPlayRewardInfo` | 80753 / `MFOBJAEMOLO` | 无独立包号 / 读 `0x14b5c8ea0` |
+| `SceneGadgetInfo` | 43382 / `OFPGGBDNEAP` | 无独立包号 / 读 `0x14b863e60` |
+
+交互请求的已知字段为 `gadget_id` 4 / `0x38`、`resin_cost_type` 7 / `0x24`、
+`op_type` 9 / `0x18`、`gadget_entity_id` 11 / `0x2c`。其余字段保留本地混淆名称，
+不推断玩法含义：
+
+| 请求字段 | 类型 / 编号 / 对象偏移 |
+| --- | --- |
+| `KHBHECKFAFO` | bool / 1 / `0x29` |
+| `NEPAHMPCHGA` | bool / 3 / `0x2b` |
+| `DAELLCLGEAL` | bool / 5 / `0x34` |
+| `GGNGMJDNJKE` | bool / 6 / `0x35` |
+| `DDDHMAOFKED` | uint32 / 10 / `0x30` |
+| `KGLMOAAIOML` | uint32 / 12 / `0x1c` |
+| `EPANKHIHBDJ` | bool / 13 / `0x28` |
+| `BOMAJJOKCCN` | uint32 / 14 / `0x20` |
+| `GHDMNALCIFD` | bool / 15 / `0x2a` |
+
+原 schema 中 50000–50004 的布尔占位编号已移除。客户端实际标签为 8、24、40、48、104、120；
+测试从这些原生标签组成输入，确认全部字段被识别，未来未知标签仍可保留。
+响应字段为 `gadget_id` 3、未识别 uint32 5、`op_type` 10、`interact_type` 11、
+`retcode` 13 / int32、`gadget_entity_id` 15。已知字段编号与原 schema 相同。
+
+场景读取函数在 `0x14b86434d` 比较标签 `0x152`，进入 content 42，
+通过类指针 `0x1457e2bc8` 创建类型 80753。该子消息读取字段 1 的 uint32 到 `0x28`，
+字段 2 的 repeated uint32 到 `0x18`，字段 3 的 repeated uint32 到 `0x20`；两个列表支持 packed 和 unpacked。
+字段名称参考固定历史定义 [MpPlayRewardInfo](https://github.com/Hiro420/3.5_protos/blob/d42eec84da01b1b28abb40d8565fbbcb306a8969/deobfuscated/MpPlayRewardInfo.proto)，
+本地原生分支独立确认了相同编号。客户端字段默认值表还确认 `ResinCostType.Normal = 1`、
+`InterOpStart = 1`、`InteractMpPlayReward = 6`。这些核对不等同于奖励领取已经实现或实机验证。
+
 ## 跨世界匹配
 
 以下 13 条匹配消息补入 MP_PLAY 使用的字段。新增确认消息以房主/队员的调用方向命名；

@@ -7,9 +7,10 @@ import "InterOpType.proto";
 import "InteractType.proto";
 
 message GadgetInteractRsp {
+	// Local 7.1 type 34877 / reader 0x14b9d9bc0; field 5 semantics remain unidentified.
 	InteractType interact_type = 11;
 	int32 retcode = 13;
-	uint32 hebnjoabfoo = 5;
+	uint32 DDDHMAOFKED = 5;
 	uint32 gadget_id = 3;
 	uint32 gadget_entity_id = 15;
 	InterOpType op_type = 10;
