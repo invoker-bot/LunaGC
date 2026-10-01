@@ -417,6 +417,10 @@ Write-Host ("  backup       : {0}" -f $astBakLabel)
 $gamePids = @(Get-Process -Name YuanShen -ErrorAction SilentlyContinue)
 $inSession = $gamePids.Count -gt 0
 
+if ($Mode -ne 'status' -and $inSession) {
+    throw 'Please exit YuanShen before applying or resetting the patch. The running client keeps the old DLL mapped until it closes.'
+}
+
 if (Test-Path $astrolabeLive) {
     if ($inSession) {
         Write-Host ("  live copy    : LIVE -- the running client has the patched image")

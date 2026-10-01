@@ -64,6 +64,8 @@ tasks:
       - build.rs
       - Cargo.toml
       - Cargo.lock
+      - server_public_key.bin
+      - sdk_public_key.xml
     generates:
       - target/release/ext.dll
     cmds:

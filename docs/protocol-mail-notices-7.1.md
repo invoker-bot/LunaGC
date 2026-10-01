@@ -46,6 +46,17 @@ SDK 配置现在返回本地公告 URL；自包含网页随服务端 JAR 打包�
 `hk4e_cn` 与 `hk4e_global` 的 getAnnList、getAnnContent、getAlertAnn、getAlertPic 共享持久化目录。
 列表与正文使用同一生效时间和公告编号，无空占位公告、外部图片或脚本。页面有 8 秒请求超时和重试按钮。
 
+2026-10-01 的客户端日志确认另一处持续转圈原因：`NoticeManager.SetCookies` 在
+`OnNativeReady` 阶段调用 `SDKUtil.RSAEncrypt`，旧补丁无条件替换公钥为 1024 位 SDK 登录密钥，
+抛出 `CryptographicException`（最大明文 117 字节），尚未执行公告网页加载。
+新版只对原始 1024 位 XML 公钥且 UTF-8 明文不超过 117 字节的调用替换登录密钥；
+公告使用的较长公钥、未知公钥和过长明文保留原始密钥，不记录 Cookie、密码或密钥内容。
+国服 `AccountPlatNative.dll` 的既有登录公钥替换保持不变。补丁必须在游戏完全退出后安装并重新启动，
+仅刷新服务器或 GM 页面不能替换正在运行的 DLL。
+
+安装新版后，客户端日志确认公告调用保留 256 字节模数（2048 位公钥）。
+用户重启并打开公告后确认加载成功，提供的截图显示欢迎公告标题与正文。
+
 `PlayerSetPauseReq` CmdId=5963、is_paused=11 也与客户端写入器一致；尚未找到可信的
 `PlayerSetPauseRsp` CmdId，本次没有猜测该响应的包号。公告网页和邮件链路的服务端回归、HTTP 和浏览器检查
 不能替代游戏内 WebView 的实机检查；最终仍需在游戏中打开、关闭公告并领取邮件附件确认。

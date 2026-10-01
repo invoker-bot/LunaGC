@@ -31,6 +31,8 @@
 
 游戏公告页 `/hk4e/announcement/index.html` 直接随服务端打包，不依赖官方 CDN；
 国服与海外服公告接口均已注册，加载失败会提示重试而不无限等待。
+若旧客户端补丁打开公告后持续转圈，更新补丁并完全退出游戏后再执行 `task patch`。
+新版补丁保留公告窗口的原始公钥，仅替换短登录数据所用的 1024 位 SDK 密钥，避免公告 Cookie 加密超长。
 邮件附件领取先保存预约状态再发物品；若进程在发放中途退出，预约会阻止自动重复发放，
 GM 邮箱会显示「附件领取中断」，需要核对数据库与日志后恢复，不能直接清除预约再次领取。
 7.1 协议依据及实机验证边界见 [公告与邮件协议记录](docs/protocol-mail-notices-7.1.md)。
@@ -366,10 +368,13 @@ known-broken, not unknown:
 Use the clone commands above. An existing checkout can instead run:
 
 ```sh
+git submodule sync -- patch resources
 git submodule update --init patch resources
 git -C resources lfs pull
 ```
 
+The patch submodule is pinned to the announcement RSA fix in
+[invoker-bot/animegamepatch](https://github.com/invoker-bot/animegamepatch).
 The resources submodule is pinned to a commit
 of [LunaGC-Resources](https://github.com/invoker-bot/LunaGC-Resources).
 
@@ -553,6 +558,9 @@ the server's. It keeps `.lunagc-bak` backups next to each patched file so
 `task patch:reset` can undo it exactly. Run `task patch:status` whenever anything
 about the client looks wrong — it prints the whole state and exits non-zero on a
 problem.
+
+Exit the game completely before `task patch` or `task patch:reset`. Both refuse
+to modify a running client, whose mapped DLL stays in use until the game exits.
 
 The built DLL is an ignored local build output. Rust nightly is required for the
 first build and whenever the patch sources change; `task patch` reuses an
