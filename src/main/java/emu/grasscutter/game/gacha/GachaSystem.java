@@ -20,6 +20,7 @@ import emu.grasscutter.net.proto.RetcodeOuterClass.Retcode;
 import emu.grasscutter.server.event.player.PlayerWishEvent;
 import emu.grasscutter.server.game.*;
 import emu.grasscutter.server.packet.send.PacketDoGachaRsp;
+import emu.grasscutter.server.packet.send.PacketGetGachaInfoRsp;
 import emu.grasscutter.utils.*;
 import it.unimi.dsi.fastutil.ints.*;
 import java.nio.file.*;
@@ -317,9 +318,7 @@ public class GachaSystem extends BaseGameSystem {
             return;
         }
 
-        int gachaTimesLimit = banner.getGachaTimesLimit();
-        if (gachaTimesLimit != Integer.MAX_VALUE
-                && (gachaInfo.getTotalPulls() + times) > gachaTimesLimit) {
+        if (times > banner.getRemainingPulls(gachaInfo)) {
             player.sendPacket(new PacketDoGachaRsp(Retcode.RET_GACHA_TIMES_LIMIT));
             return;
         }
@@ -464,6 +463,9 @@ public class GachaSystem extends BaseGameSystem {
 
         // Packets
         player.sendPacket(new PacketDoGachaRsp(banner, list, gachaInfo));
+        if (banner.getRemainingPulls(gachaInfo) == 0) {
+            player.sendPacket(new PacketGetGachaInfoRsp(this, player));
+        }
 
         // Battle Pass trigger
         player.getBattlePassManager().triggerMission(WatcherTriggerType.TRIGGER_GACHA_NUM, 0, times);
@@ -519,14 +521,16 @@ public class GachaSystem extends BaseGameSystem {
         }
     }
 
-    private synchronized GetGachaInfoRsp createProto(Player player) {
+    static GetGachaInfoRsp createProto(
+            Player player, Collection<GachaBanner> banners, long currentTime) {
         GetGachaInfoRsp.Builder proto = GetGachaInfoRsp.newBuilder().setGachaRandom(12345);
 
-        long currentTime = System.currentTimeMillis() / 1000L;
-
-        for (GachaBanner banner : getGachaBanners().values()) {
+        for (GachaBanner banner : banners) {
             if (banner.isActive(currentTime)) {
-                proto.addGachaInfoList(banner.toProto(player));
+                var gachaInfo = player.getGachaInfo().getBannerInfo(banner);
+                if (banner.getRemainingPulls(gachaInfo) > 0) {
+                    proto.addGachaInfoList(banner.toProto(player));
+                }
             } else {
                 Grasscutter.getLogger()
                         .debug(
@@ -538,18 +542,19 @@ public class GachaSystem extends BaseGameSystem {
             }
         }
 
-        if (proto.getGachaInfoListCount() == 0) {
+        if (proto.getGachaInfoListCount() == 0
+                && banners.stream().noneMatch(banner -> banner.isActive(currentTime))) {
             Grasscutter.getLogger()
                     .warn(
                             "[Gacha] No banner is currently active - the wish screen will be empty. Check the beginTime/endTime of the {} banner(s) in Banners.json.",
-                            getGachaBanners().size());
+                            banners.size());
         }
 
         return proto.build();
     }
 
-    public GetGachaInfoRsp toProto(Player player) {
-        return createProto(player);
+    public synchronized GetGachaInfoRsp toProto(Player player) {
+        return createProto(player, getGachaBanners().values(), System.currentTimeMillis() / 1000L);
     }
 
     private class BannerPools {

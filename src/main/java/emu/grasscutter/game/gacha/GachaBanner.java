@@ -106,6 +106,12 @@ public class GachaBanner {
         return !disabled && !deprecated && beginTime <= now && now < endTime;
     }
 
+    public int getRemainingPulls(PlayerGachaBannerInfo gachaInfo) {
+        return gachaTimesLimit == Integer.MAX_VALUE
+                ? Integer.MAX_VALUE
+                : Math.max(gachaTimesLimit - gachaInfo.getTotalPulls(), 0);
+    }
+
     private void warnDeprecated(String name, String replacement) {
         Grasscutter.getLogger()
                 .error(
@@ -266,11 +272,7 @@ public class GachaBanner {
 
         // Grasscutter.getLogger().info("record = " + record);
         PlayerGachaBannerInfo gachaInfo = player.getGachaInfo().getBannerInfo(this);
-        int leftGachaTimes =
-                switch (gachaTimesLimit) {
-                    case Integer.MAX_VALUE -> Integer.MAX_VALUE;
-                    default -> Math.max(gachaTimesLimit - gachaInfo.getTotalPulls(), 0);
-                };
+        int leftGachaTimes = getRemainingPulls(gachaInfo);
 
         String previewPath = this.getPreviewPrefabPath();
         if (previewPath == null || previewPath.isEmpty()) {

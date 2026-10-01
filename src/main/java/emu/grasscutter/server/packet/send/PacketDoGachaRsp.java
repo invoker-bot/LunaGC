@@ -18,11 +18,7 @@ public class PacketDoGachaRsp extends BasePacket {
         ItemParamData costItem = banner.getCost(1);
         ItemParamData costItem10 = banner.getCost(10);
         int gachaTimesLimit = banner.getGachaTimesLimit();
-        int leftGachaTimes =
-                switch (gachaTimesLimit) {
-                    case Integer.MAX_VALUE -> Integer.MAX_VALUE;
-                    default -> Math.max(gachaTimesLimit - gachaInfo.getTotalPulls(), 0);
-                };
+        int leftGachaTimes = banner.getRemainingPulls(gachaInfo);
         DoGachaRsp.Builder rsp =
                 DoGachaRsp.newBuilder()
                         .setGachaType(banner.getGachaType())
