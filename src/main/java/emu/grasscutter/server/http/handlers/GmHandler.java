@@ -12,8 +12,8 @@ import emu.grasscutter.command.CommandMap;
 import emu.grasscutter.data.GameData;
 import emu.grasscutter.data.excels.ItemData;
 import emu.grasscutter.game.activity.HistoricalActivityService;
+import emu.grasscutter.game.gacha.BannerConfig;
 import emu.grasscutter.game.gacha.GachaBanner;
-import emu.grasscutter.game.gacha.GachaBanner.BannerType;
 import emu.grasscutter.game.inventory.MaterialType;
 import emu.grasscutter.game.player.Player;
 import emu.grasscutter.game.props.ItemUseOp;
@@ -65,13 +65,6 @@ public final class GmHandler implements Router {
 
     /** Where the banner table lives, relative to the data directory. */
     private static final String BANNERS_FILE = "Banners.json";
-
-    /**
-     * How many seconds a re-run banner stays open for. A re-run gets a fresh window rather than the
-     * sentinel {@code 1924992000}, because that sentinel means "no end" and would leave the re-run
-     * slot occupied forever; the operator can flip it off again from the console either way.
-     */
-    private static final long RERUN_WINDOW_SECONDS = TimeUnit.DAYS.toSeconds(30);
 
     /**
      * Official-server banner opening times, keyed by version.
@@ -568,8 +561,8 @@ public final class GmHandler implements Router {
      * <p>{@code loaded} is whether the banner is in the gacha system's map at all -- a disabled row
      * is skipped by {@link emu.grasscutter.game.gacha.GachaSystem#load()} and never reaches it.
      * {@code active} is whether the client's wish screen would actually show it, which mirrors the
-     * time-window rule in {@code createProto}: a banner is active when it is loaded and either inside
-     * its begin/end window or a standard banner.
+     * time-window rule in {@code createProto}: a banner is active when it is loaded and inside its
+     * begin/end window, including standard banners.
      */
     private static void listBanners(Context ctx) throws Exception {
         if (!authorize(ctx)) return;
@@ -601,8 +594,8 @@ public final class GmHandler implements Router {
      * <p>{@code loaded} is whether the banner is in the gacha system's map at all -- a disabled row
      * is skipped by {@link emu.grasscutter.game.gacha.GachaSystem#load()} and never reaches it.
      * {@code active} is whether the client's wish screen would actually show it, which mirrors the
-     * time-window rule in {@code createProto}: a banner is active when it is loaded and either inside
-     * its begin/end window or a standard banner.
+     * time-window rule in {@code createProto}: a banner is active when it is loaded and inside its
+     * begin/end window, including standard banners.
      */
     private static Map<String, Object> bannerRowOf(
             Int2ObjectMap<Language.TextStrings> strings,
@@ -610,8 +603,6 @@ public final class GmHandler implements Router {
             Int2ObjectMap<GachaBanner> live,
             long now) {
         boolean loaded = live.containsKey(banner.getScheduleId());
-        boolean timeOk = banner.getEndTime() >= now && banner.getBeginTime() <= now;
-        boolean isStandard = banner.getBannerType() == BannerType.STANDARD;
 
         var row = new LinkedHashMap<String, Object>();
         row.put("scheduleId", banner.getScheduleId());
@@ -627,7 +618,7 @@ public final class GmHandler implements Router {
         row.put("rateUpItems5Names", upSlots(strings, banner.getRateUpItems5()));
         row.put("disabled", banner.isDisabled());
         row.put("loaded", loaded);
-        row.put("active", loaded && (timeOk || isStandard));
+        row.put("active", loaded && banner.isActive(now));
         // Where this banner sat in the official version's schedule, for the history view's ordering.
         row.put("phase", phaseLabel(effectiveGachaType(banner)));
         return row;
@@ -712,7 +703,7 @@ public final class GmHandler implements Router {
      * have diverged, and pretending the flip worked would leave the operator staring at a banner that
      * never changes.
      */
-    private static void setBanner(Context ctx) throws Exception {
+    private static synchronized void setBanner(Context ctx) throws Exception {
         if (!authorize(ctx)) return;
 
         var body = ctx.body();
@@ -735,7 +726,7 @@ public final class GmHandler implements Router {
 
         int scheduleId;
         try {
-            scheduleId = parsed.get("scheduleId").getAsInt();
+            scheduleId = parsed.get("scheduleId").getAsBigDecimal().intValueExact();
             if (scheduleId < 0) throw new IllegalArgumentException("unassigned schedule id");
         } catch (Exception e) {
             ctx.status(400)
@@ -752,10 +743,25 @@ public final class GmHandler implements Router {
                         .json(Map.of("retcode", 400, "message", "'action': 'rerun' needs a 'commit'"));
                 return;
             }
-            rerunBannerRow(ctx, scheduleId, parsed.get("commit").getAsString());
+            long now = System.currentTimeMillis() / 1000L;
+            long end;
+            try {
+                end = BannerConfig.rerunEnd(parsed, now);
+            } catch (IllegalArgumentException e) {
+                ctx.status(400).json(Map.of("retcode", 400, "message", e.getMessage()));
+                return;
+            }
+            rerunBannerRow(ctx, scheduleId, parsed.get("commit").getAsString(), now, end);
+        } else if ("reschedule".equals(action)) {
+            rescheduleBannerRow(ctx, scheduleId, parsed);
         } else {
             ctx.status(400)
-                    .json(Map.of("retcode", 400, "message", "'action' must be enable, disable or rerun"));
+                    .json(
+                            Map.of(
+                                    "retcode",
+                                    400,
+                                    "message",
+                                    "'action' must be enable, disable, rerun or reschedule"));
         }
     }
 
@@ -822,15 +828,16 @@ public final class GmHandler implements Router {
      * {@code endTime = 1924992000} and a blank {@code beginTime}, so as-is it would either sit
      * dormant (begin in the past but end at the sentinel -- actually active, but indistinguishable
      * from the copy it replaced) or crowd out the banners already running. Instead the copy gets a
-     * fresh {@link #RERUN_WINDOW_SECONDS} window starting now, which is long enough to be useful and
-     * short enough that the re-run expires on its own if the operator forgets it.
+     * fresh configurable window starting now, which is long enough to be useful and short enough that
+     * the re-run expires on its own if the operator forgets it.
      *
      * <p>If a row with the same scheduleId is already in the live table it is replaced in place, so a
      * re-run never leaves two rows for one schedule; otherwise the row is appended. {@code disabled}
      * is dropped, since re-running a banner that is still turned off would be a no-op the reload
      * quietly ignores.
      */
-    private static void rerunBannerRow(Context ctx, int scheduleId, String commit) throws Exception {
+    private static void rerunBannerRow(Context ctx, int scheduleId, String commit, long now, long end)
+            throws Exception {
         Path file = FileUtils.getDataPath(BANNERS_FILE);
         Path dataDir = file.getParent();
 
@@ -880,9 +887,8 @@ public final class GmHandler implements Router {
 
         // Deep copy so the historical revision is never mutated, then stamp the fresh window.
         JsonObject row = JsonUtils.decode(JsonUtils.encode(template), JsonObject.class);
-        long now = System.currentTimeMillis() / 1000L;
         row.addProperty("beginTime", now);
-        row.addProperty("endTime", now + RERUN_WINDOW_SECONDS);
+        row.addProperty("endTime", end);
         row.remove("disabled");
 
         JsonArray target;
@@ -925,11 +931,39 @@ public final class GmHandler implements Router {
         result.put("action", "rerun");
         result.put("from", commit);
         result.put("beginTime", now);
-        result.put("endTime", now + RERUN_WINDOW_SECONDS);
+        result.put("endTime", end);
         result.put("loaded", live.containsKey(scheduleId));
 
         ctx.contentType("application/json; charset=utf-8");
         ctx.json(result);
+    }
+
+    /** Change only the deadline; keep the start, enabled flag, UP pool and pity configuration. */
+    private static void rescheduleBannerRow(Context ctx, int scheduleId, JsonObject request)
+            throws Exception {
+        Path file = FileUtils.getDataPath(BANNERS_FILE);
+        var rows = readBannerTable(file);
+        for (var el : rows) {
+            var row = el.getAsJsonObject();
+            if (row.get("scheduleId").getAsInt() != scheduleId) continue;
+            long end;
+            try {
+                end =
+                        BannerConfig.requestedEnd(
+                                request,
+                                System.currentTimeMillis() / 1000L,
+                                row.has("beginTime") ? row.get("beginTime").getAsLong() : 0);
+            } catch (IllegalArgumentException e) {
+                ctx.status(400).json(Map.of("retcode", 400, "message", e.getMessage()));
+                return;
+            }
+            row.addProperty("endTime", end);
+            if (!saveBannerTable(ctx, file, rows)) return;
+            ctx.json(
+                    Map.of("retcode", 0, "scheduleId", scheduleId, "action", "reschedule", "endTime", end));
+            return;
+        }
+        ctx.status(400).json(Map.of("retcode", 400, "message", "该卡池已不在当前配置中，请刷新后重试。"));
     }
 
     /**
@@ -966,7 +1000,8 @@ public final class GmHandler implements Router {
         // The config leaves the file watcher off, so the reload is ours to trigger. Without it the
         // change would only take effect at the next startup.
         try {
-            Grasscutter.getGameServer().getGachaSystem().load();
+            if (!Grasscutter.getGameServer().getGachaSystem().load())
+                throw new IllegalStateException("卡池重载失败，仍使用之前的配置。");
         } catch (Exception e) {
             Grasscutter.getLogger().error("Banner table saved, but the reload failed.", e);
             ctx.status(500)
@@ -983,13 +1018,7 @@ public final class GmHandler implements Router {
 
     /** Prefer editable JSON; a fresh runtime can still use the bundled TSJ defaults. */
     private static JsonArray readBannerTable(Path file) throws Exception {
-        if (!Files.exists(file)) {
-            var defaults = emu.grasscutter.data.DataLoader.loadTableToList("Banners", GachaBanner.class);
-            return JsonUtils.toJson(defaults == null ? List.of() : defaults).getAsJsonArray();
-        }
-        try (var reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-            return JsonUtils.loadToClass(reader, JsonArray.class);
-        }
+        return BannerConfig.normalize(BannerConfig.read(file));
     }
 
     /**
@@ -1002,7 +1031,7 @@ public final class GmHandler implements Router {
     private static JsonArray readBannerTableFromGit(Path dataDir, String commit, String rootPath)
             throws Exception {
         String raw = git(dataDir, "show", commit + ":" + rootPath);
-        return JsonUtils.decode(raw, JsonArray.class);
+        return BannerConfig.normalize(JsonUtils.decode(raw, JsonArray.class));
     }
 
     /** {@code data/Banners.json} expressed the way {@code git show <rev>:<path>} wants it. */
@@ -1019,8 +1048,10 @@ public final class GmHandler implements Router {
     /** Reads the banner table as mapped objects, for the list endpoint's status columns. */
     private static List<GachaBanner> loadBannerRows() {
         try {
-            var rows = emu.grasscutter.data.DataLoader.loadTableToList("Banners", GachaBanner.class);
-            if (rows != null) return rows;
+            return java.util.stream.StreamSupport.stream(
+                            readBannerTable(FileUtils.getDataPath(BANNERS_FILE)).spliterator(), false)
+                    .map(row -> JsonUtils.decode(row, GachaBanner.class))
+                    .toList();
         } catch (Exception e) {
             Grasscutter.getLogger().warn("Could not load the banner table: {}", e.getMessage());
         }

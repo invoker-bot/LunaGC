@@ -131,7 +131,10 @@
   .badge.ok { color: var(--ok); border-color: #2c5b40; background: #1d2c24; }
   .badge.warn { color: var(--warn); border-color: #5b4a24; background: #2c2618; }
   .badge.err { color: var(--err); border-color: #5b2c2c; background: #2c1d1d; }
-  .banner .ops { margin-top: 6px; }
+  .banner .ops { margin-top:6px; display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .banner .ops label { display:flex; align-items:center; flex-wrap:wrap; gap:6px; font-size:12px; color:var(--dim); }
+  .banner .ops input[type=number] { width:78px; }
+  .banner .ops input[type=datetime-local] { max-width:100%; width:230px; }
   .banner .ops button { padding: 4px 12px; font-size: 12.5px; }
   .banner .up { font-size: 12px; color: var(--dim); font-family: var(--mono);
                 word-break: break-all; margin-top: 2px; }
@@ -300,7 +303,7 @@
     <div class="pane" id="pane-history">
       <h2>历史卡池 <button id="historyRefresh" class="ghost" style="padding:3px 10px;font-size:12px">刷新</button></h2>
       <div style="margin-bottom:10px;color:var(--dim);font-size:12px">
-        当前配置和历史归档统一列出，历史按版本从新到旧排列。可管理当前卡池开关，或复刻历史卡池 30 天。
+        当前配置和历史归档统一列出，历史按版本从新到旧排列。复刻时可指定 1–365 天，默认 30 天；当前卡池可修改到期时间。
         「生效中」表示客户端祈愿界面会展示它；历史月份为近似时间，归档仍待逐期核实。
       </div>
       <div class="row" style="margin-bottom:10px">
@@ -1111,14 +1114,20 @@ function renderBanner(b, opts) {
   if (b.scheduleId < 0) {
     const note = document.createElement("span");
     note.className = "empty";
-    note.textContent = "旧配置缺少卡池 ID，请从历史归档选择对应卡池复刻。";
+    note.textContent = "此旧记录无法分配有效编号，请刷新或查看对应版本的历史归档。";
     ops.appendChild(note);
     return el;
   }
+  const duration = document.createElement("label");
+  duration.appendChild(document.createTextNode("复刻天数"));
+  const days = document.createElement("input");
+  days.type = "number"; days.min = "1"; days.max = "365"; days.step = "1"; days.value = "30";
+  days.dataset.bannerDays = ""; duration.appendChild(days);
   if (opts.rerun) {
+    ops.appendChild(duration);
     const btn = document.createElement("button");
     btn.textContent = "复刻此卡池";
-    btn.onclick = () => rerunBanner(b.scheduleId, opts.commit, el);
+    btn.onclick = () => rerunBanner(b.scheduleId, opts.commit, el, days);
     ops.appendChild(btn);
     return el;
   }
@@ -1132,6 +1141,20 @@ function renderBanner(b, opts) {
     btn.onclick = () => flipBanner(b.scheduleId, "disable", el);
   }
   ops.appendChild(btn);
+  ops.appendChild(duration);
+  const renew = document.createElement("button");
+  renew.textContent = b.active ? "按时长重新复刻" : "复刻此卡池";
+  renew.onclick = () => rerunBanner(b.scheduleId, "working", el, days);
+  ops.appendChild(renew);
+  const expiry = document.createElement("label");
+  expiry.appendChild(document.createTextNode("到期时间"));
+  const end = document.createElement("input");
+  end.type = "datetime-local"; end.required = true; end.dataset.bannerEnd = "";
+  end.step = "1"; end.value = new Date(b.endTime*1000-new Date(b.endTime*1000).getTimezoneOffset()*60000).toISOString().slice(0,19);
+  expiry.appendChild(end); ops.appendChild(expiry);
+  const saveEnd = document.createElement("button"); saveEnd.textContent = "保存到期时间";
+  saveEnd.onclick = () => rescheduleBanner(b.scheduleId, el, end);
+  ops.appendChild(saveEnd);
   return el;
 }
 
@@ -1236,14 +1259,18 @@ function renderHistoryRevision(rev) {
   return el;
 }
 
-function rerunBanner(scheduleId, commit, rowEl) {
-  const btn = rowEl.querySelector("button");
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spin"></span>写入中';
+function rerunBanner(scheduleId, commit, rowEl, daysInput) {
+  if (!daysInput.reportValidity()) return;
+  const controls = Array.from(rowEl.querySelectorAll("button,input"));
+  const durationDays = Number(daysInput.value);
+  if (!Number.isInteger(durationDays) || durationDays < 1 || durationDays > 365) {
+    out("复刻时长须为 1–365 的整数天数。", "err"); return;
+  }
+  controls.forEach(c => c.disabled = true);
   api("/gm/api/banners", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ scheduleId, action: "rerun", commit })
+    body: JSON.stringify({ scheduleId, action: "rerun", commit, durationDays })
   }).then(r => {
     if (!r.ok) {
       out("复刻失败: " + (r.json && JSON.stringify(r.json) || r.text), "err");
@@ -1253,7 +1280,23 @@ function rerunBanner(scheduleId, commit, rowEl) {
         + `，开启至 ${fmtTime(r.json.endTime)}。`);
     loadHistory();
   }).catch(e => { if (e.message !== "403") out("请求失败: " + e, "err"); })
-  .finally(() => { btn.disabled = false; });
+  .finally(() => { controls.forEach(c => c.disabled = false); });
+}
+
+function rescheduleBanner(scheduleId, rowEl, endInput) {
+  const endTime = Math.floor(new Date(endInput.value).getTime()/1000);
+  if (!endInput.reportValidity() || !Number.isFinite(endTime) || endTime <= Date.now()/1000) {
+    out("到期时间须晚于当前时间。", "err"); return;
+  }
+  const controls = Array.from(rowEl.querySelectorAll("button,input"));
+  controls.forEach(c => c.disabled = true);
+  api("/gm/api/banners", {method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({scheduleId,action:"reschedule",endTime})})
+    .then(r => {
+      if (!r.ok) {out("修改到期时间失败: " + (r.json?.message || r.text), "err"); return;}
+      out(`卡池 #${scheduleId} 的到期时间已改为 ${fmtTime(r.json.endTime)}。`); loadHistory();
+    }).catch(e => {if(e.message!=="403")out("请求失败: " + e,"err");})
+    .finally(() => controls.forEach(c => c.disabled=false));
 }
 
 $("historyRefresh").onclick = loadHistory;

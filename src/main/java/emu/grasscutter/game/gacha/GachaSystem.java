@@ -8,7 +8,6 @@ import emu.grasscutter.data.*;
 import emu.grasscutter.data.common.ItemParamData;
 import emu.grasscutter.data.excels.ItemData;
 import emu.grasscutter.database.DatabaseHelper;
-import emu.grasscutter.game.gacha.GachaBanner.BannerType;
 import emu.grasscutter.game.inventory.*;
 import emu.grasscutter.game.player.Player;
 import emu.grasscutter.game.props.WatcherTriggerType;
@@ -31,7 +30,7 @@ import org.greenrobot.eventbus.Subscribe;
 public class GachaSystem extends BaseGameSystem {
     private static final int starglitterId = 221;
     private static final int stardustId = 222;
-    private final Int2ObjectMap<GachaBanner> gachaBanners;
+    private volatile Int2ObjectMap<GachaBanner> gachaBanners;
     private WatchService watchService;
 
     public GachaSystem(GameServer server) {
@@ -59,12 +58,15 @@ public class GachaSystem extends BaseGameSystem {
         return array[randomRange(0, array.length - 1)];
     }
 
-    public synchronized void load() {
-        getGachaBanners().clear();
-        int autoScheduleId = 1000;
+    public synchronized boolean load() {
+        var replacement = new Int2ObjectOpenHashMap<GachaBanner>();
         int autoSortId = 9000;
         try {
-            var banners = DataLoader.loadTableToList("Banners", GachaBanner.class);
+            var rows = BannerConfig.load(FileUtils.getDataPath("Banners.json"));
+            var banners =
+                    java.util.stream.StreamSupport.stream(rows.spliterator(), false)
+                            .map(row -> JsonUtils.decode(row, GachaBanner.class))
+                            .toList();
             if (!banners.isEmpty()) {
                 for (var banner : banners) {
                     banner.onLoad();
@@ -75,18 +77,20 @@ public class GachaSystem extends BaseGameSystem {
                     } else if (banner.isDisabled()) {
                         Grasscutter.getLogger().trace("A Banner has not been loaded because it is disabled.");
                     } else {
-                        if (banner.scheduleId < 0) banner.scheduleId = autoScheduleId++;
                         if (banner.sortId < 0) banner.sortId = autoSortId--;
-                        getGachaBanners().put(banner.scheduleId, banner);
+                        replacement.put(banner.scheduleId, banner);
                     }
                 }
                 Grasscutter.getLogger().debug("Banners successfully loaded.");
             } else {
                 Grasscutter.getLogger().error("Unable to load banners. Banners size is 0.");
             }
+            this.gachaBanners = replacement;
+            return true;
         } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Grasscutter.getLogger()
+                    .error("Could not load banners; keeping the previous configuration.", e);
+            return false;
         }
     }
 
@@ -279,8 +283,8 @@ public class GachaSystem extends BaseGameSystem {
 
         // Get banner
         GachaBanner banner = this.getGachaBanners().get(scheduleId);
-        if (banner == null) {
-            player.sendPacket(new PacketDoGachaRsp());
+        if (banner == null || !banner.isActive(System.currentTimeMillis() / 1000L)) {
+            player.sendPacket(new PacketDoGachaRsp(Retcode.RET_GACHA_SCHEDULE_NOT_MATCH));
             return;
         }
 
@@ -307,6 +311,11 @@ public class GachaSystem extends BaseGameSystem {
         // Set properties.
         banner = event.getBanner();
         times = event.getWishCount();
+
+        if (banner == null || !banner.isActive(System.currentTimeMillis() / 1000L)) {
+            player.sendPacket(new PacketDoGachaRsp(Retcode.RET_GACHA_SCHEDULE_NOT_MATCH));
+            return;
+        }
 
         int gachaTimesLimit = banner.getGachaTimesLimit();
         if (gachaTimesLimit != Integer.MAX_VALUE
@@ -516,9 +525,7 @@ public class GachaSystem extends BaseGameSystem {
         long currentTime = System.currentTimeMillis() / 1000L;
 
         for (GachaBanner banner : getGachaBanners().values()) {
-            boolean timeOk = banner.getEndTime() >= currentTime && banner.getBeginTime() <= currentTime;
-            boolean isStandard = banner.getBannerType() == BannerType.STANDARD;
-            if (timeOk || isStandard) {
+            if (banner.isActive(currentTime)) {
                 proto.addGachaInfoList(banner.toProto(player));
             } else {
                 Grasscutter.getLogger()

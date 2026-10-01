@@ -100,6 +100,10 @@ public class GachaBanner {
     @Getter private boolean deprecated = false;
     @Getter private boolean disabled = false;
 
+    public boolean isActive(long now) {
+        return !disabled && !deprecated && beginTime <= now && now < endTime;
+    }
+
     private void warnDeprecated(String name, String replacement) {
         Grasscutter.getLogger()
                 .error(
