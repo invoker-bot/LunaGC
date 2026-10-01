@@ -11,6 +11,7 @@ import emu.grasscutter.command.Command;
 import emu.grasscutter.command.CommandMap;
 import emu.grasscutter.data.GameData;
 import emu.grasscutter.data.excels.ItemData;
+import emu.grasscutter.game.activity.ActivityScheduleStore;
 import emu.grasscutter.game.activity.HistoricalActivityService;
 import emu.grasscutter.game.gacha.BannerConfig;
 import emu.grasscutter.game.gacha.GachaBanner;
@@ -230,11 +231,13 @@ public final class GmHandler implements Router {
             var body = JsonUtils.decode(ctx.body(), JsonObject.class);
             if (body == null || !body.has("key") || !body.has("action"))
                 throw new IllegalArgumentException("必须指定活动 key 和 action");
+            String action = body.get("action").getAsString();
             ctx.json(
                     HistoricalActivityService.update(
                             body.get("key").getAsString(),
-                            body.get("action").getAsString(),
-                            body.has("durationDays") ? body.get("durationDays").getAsInt() : 0));
+                            action,
+                            ActivityScheduleStore.requestedDays(body),
+                            "reschedule".equals(action) ? ActivityScheduleStore.requestedEnd(body) : null));
         } catch (IllegalArgumentException | IllegalStateException e) {
             ctx.status(400).json(Map.of("retcode", -1, "message", e.getMessage()));
         }
@@ -250,6 +253,7 @@ public final class GmHandler implements Router {
             return;
         }
         ctx.contentType("text/html; charset=utf-8");
+        ctx.header("Cache-Control", "no-store");
         ctx.result(page);
     }
 

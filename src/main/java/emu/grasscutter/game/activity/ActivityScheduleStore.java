@@ -2,6 +2,7 @@ package emu.grasscutter.game.activity;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -9,13 +10,22 @@ import java.time.Duration;
 import java.util.*;
 
 public final class ActivityScheduleStore {
-    private static final Gson SCHEDULE_JSON = new GsonBuilder().setPrettyPrinting()
-            .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").disableHtmlEscaping().create();
+    private static final Gson SCHEDULE_JSON =
+            new GsonBuilder()
+                    .setPrettyPrinting()
+                    .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+                    .disableHtmlEscaping()
+                    .create();
+
     private ActivityScheduleStore() {}
 
     /** Pure planning: no live config is mutated before validation and a successful disk write. */
-    public static List<ActivityConfigItem> plan(List<ActivityConfigItem> current,
-            HistoricalActivity event, String action, int durationDays, long now) {
+    public static List<ActivityConfigItem> plan(
+            List<ActivityConfigItem> current,
+            HistoricalActivity event,
+            String action,
+            int durationDays,
+            long now) {
         if (!Set.of("enable", "disable", "rerun").contains(action))
             throw new IllegalArgumentException("action 必须为 enable、disable 或 rerun");
         if (durationDays < 0 || durationDays > 365)
@@ -29,16 +39,23 @@ public final class ActivityScheduleStore {
             else result.add(copy);
         }
         if ("disable".equals(action)) {
-            if (selected != null) { selected.setDisabled(true); result.add(selected); }
+            if (selected != null) {
+                selected.setDisabled(true);
+                result.add(selected);
+            }
             return result;
         }
         if (!event.hasKnownType()) throw new IllegalArgumentException("活动类型尚未核实，暂不能开启");
-        boolean resume = "enable".equals(action) && selected != null
-                && Objects.equals(selected.getHistoryKey(), event.getKey())
-                && selected.getEndTime().getTime() > now;
+        boolean resume =
+                "enable".equals(action)
+                        && selected != null
+                        && Objects.equals(selected.getHistoryKey(), event.getKey())
+                        && selected.getEndTime().getTime() > now;
         if (!resume) {
-            int nextSchedule = selected == null ? event.getScheduleId()
-                    : Math.addExact(Math.max(event.getScheduleId(), selected.getScheduleId()), 1);
+            int nextSchedule =
+                    selected == null
+                            ? event.getScheduleId()
+                            : Math.addExact(Math.max(event.getScheduleId(), selected.getScheduleId()), 1);
             var occupied = new HashSet<Integer>();
             current.forEach(item -> occupied.add(item.getScheduleId()));
             while (occupied.contains(nextSchedule)) nextSchedule = Math.addExact(nextSchedule, 1);
@@ -49,7 +66,8 @@ public final class ActivityScheduleStore {
             selected.setHistoryKey(event.getKey());
             selected.setMeetCondList(List.of());
             selected.setBeginTime(new Date(now));
-            long duration = durationDays == 0 ? event.durationMillis() : Duration.ofDays(durationDays).toMillis();
+            long duration =
+                    durationDays == 0 ? event.durationMillis() : Duration.ofDays(durationDays).toMillis();
             selected.setEndTime(new Date(Math.addExact(now, duration)));
             selected.onLoad();
         }
@@ -59,6 +77,66 @@ public final class ActivityScheduleStore {
         return result;
     }
 
+    public static List<ActivityConfigItem> reschedule(
+            List<ActivityConfigItem> current, HistoricalActivity event, long endTime, long now) {
+        var selected =
+                current.stream()
+                        .filter(
+                                item ->
+                                        item.getActivityId() == event.getActivityId()
+                                                && Objects.equals(item.getHistoryKey(), event.getKey()))
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalArgumentException("该活动尚无对应排期，请先开启或复刻"));
+        if (endTime <= now
+                || endTime > Integer.MAX_VALUE * 1000L
+                || selected.getBeginTime() == null
+                || selected.getEndTime() == null
+                || endTime <= selected.getBeginTime().getTime())
+            throw new IllegalArgumentException("到期时间须晚于当前时间和开始时间，且不超过 2038 年协议上限");
+        // Keep the reward-claim period after gameplay closes, while moving both deadlines.
+        long claimPeriod =
+                selected.getCloseTime() == null
+                        ? 0
+                        : Math.max(0, selected.getEndTime().getTime() - selected.getCloseTime().getTime());
+        long closeTime = endTime - claimPeriod;
+        long openTime =
+                selected.getOpenTime() == null
+                        ? selected.getBeginTime().getTime()
+                        : selected.getOpenTime().getTime();
+        if (closeTime <= openTime) throw new IllegalArgumentException("新的到期时间过早，须保留玩法开放期和原有领奖期");
+        var result = new ArrayList<ActivityConfigItem>();
+        for (var item : current) {
+            var copy = SCHEDULE_JSON.fromJson(SCHEDULE_JSON.toJson(item), ActivityConfigItem.class);
+            if (item == selected) {
+                copy.setEndTime(new Date(endTime));
+                copy.setCloseTime(new Date(closeTime));
+            }
+            copy.onLoad();
+            result.add(copy);
+        }
+        return result;
+    }
+
+    public static int requestedDays(JsonObject request) {
+        try {
+            int days =
+                    request.has("durationDays")
+                            ? request.get("durationDays").getAsBigDecimal().intValueExact()
+                            : 0;
+            if (days >= 0 && days <= 365) return days;
+        } catch (RuntimeException ignored) {
+        }
+        throw new IllegalArgumentException("复刻时长须为 1–365 的整数天数，0 表示原活动时长");
+    }
+
+    public static long requestedEnd(JsonObject request) {
+        try {
+            return Math.multiplyExact(request.get("endTime").getAsBigDecimal().longValueExact(), 1000);
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("请填写有效的到期时间");
+        }
+    }
+
     public static void write(Path path, List<ActivityConfigItem> items) throws IOException {
         var target = path.toAbsolutePath();
         Files.createDirectories(target.getParent());
@@ -66,10 +144,13 @@ public final class ActivityScheduleStore {
         try {
             Files.writeString(temp, SCHEDULE_JSON.toJson(items) + "\n", StandardCharsets.UTF_8);
             try {
-                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+                Files.move(
+                        temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
             } catch (AtomicMoveNotSupportedException e) {
                 Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
             }
-        } finally { Files.deleteIfExists(temp); }
+        } finally {
+            Files.deleteIfExists(temp);
+        }
     }
 }

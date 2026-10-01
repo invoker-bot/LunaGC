@@ -331,12 +331,8 @@
           <option value="active">已开启</option>
           <option value="restoring">还原中</option>
         </select>
-        <label for="activityDays">复刻时长</label>
-        <select id="activityDays">
-          <option value="0">原活动时长</option><option value="7">7 天</option>
-          <option value="14">14 天</option><option value="30">30 天</option>
-        </select>
       </div>
+      <p class="eq-note">每个活动可设置开启 / 复刻天数：1–365 天，0 表示原活动时长。保存到期时间保留进度；重新复刻会重置进度。恢复开启沿用原排期时间。</p>
       <p id="activitySummary" style="color:var(--dim);font-size:12px" role="status"></p>
       <div class="pager" id="activityPagerTop" aria-label="往期活动分页"></div>
       <div id="activityList"><span class="empty">加载中…</span></div>
@@ -1332,6 +1328,7 @@ function renderActivities() {
   for (const a of visible) {
     const el = document.createElement("div");
     el.className = "banner";
+    el.dataset.activityKey = a.key;
     const official = a.officialBeginTime
       ? `${a.officialBeginDescription || a.officialBeginTime} ~ ${a.officialEndDescription || a.officialEndTime}（国服时间）`
       : "时间待核实";
@@ -1343,6 +1340,11 @@ function renderActivities() {
       <div class="tm">本次复刻：${a.scheduleId ? `${fmtTime(a.beginTime)} ~ ${fmtTime(a.endTime)} · 排期 ${a.scheduleId}` : "尚未开启"}</div>
       <div class="up">${esc(a.restorationNote)}</div><div class="ops row"></div>`;
     const ops = el.querySelector(".ops");
+    const duration = document.createElement("label");
+    duration.appendChild(document.createTextNode("开启 / 复刻天数"));
+    const days = document.createElement("input");
+    days.type = "number"; days.min = "0"; days.max = "365"; days.step = "1"; days.value = "0"; days.required = true;
+    days.dataset.activityDays = ""; duration.appendChild(days); ops.appendChild(duration);
     const addButton = (label, action, disabled) => {
       const button = document.createElement("button");
       button.textContent = label; button.disabled = disabled;
@@ -1352,6 +1354,17 @@ function renderActivities() {
     addButton(a.active ? "关闭活动" : a.disabled && a.endTime * 1000 > Date.now() ? "恢复开启" : "开启活动",
       a.active ? "disable" : "enable", !a.canEnable && !a.active);
     if (a.scheduleId) addButton("重新复刻（重置进度）", "rerun", !a.canEnable);
+    if (a.scheduleId) {
+      const expiry = document.createElement("label");
+      expiry.appendChild(document.createTextNode("到期时间"));
+      const end = document.createElement("input");
+      end.type = "datetime-local"; end.required = true; end.step = "1"; end.dataset.activityEnd = "";
+      end.value = new Date(a.endTime*1000-new Date(a.endTime*1000).getTimezoneOffset()*60000).toISOString().slice(0,19);
+      expiry.appendChild(end); ops.appendChild(expiry);
+      const save = document.createElement("button"); save.textContent = "保存到期时间";
+      save.onclick = () => changeActivity(a, "reschedule", el);
+      ops.appendChild(save);
+    }
     if (a.sourceUrl && a.sourceUrl.startsWith("https://")) {
       const link = document.createElement("a"); link.textContent = "历史资料";
       link.href = a.sourceUrl; link.target = "_blank"; link.rel = "noopener noreferrer";
@@ -1361,20 +1374,39 @@ function renderActivities() {
   }
 }
 async function changeActivity(activity, action, row) {
-  row.querySelectorAll("button").forEach(b => { b.disabled = true; });
+  const request = { key: activity.key, action };
+  if (action === "reschedule") {
+    const input = row.querySelector("[data-activity-end]");
+    const endTime = Math.floor(new Date(input.value).getTime()/1000);
+    if (!input.reportValidity() || !Number.isFinite(endTime) || endTime <= Date.now()/1000 || endTime > 2147483647) {
+      out("到期时间须晚于当前时间，且不超过 2038 年协议上限。", "err"); return;
+    }
+    request.endTime = endTime;
+  } else if (action !== "disable") {
+    const input = row.querySelector("[data-activity-days]");
+    const days = Number(input.value);
+    if (!input.reportValidity() || !Number.isInteger(days) || days < 0 || days > 365) {
+      out("复刻时长须为 1–365 的整数天数，0 表示原活动时长。", "err"); return;
+    }
+    request.durationDays = days;
+  }
+  const controls = Array.from(row.querySelectorAll("button,input"));
+  const disabled = controls.map(c => c.disabled);
+  controls.forEach(c => { c.disabled = true; });
   try {
     const r = await api("/gm/api/activities", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: activity.key, action, durationDays: Number($("activityDays").value) })
+      body: JSON.stringify(request)
     });
     if (!r.ok) throw new Error(r.json && r.json.message || r.text || "保存失败");
-    out(`${activity.name}：${action === "disable" ? "已关闭" : "已开启至 " + fmtTime(r.json.endTime)}`
+    out(`${activity.name}：${action === "disable" ? "已关闭" : action === "reschedule" ? "到期时间已改为 " + fmtTime(r.json.endTime) + "（保留进度）" : "已开启至 " + fmtTime(r.json.endTime)}`
       + `，已同步 ${r.json.syncedPlayers} 位在线玩家。`
       + (r.json.syncFailures ? ` ${r.json.syncFailures} 位同步失败，请重新登录。` : ""));
     loadActivities();
   } catch (e) {
     if (e.message !== "403") out("活动操作失败：" + e.message, "err");
-    renderActivities();
+  } finally {
+    controls.forEach((c, i) => { c.disabled = disabled[i]; });
   }
 }
 $("activityRefresh").onclick = loadActivities;
