@@ -11,6 +11,8 @@ These are not copied from a different client version.
 | GetShopBatchReq / 12377 | packed shop types = 11 | codec constructor `0x1486033b0`, tag `0x5a` |
 | GetShopBatchRsp / 68803 | shops = 4, retcode = 10 | reader `0x147848850`, tags `0x22`, `0x50` |
 | Shop / 17784 | cards = 1, crystals = 9; goods = 4, shop type = 8 | reader `0x152917570`, nested types 51075 / 62721 |
+| ShopGoods / 79360 | min level = 11, purchase limit = 14, mora = 9, crystals = 15 | reader `0x14c846ab0`; consumer `0x149a58d60` maps offsets 0x74 / 0x8c / 0x5c to item IDs 201 / 202 / 203; level check `0x149a571f5` reads 0x88; limit check `0x149a57404` reads 0x78 |
+| ShopType / 57587 | RECOMMEND = 900, PACKAGE = 902, MCOIN = 903, PAIMON = 1001 | recovered numeric enum defaults; recommendation panel `0x14cfd78d9` tests shop type 0x384 |
 | ShopPlayProduct / 42863 | product ID = 1, price tier = 2, play type = 3 | writer tags at `0x152776713`, `0x15277678b`, `0x1527767f2` |
 | RechargeReq / 67538 | play = 1, card = 12, crystals = 14 | writer `0x14af78330`, nested types 42863 / 51075 / 62721 |
 | RechargeRsp / 17747 | retcode = 5, product ID = 12 | reader `0x14eaef090`, tags `0x28`, `0x62` |
@@ -41,7 +43,23 @@ NORMAL / EXTRA / UPGRADE / NORMAL_DISCOUNT / EXTRA_DISCOUNT = 1 / 2 / 3 / 4 / 5.
 `ShopmallRecommendConfigData.json` references PACKAGE config 101, so the monthly
 card remains in shop 902; crystals are in 903 and premium battle pass products
 use the battle pass product query. Moving the card to shop 1001 would contradict
-the recommendation resource.
+the recommendation resource. The virtual recommendation entrance 900 must also
+be advertised in `GetShopmallDataRsp`; it selects the recommendation panel and
+looks up the PACKAGE card. Omitting 900 hides the recommendation page even when
+902 contains a valid monthly card.
+
+Native goods consumers append scalar mora, primogem and crystal prices to the
+cost display. Those currencies must not also be duplicated in `cost_item_list`.
+The four previously unmapped fields above now carry their verified tags rather
+than placeholder field numbers in the 50000 range.
+
+Paimon's Bargains uses current resource goods, including `rotateId` and original
+sale windows, instead of the fork's fixed substitutions (unrelated characters,
+five-star weapons and Traveler tokens in rotating slots). The month index is
+relative to the first sale month in the row; the supplied rotations start in
+October 2020. Queries and purchases resolve the same row at the Shanghai 04:00
+month boundary. Expired rows and unresolved item ID 0 are omitted from client
+responses. GM operator overrides are still applied after the resource catalogue.
 
 Battle pass triggers are reloaded after resources load. Raw trigger names are
 preserved because newer resources use names absent from the legacy watcher enum,

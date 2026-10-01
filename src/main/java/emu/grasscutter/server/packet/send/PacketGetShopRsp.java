@@ -12,12 +12,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class PacketGetShopRsp extends BasePacket {
-    private static void addCurrencyCost(ShopGoods.Builder goods, int itemId, int count) {
-        if (count <= 0) return;
-        goods.addCostItemList(
-                ItemParamOuterClass.ItemParam.newBuilder().setItemId(itemId).setCount(count).build());
-    }
-
     public PacketGetShopRsp(Player player, int shopType) {
         super(PacketOpcodes.GetShopRsp);
 
@@ -37,13 +31,20 @@ public class PacketGetShopRsp extends BasePacket {
             List<ShopGoods> goodsList = new ArrayList<>();
 
             for (ShopInfo info : list) {
+                int currentTs = Utils.getCurrentSeconds();
+                var item = info.resolveGoodsItem(currentTs);
+                if (currentTs < info.getBeginTime()
+                        || currentTs >= info.getEndTime()
+                        || item == null
+                        || item.getId() <= 0
+                        || item.getCount() <= 0) continue;
                 ShopGoods.Builder goods =
                         ShopGoods.newBuilder()
                                 .setGoodsId(info.getGoodsId())
                                 .setGoodsItem(
                                         ItemParamOuterClass.ItemParam.newBuilder()
-                                                .setItemId(info.getGoodsItem().getId())
-                                                .setCount(info.getGoodsItem().getCount())
+                                                .setItemId(item.getId())
+                                                .setCount(item.getCount())
                                                 .build())
                                 .setScoin(info.getScoin())
                                 .setHcoin(info.getHcoin())
@@ -51,7 +52,8 @@ public class PacketGetShopRsp extends BasePacket {
                                 .setEndTime(info.getEndTime())
                                 .setMinLevel(info.getMinLevel())
                                 .setMaxLevel(info.getMaxLevel())
-                                .setMcoin(info.getMcoin());
+                                .setMcoin(info.getMcoin())
+                                .setSingleLimit(info.getBuyLimit());
 
                 if (info.getCostItemList() != null) {
                     goods.addAllCostItemList(
@@ -65,11 +67,8 @@ public class PacketGetShopRsp extends BasePacket {
                                     .collect(Collectors.toList()));
                 }
 
-                addCurrencyCost(goods, 202, info.getScoin());
-                addCurrencyCost(goods, 201, info.getHcoin());
-                addCurrencyCost(goods, 203, info.getMcoin());
-
-                int currentTs = Utils.getCurrentSeconds();
+                // Native clients append scalar currency costs themselves. Duplicating those
+                // currencies in cost_item_list displays them twice in the UI.
                 ShopLimit currentShopLimit = player.getGoodsLimit(info.getGoodsId());
                 int nextRefreshTime = ShopSystem.getShopNextRefreshTime(info);
 

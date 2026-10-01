@@ -81,6 +81,16 @@ public class ShopSystem extends BaseGameSystem {
                         .forEach(
                                 (k, v) -> {
                                     int shopId = k.intValue();
+                                    // The fork snapshot replaces rotating Paimon goods with unrelated
+                                    // characters/weapons. Use the official rows; GM overrides apply later.
+                                    if (shopId == ShopType.SHOP_TYPE_PAIMON.shopTypeId) {
+                                        shopData.put(
+                                                shopId,
+                                                v.stream()
+                                                        .map(ShopInfo::new)
+                                                        .collect(java.util.stream.Collectors.toCollection(ArrayList::new)));
+                                        return;
+                                    }
                                     var items = shopData.computeIfAbsent(shopId, x -> new ArrayList<>());
                                     var known = new HashMap<Integer, ShopInfo>();
                                     for (ShopInfo curated : items) known.put(curated.getGoodsId(), curated);

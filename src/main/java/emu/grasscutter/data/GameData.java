@@ -540,6 +540,8 @@ public final class GameData {
             new Int2ObjectOpenHashMap<>();
     private static final Int2ObjectMap<ShopGoodsData> shopGoodsDataMap =
             new Int2ObjectOpenHashMap<>();
+    @Getter private static final Int2ObjectMap<ShopRotateData> shopRotateDataMap =
+            new Int2ObjectOpenHashMap<>();
 
     // The following are accessed via getMapByResourceDef, and will show as unused
     private static final Int2ObjectMap<CodexMaterialData> codexMaterialDataMap =

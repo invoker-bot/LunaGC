@@ -31,7 +31,10 @@ final class GmShop {
         var names = Language.getTextMapStrings();
         var result = new ArrayList<Map<String, Object>>();
         for (var e : entries) {
-            var data = GameData.getItemDataMap().get(e.goods().getGoodsItem().getId());
+            var goods = ShopCatalog.copy(e.goods());
+            var item = goods.resolveGoodsItem(emu.grasscutter.utils.Utils.getCurrentSeconds());
+            if (item != null) goods.setGoodsItem(item);
+            var data = item == null ? null : GameData.getItemDataMap().get(item.getId());
             String name = data == null ? "资源中未找到的物品" : GmHandler.nameOf(names, data);
             var row = new LinkedHashMap<String, Object>();
             row.put("shopType", e.shopType());
@@ -40,7 +43,7 @@ final class GmShop {
             row.put("enabled", e.enabled());
             row.put("custom", e.custom());
             row.put("modified", e.modified());
-            row.put("goods", e.goods());
+            row.put("goods", goods);
             result.add(row);
         }
         result.sort(Comparator.comparingInt(m -> ((ShopInfo) m.get("goods")).getGoodsId()));

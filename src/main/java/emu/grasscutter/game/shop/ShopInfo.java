@@ -1,7 +1,12 @@
 package emu.grasscutter.game.shop;
 
+import emu.grasscutter.data.GameData;
 import emu.grasscutter.data.common.ItemParamData;
 import emu.grasscutter.data.excels.ShopGoodsData;
+import emu.grasscutter.data.excels.ShopRotateData;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import lombok.*;
 
@@ -21,6 +26,7 @@ public class ShopInfo {
     @Getter @Setter private int hcoin = 0;
     @Getter @Setter private int disableType = 0;
     @Getter @Setter private int secondarySheetId = 0;
+    @Getter @Setter private int rotateId = 0;
 
     private String refreshType;
     private transient ShopRefreshType shopRefreshType;
@@ -37,6 +43,9 @@ public class ShopInfo {
         this.mcoin = sgd.getCostMcoin();
         this.hcoin = sgd.getCostHcoin();
         this.buyLimit = sgd.getBuyLimit();
+        this.rotateId = sgd.getRotateId();
+        this.beginTime = resourceTime(sgd.getBeginTime(), 0);
+        this.endTime = resourceTime(sgd.getEndTime(), this.endTime);
 
         this.minLevel = sgd.getMinPlayerLevel();
         this.maxLevel = sgd.getMaxPlayerLevel() == 0 ? 61 : sgd.getMaxPlayerLevel();
@@ -51,6 +60,30 @@ public class ShopInfo {
         this.secondarySheetId = sgd.getSubTabId();
         setShopRefreshType(sgd.getRefreshType());
         this.shopRefreshParam = sgd.getRefreshParam();
+    }
+
+    private static int resourceTime(String value, int fallback) {
+        if (value == null || value.isBlank()) return fallback;
+        return Math.toIntExact(
+                LocalDateTime.parse(value, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                        .atZone(ZoneId.of("Asia/Shanghai"))
+                        .toEpochSecond());
+    }
+
+    /** Resolve the monthly resource rotation without changing the shared catalogue. */
+    public ItemParamData resolveGoodsItem(int timestamp) {
+        if (rotateId == 0) return goodsItem;
+        var rotation =
+                GameData.getShopRotateDataMap().values().stream()
+                        .filter(row -> row.getRotateId() == rotateId)
+                        .sorted(Comparator.comparingInt(ShopRotateData::getRotateOrder))
+                        .toList();
+        if (rotation.isEmpty()) return null;
+        var zone = ZoneId.of("Asia/Shanghai");
+        var start = YearMonth.from(Instant.ofEpochSecond(beginTime).atZone(zone));
+        var month = YearMonth.from(Instant.ofEpochSecond(timestamp).atZone(zone).minusHours(4));
+        int index = Math.floorMod(ChronoUnit.MONTHS.between(start, month), rotation.size());
+        return new ItemParamData(rotation.get(index).getItemId(), goodsItem.getCount());
     }
 
     public ShopRefreshType getShopRefreshType() {

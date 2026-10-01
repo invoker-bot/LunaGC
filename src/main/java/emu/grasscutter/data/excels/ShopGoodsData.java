@@ -23,6 +23,21 @@ public class ShopGoodsData extends GameResource {
     private int maxPlayerLevel;
 
     private int buyLimit;
+    private int rotateId;
+    private String beginTime;
+    private String endTime;
+
+    public int getRotateId() {
+        return rotateId;
+    }
+
+    public String getBeginTime() {
+        return beginTime;
+    }
+
+    public String getEndTime() {
+        return endTime;
+    }
 
     @SerializedName(
             value = "subTabId",

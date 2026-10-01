@@ -101,12 +101,17 @@ public class HandlerBuyGoodsReq extends PacketHandler {
                 }
             }
 
-            int itemId = sg.getGoodsItem().getId();
+            var resolvedItem = sg.resolveGoodsItem(currentTs);
+            if (resolvedItem == null || resolvedItem.getId() <= 0 || resolvedItem.getCount() <= 0) {
+                session.send(new PacketBuyGoodsRsp(Retcode.RET_SHOP_CONTENT_NOT_MATCH));
+                continue;
+            }
+            int itemId = resolvedItem.getId();
             int itemCount;
             try {
                 // A free good passes payItems whatever the count, so this product is the only
                 // thing standing between a crafted request and an overflowed stack.
-                itemCount = Math.multiplyExact(buyCount, sg.getGoodsItem().getCount());
+                itemCount = Math.multiplyExact(buyCount, resolvedItem.getCount());
             } catch (ArithmeticException overflow) {
                 session.send(new PacketBuyGoodsRsp(Retcode.RET_SVR_ERROR));
                 continue;

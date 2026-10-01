@@ -7,7 +7,7 @@ import java.util.*;
 
 public class PacketGetShopmallDataRsp extends BasePacket {
 
-    private static final List<Integer> SHOP_MALL_TABS = List.of(902, 1001, 1052, 903);
+    private static final List<Integer> SHOP_MALL_TABS = List.of(900, 902, 1001, 1052, 903);
 
     public PacketGetShopmallDataRsp(ShopSystem shopSystem) {
         super(PacketOpcodes.GetShopmallDataRsp);
@@ -21,7 +21,8 @@ public class PacketGetShopmallDataRsp extends BasePacket {
                             .anyMatch(
                                     p ->
                                             shopSystem.getFreeStore().enabled(p)
-                                                    && ((shopType == 902 && p.kind().equals("card"))
+                                                    && (((shopType == 900 || shopType == 902)
+                                                                    && p.kind().equals("card"))
                                                             || (shopType == 903 && p.kind().equals("crystals"))))) {
                 shop_malls.add(shopType);
             }
