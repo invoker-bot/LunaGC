@@ -7,6 +7,6 @@ import "ItemParam.proto";
 
 message CalcWeaponUpgradeReturnItemsReq {
 	uint64 target_weapon_guid = 1;
-	repeated uint64 food_weapon_guid_list = 6;
-	repeated ItemParam item_param_list = 12;
+	repeated uint64 food_weapon_guid_list = 14;
+	repeated ItemParam item_param_list = 10;
 }
