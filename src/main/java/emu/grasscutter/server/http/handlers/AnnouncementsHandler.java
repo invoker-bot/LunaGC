@@ -1,5 +1,6 @@
 package emu.grasscutter.server.http.handlers;
 
+import emu.grasscutter.Grasscutter;
 import emu.grasscutter.game.notice.NoticeCatalog;
 import emu.grasscutter.server.http.Router;
 import io.javalin.Javalin;
@@ -71,7 +72,16 @@ public final class AnnouncementsHandler implements Router {
             allRoutes(
                     app,
                     "/" + region + "/mdk/shopwindow/shopwindow/listPriceTier",
-                    ctx -> response(ctx, Map.of("suggest_currency", "USD", "tiers", List.of())));
+                    ctx -> {
+                        var server = Grasscutter.getGameServer();
+                        if (server == null) {
+                            ctx.status(503).json(Map.of("retcode", 1, "message", "Game server unavailable"));
+                            return;
+                        }
+                        response(
+                                ctx,
+                                server.getShopSystem().getFreeStore().priceTiers(region.equals("hk4e_global")));
+                    });
         }
         app.get("/hk4e/announcement/index.html", AnnouncementsHandler::page);
         app.get("/hk4e/announcement/", AnnouncementsHandler::page);

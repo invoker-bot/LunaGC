@@ -53,6 +53,7 @@ public class ResinManager extends BasePlayerManager {
                 .getBattlePassManager()
                 .triggerMission(
                         WatcherTriggerType.TRIGGER_COST_MATERIAL, 106, amount); // Resin item id = 106
+        this.player.getBattlePassManager().triggerMission("TRIGGER_CONSUME_RESIN", 0, amount);
 
         return true;
     }

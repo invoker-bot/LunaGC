@@ -245,6 +245,9 @@ public class InventorySystem extends BaseGameSystem {
 
         // Avatar
         if (oldLevel != level) {
+            player.getBattlePassManager().triggerMission(
+                    "TRIGGER_ANY_RANK_LEVEL_RELIQUARY_UPGRADE_LEVEL",
+                    relic.getItemData().getRankLevel(), level - oldLevel);
             Avatar avatar =
                     relic.getEquipCharacter() > 0
                             ? player.getAvatars().getAvatarById(relic.getEquipCharacter())

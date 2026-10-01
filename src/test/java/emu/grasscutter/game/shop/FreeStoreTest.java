@@ -34,8 +34,16 @@ class FreeStoreTest {
 
         final Map<Integer, Integer> granted = new HashMap<>();
         LocalDate day = LocalDate.of(2026, 10, 1);
+        Instant now;
         final BattlePassManager pass =
                 new BattlePassManager(this) {
+                    @Override
+                    protected Instant missionNow() {
+                        return now == null
+                                ? day.atTime(12, 0).atZone(ZoneId.of("Asia/Shanghai")).toInstant()
+                                : now;
+                    }
+
                     @Override
                     public void save() {}
                 };
@@ -182,6 +190,40 @@ class FreeStoreTest {
         assertFalse(
                 store.products().isEmpty(), "The resource product tables must be mounted for this test");
         return store;
+    }
+
+    @Test
+    void desktopShopUsesDesktopProductsInsteadOfCloudGameProducts() {
+        var store = store(new ShopCatalog(dir.resolve("shop.json")));
+        for (var product : store.products()) {
+            if (product.kind().equals("primogems")) continue;
+            assertFalse(product.productId().startsWith("cloud"), product.productId());
+        }
+        var shop = emu.grasscutter.net.proto.ShopOuterClass.Shop.newBuilder().setShopType(903);
+        store.addProducts(shop, new TestPlayer());
+        assertEquals(6, shop.getMcoinProductListCount());
+        assertEquals("ys_chn_primogem1ststall_tier1", shop.getMcoinProductList(0).getProductId());
+        assertEquals("Tier_1", shop.getMcoinProductList(0).getPriceTier());
+        var card = emu.grasscutter.net.proto.ShopOuterClass.Shop.newBuilder().setShopType(902);
+        store.addProducts(card, new TestPlayer());
+        assertEquals("ys_chn_blessofmoon_tier5", card.getCardProductList(0).getProductId());
+        assertEquals("Tier_5", card.getCardProductList(0).getPriceTier());
+    }
+
+    @Test
+    void sdkPriceTableKeepsResourceTierNamesWithZeroPrices() {
+        var store = store(new ShopCatalog(dir.resolve("shop.json")));
+        var json = new Gson().toJsonTree(store.priceTiers(false)).getAsJsonObject();
+        var tiers = new HashSet<String>();
+        for (var row : json.getAsJsonArray("tiers")) {
+            var tier = row.getAsJsonObject();
+            tiers.add(tier.get("tier_id").getAsString());
+            var price = tier.getAsJsonArray("t_price").get(0).getAsJsonObject();
+            assertEquals("0", price.get("price").getAsString());
+            assertEquals("CNY", price.get("currency").getAsString());
+        }
+        assertTrue(tiers.containsAll(Set.of("Tier_1", "Tier_5", "Tier_10", "Tier_20")));
+        assertFalse(tiers.contains("Tier_0"));
     }
 
     @Test

@@ -13,7 +13,7 @@ public class HandlerGetBattlePassProductReq extends PacketHandler {
         var product = session.getServer().getShopSystem().getFreeStore().productForPlayType(type);
         var response = GetBattlePassProductRsp.newBuilder().setPlayType(type);
         if (product == null) response.setRetcode(1);
-        else response.setProductId(product.productId()).setPriceTier("Tier_0");
+        else response.setProductId(product.productId()).setPriceTier(product.priceTier());
         var packet = new BasePacket(PacketOpcodes.GetBattlePassProductRsp);
         packet.setData(response.build());
         session.send(packet);

@@ -14,6 +14,7 @@ import emu.grasscutter.data.excels.RewardPreviewData;
 import emu.grasscutter.database.DatabaseHelper;
 import emu.grasscutter.game.player.Player;
 import emu.grasscutter.game.props.ActionReason;
+import emu.grasscutter.game.props.WatcherTriggerType;
 import emu.grasscutter.game.world.Scene;
 import emu.grasscutter.game.entity.EntityMonster;
 import emu.grasscutter.scripts.ScriptLoader;
@@ -819,6 +820,7 @@ public class DailyTaskManager {
 			this.broadcastProgress(task);
 
 			if (task.isFinished()) {
+                notifyBattlePassCommission();
 				Grasscutter.getLogger()
 						.info(
 								"[DailyTask] Commission {} completed from group {}.",
@@ -1048,6 +1050,12 @@ public class DailyTaskManager {
 						data.getNewGroupVec());
 	}
 
+    private void notifyBattlePassCommission() {
+        if (player != null && player.getBattlePassManager() != null) {
+            player.getBattlePassManager().triggerMission(WatcherTriggerType.TRIGGER_DAILY_TASK);
+        }
+    }
+
 	public synchronized boolean finishDailyTask(int taskId) {
 		DailyTask task =
 				this.getDailyTask(taskId);
@@ -1059,6 +1067,7 @@ public class DailyTaskManager {
 		if (!task.finish()) {
 			return false;
 		}
+        notifyBattlePassCommission();
 
 		this.broadcastProgress(task);
 

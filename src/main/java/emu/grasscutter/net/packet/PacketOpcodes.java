@@ -374,7 +374,7 @@ public final class PacketOpcodes {
     public static final int TakeAchievementGoalRewardRsp = -66;
     public static final int TakeAchievementRewardReq = -67;
     public static final int TakeAchievementRewardRsp = -68;
-    public static final int TakeBattlePassMissionPointReq = -69;
+    public static final int TakeBattlePassMissionPointReq = 23648;
     public static final int TakeBattlePassRewardReq = 9892;
     public static final int TakeBattlePassRewardRsp = 2848;
     public static final int TakeFurnitureMakeReq = 4563;

@@ -107,7 +107,8 @@ public class BlossomManager {
                     }
                     entityGadget.updateState(201);
                     scene.setChallenge(activity.getChallenge());
-                    scene.removeEntity(entityGadget, VisionTypeOuterClass.VisionType.VisionType_VISION_REMOVE);
+                    scene.removeEntity(
+                            entityGadget, VisionTypeOuterClass.VisionType.VisionType_VISION_REMOVE);
                     activity.start();
                     return true;
                 });
@@ -217,6 +218,12 @@ public class BlossomManager {
                         it.remove();
                         recycleGadgetEntity(List.of(gadget));
                         blossomConsumed.add(gadget.getSpawnEntry());
+                        player
+                                .getBattlePassManager()
+                                .triggerMission(
+                                        emu.grasscutter.game.props.WatcherTriggerType.TRIGGER_FINISH_BLOSSOM_PROGRESS,
+                                        type.getBlossomChestId(),
+                                        1);
                         return items;
                     }
                     return null;

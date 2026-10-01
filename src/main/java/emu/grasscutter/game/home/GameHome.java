@@ -382,6 +382,10 @@ public class GameHome {
 
     public void takeHomeCoin(Player player) {
         player.getInventory().addItem(204, storedCoin);
+        player
+                .getBattlePassManager()
+                .triggerMission(
+                        emu.grasscutter.game.props.WatcherTriggerType.TRIGGER_HOME_COIN, 0, storedCoin);
         storedCoin = 0;
         save();
         player.getSession().send(new PacketHomeResourceNotify(player));

@@ -55,4 +55,22 @@ class StoreProtocolTest {
         assertEquals(2, rsp.getPlayType());
         assertEquals("p", rsp.getProductId());
     }
+
+    @Test
+    void battlePassMissionClaimAndWeeklyPointsUseClientFields() throws Exception {
+        var req =
+                TakeBattlePassMissionPointReqOuterClass.TakeBattlePassMissionPointReq.parseFrom(
+                        new byte[] {0x22, 2, 1, 2});
+        assertEquals(java.util.List.of(1, 2), req.getMissionIdListList());
+        assertEquals(23648, emu.grasscutter.net.packet.PacketOpcodes.TakeBattlePassMissionPointReq);
+        var rsp =
+                TakeBattlePassMissionPointRspOuterClass.TakeBattlePassMissionPointRsp.parseFrom(
+                        new byte[] {0x40, 1, 0x6a, 2, 1, 2});
+        assertEquals(1, rsp.getRetcode());
+        assertEquals(java.util.List.of(1, 2), rsp.getMissionIdListList());
+        var schedule =
+                BattlePassScheduleOuterClass.BattlePassSchedule.parseFrom(new byte[] {0x48, 8, 0x78, 120});
+        assertEquals(8, schedule.getPaidPlatformFlags());
+        assertEquals(120, schedule.getCurCyclePoints());
+    }
 }

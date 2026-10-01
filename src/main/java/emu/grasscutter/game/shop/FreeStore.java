@@ -26,7 +26,8 @@ public class FreeStore {
             int days,
             int dailyAmount,
             int maxDays,
-            int playType) {}
+            int playType,
+            String priceTier) {}
 
     private final ShopCatalog catalog;
     private volatile List<Product> products = List.of();
@@ -60,7 +61,11 @@ public class FreeStore {
                     if (matching.isEmpty()) continue;
                     var primary =
                             matching.stream()
-                                    .filter(i -> i.has("isInternal") && i.get("isInternal").getAsBoolean())
+                                    .filter(
+                                            i ->
+                                                    i.has("isInternal")
+                                                            && i.get("isInternal").getAsBoolean()
+                                                            && !i.get("productId").getAsString().startsWith("cloud"))
                                     .findFirst()
                                     .orElse(matching.get(0));
                     String id = primary.get("productId").getAsString();
@@ -80,7 +85,8 @@ public class FreeStore {
                                         number(row, "days"),
                                         number(row, "hcoinPerDay"),
                                         number(row, "totalLimitDays"),
-                                        0);
+                                        0,
+                                        row.get("priceTier").getAsString());
                     } else if (table.contains("Mcoin")) {
                         int amount = number(row, "mcoinNum");
                         product =
@@ -95,7 +101,8 @@ public class FreeStore {
                                         0,
                                         0,
                                         0,
-                                        0);
+                                        0,
+                                        row.get("priceTier").getAsString());
                         all.add(
                                 new Product(
                                         "primogems:" + config,
@@ -108,7 +115,8 @@ public class FreeStore {
                                         0,
                                         0,
                                         0,
-                                        0));
+                                        0,
+                                        ""));
                     } else {
                         String type = row.get("play_type").getAsString();
                         int play =
@@ -134,7 +142,8 @@ public class FreeStore {
                                         0,
                                         0,
                                         0,
-                                        play);
+                                        play,
+                                        row.get("priceTier").getAsString());
                     }
                     all.add(product);
                     for (var match : matching) index.put(match.get("productId").getAsString(), product);
@@ -149,6 +158,35 @@ public class FreeStore {
 
     public List<Product> products() {
         return products;
+    }
+
+    /** Preserve resource tier names so the native shop can match its product configuration. */
+    public Map<String, Object> priceTiers(boolean overseas) {
+        String currency = overseas ? "USD" : "CNY";
+        var price =
+                Map.of(
+                        "enable",
+                        1,
+                        "country",
+                        overseas ? "US" : "CN",
+                        "currency",
+                        currency,
+                        "price",
+                        "0",
+                        "symbol",
+                        overseas ? "$" : "￥",
+                        "amount_display",
+                        "0.00");
+        var tiers =
+                products.stream()
+                        .filter(this::enabled)
+                        .map(Product::priceTier)
+                        .filter(t -> !t.isEmpty())
+                        .distinct()
+                        .sorted()
+                        .map(t -> Map.of("tier_id", t, "t_price", List.of(price)))
+                        .toList();
+        return Map.of("suggest_currency", currency, "tiers", tiers, "price_tier_version", "1");
     }
 
     public Product productForPlayType(int type) {
@@ -244,7 +282,7 @@ public class FreeStore {
                 shop.addCardProductList(
                         ShopCardProduct.newBuilder()
                                 .setProductId(p.productId)
-                                .setPriceTier("Tier_0")
+                                .setPriceTier(p.priceTier)
                                 .setMcoinBase(p.amount)
                                 .setHcoinPerDay(p.dailyAmount)
                                 .setDays(p.days)
@@ -254,7 +292,7 @@ public class FreeStore {
                 shop.addMcoinProductList(
                         ShopMcoinProduct.newBuilder()
                                 .setProductId(p.productId)
-                                .setPriceTier("Tier_0")
+                                .setPriceTier(p.priceTier)
                                 .setMcoinBase(p.amount)
                                 .setMcoinFirst(p.firstBonus)
                                 .setMcoinNonFirst(p.bonus)

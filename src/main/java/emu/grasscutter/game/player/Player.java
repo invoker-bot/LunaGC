@@ -1349,6 +1349,9 @@ public class Player implements PlayerHook, FieldFetch {
 
     private synchronized void doDailyReset() {
 
+        if (getBattlePassManager().refreshMissions()) {
+            getBattlePassManager().triggerMission(WatcherTriggerType.TRIGGER_LOGIN);
+        }
         int currentTime = Utils.getCurrentSeconds();
 
         var currentDate =
@@ -1362,14 +1365,6 @@ public class Player implements PlayerHook, FieldFetch {
         }
 
         this.setForgePoints(300_000);
-
-        this.getBattlePassManager().resetDailyMissions();
-
-        this.getBattlePassManager().triggerMission(WatcherTriggerType.TRIGGER_LOGIN);
-
-        if (currentDate.getDayOfWeek() == DayOfWeek.MONDAY) {
-            this.getBattlePassManager().resetWeeklyMissions();
-        }
 
         // The weekly-boss claim counter refreshes with the weekly reset. doDailyReset only runs
         // once per calendar day, so comparing the Monday that starts each week - rather than

@@ -12,8 +12,8 @@ public class HandlerTakeBattlePassMissionPointReq extends PacketHandler {
     public void handle(GameSession session, byte[] header, byte[] payload) throws Exception {
         var req = TakeBattlePassMissionPointReq.parseFrom(payload);
 
-        session.getPlayer().getBattlePassManager().takeMissionPoint(req.getMissionIdListList());
-
-        session.send(new PacketTakeBattlePassMissionPointRsp());
+        var claimed =
+                session.getPlayer().getBattlePassManager().takeMissionPoint(req.getMissionIdListList());
+        session.send(new PacketTakeBattlePassMissionPointRsp(claimed));
     }
 }

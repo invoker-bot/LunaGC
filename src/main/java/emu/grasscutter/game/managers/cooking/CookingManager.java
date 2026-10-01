@@ -7,6 +7,7 @@ import emu.grasscutter.data.excels.ItemData;
 import emu.grasscutter.game.inventory.GameItem;
 import emu.grasscutter.game.player.*;
 import emu.grasscutter.game.props.ActionReason;
+import emu.grasscutter.game.props.WatcherTriggerType;
 import emu.grasscutter.net.proto.CookRecipeDataOuterClass;
 import emu.grasscutter.net.proto.PlayerCookArgsReqOuterClass.PlayerCookArgsReq;
 import emu.grasscutter.net.proto.PlayerCookReqOuterClass.PlayerCookReq;
@@ -219,6 +220,7 @@ public class CookingManager extends BasePlayerManager {
         }
 
         // Send response.
+        this.player.getBattlePassManager().triggerMission(WatcherTriggerType.TRIGGER_DO_COOK, 1, count);
         this.player.sendPacket(
                 new PacketPlayerCookRsp(cookResults, quality, count, recipeId, proficiency));
     }

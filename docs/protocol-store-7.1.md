@@ -16,18 +16,40 @@ These are not copied from a different client version.
 | RechargeRsp / 17747 | retcode = 5, product ID = 12 | reader `0x14eaef090`, tags `0x28`, `0x62` |
 | GetBattlePassProductReq / 82534 | play type = 9 | writer `0x150c63ce0`, tag `0x48` |
 | GetBattlePassProductRsp / 78059 | retcode = 2, tier = 4, play type = 6, product ID = 15 | reader `0x14fddac10`, tags `0x10`, `0x22`, `0x30`, `0x7a` |
+| TakeBattlePassMissionPointReq / 28005 / opcode 23648 | packed mission IDs = 4 | codec constructor `0x1518454e0`, tag `0x22`; sender `0x14d124b70` shares the normal BP module with TakeBattlePassRewardReq |
+| TakeBattlePassMissionPointRsp / 18629 / opcode 26251 | retcode = 8, mission IDs = 13 | reader `0x1497ab090`, tags `0x40`, `0x68` / `0x6a` |
+| BattlePassSchedule / 25940 | paid platform flags = 9, weekly points = 15 | reader `0x15304b350`; conversion `0x14d1222b0` maps field 9 to the flags tested with `Miscs.GetPlatFormCategory` at `0x14d125110` |
 
 The old Shop schema swapped its card and crystal lists. `StoreProtocolTest` now
 parses fixed wire fixtures using the observed tags. Unknown fields and unsupported
 concert/cloud products are left out; no unknown opcode has been invented.
 
 Product IDs, aliases, pack amounts, first/subsequent crystal bonuses and monthly
-card limits come from `Product*ConfigData.json`. Supported cash products use the
-server's zero-price tier `Tier_0`; client-provided prices or rewards are ignored.
+card limits come from `Product*ConfigData.json`. Native product discovery selects
+the desktop `ys_chn_*` aliases rather than the first `cloudys_chn_*` row.
+Products retain the resource tier names (for example `Tier_1`, `Tier_5`, `Tier_10`)
+and the SDK price endpoint returns a `t_price` array with `price: "0"` for each tier.
+An invented `Tier_0` cannot match the native client configuration. Client-provided
+prices or rewards are ignored. The SDK response shape follows the public
+`sdk-static.mihoyo.com/hk4e_cn/mdk/shopwindow/shopwindow/listPriceTier?game_biz=hk4e_cn`
+endpoint, with the prices replaced by zero.
 Battle pass product types follow the resource's NORMAL / EXTRA / UPGRADE and
 discount variants. Battle pass extras and reward index use the current schedule.
 The cached numeric field defaults also verify HCOIN card type = 1 and battle pass
 NORMAL / EXTRA / UPGRADE / NORMAL_DISCOUNT / EXTRA_DISCOUNT = 1 / 2 / 3 / 4 / 5.
+
+`ShopmallRecommendConfigData.json` references PACKAGE config 101, so the monthly
+card remains in shop 902; crystals are in 903 and premium battle pass products
+use the battle pass product query. Moving the card to shop 1001 would contradict
+the recommendation resource.
+
+Battle pass triggers are reloaded after resources load. Raw trigger names are
+preserved because newer resources use names absent from the legacy watcher enum,
+including `TRIGGER_CONSUME_RESIN`. Daily and weekly experience both count toward
+the weekly limit; period tasks do not. Refresh dates are persisted, with daily
+04:00 and Monday 04:00 boundaries in Asia/Shanghai. Legacy saves retain their
+progress at first assignment. Invalid selections and wrong reward-track tags
+are rejected; acknowledgements include only granted rewards and claimed missions.
 
 ## Verification boundary
 

@@ -153,6 +153,12 @@ public class FurnitureManager extends BasePlayerManager {
 
         player.getInventory().addItem(makeData.getFurnitureItemID(), makeData.getCount());
         player.getHome().getFurnitureMakeSlotItemList().remove(slotItem.get());
+        player
+                .getBattlePassManager()
+                .triggerMission(
+                        emu.grasscutter.game.props.WatcherTriggerType.TRIGGER_FURNITURE_MAKE,
+                        0,
+                        makeData.getCount());
 
         // Should be for first craft, but until first craft check exists add exp for each item crafted
         player.getInventory().addItem(121, makeData.getExp(), ActionReason.FurnitureMakeTake);

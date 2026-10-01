@@ -16,37 +16,47 @@ public class BattlePassMissionData extends GameResource {
     private int addPoint;
     private int scheduleId;
     private int progress;
+    private boolean isDisuse;
     private TriggerConfig triggerConfig;
     private BattlePassMissionRefreshType refreshType;
 
-    private transient Set<Integer> mainParams;
+    private transient Set<Integer> mainParams = Set.of();
 
     public WatcherTriggerType getTriggerType() {
-        return this.getTriggerConfig().getTriggerType();
+        return WatcherTriggerType.getTypeByName(getTriggerName());
+    }
+
+    public String getTriggerName() {
+        return triggerConfig == null ? null : triggerConfig.getTriggerType();
     }
 
     public boolean isCycleRefresh() {
         return getRefreshType() == null
+                || getRefreshType() == BattlePassMissionRefreshType.BATTLE_PASS_MISSION_REFRESH_DAILY
                 || getRefreshType()
-                        == BattlePassMissionRefreshType.BATTLE_PASS_MISSION_REFRESH_CYCLE_CROSS_SCHEDULE;
+                        == BattlePassMissionRefreshType.BATTLE_PASS_MISSION_REFRESH_CYCLE_CROSS_SCHEDULE
+                || getRefreshType() == BattlePassMissionRefreshType.BATTLE_PASS_MISSION_REFRESH_CYCLE;
     }
 
     public boolean isValidRefreshType() {
-        return getRefreshType() == null
-                || getRefreshType()
-                        == BattlePassMissionRefreshType.BATTLE_PASS_MISSION_REFRESH_CYCLE_CROSS_SCHEDULE
-                || getScheduleId() == 2701;
+        return !isDisuse
+                && getTriggerName() != null
+                && (getScheduleId() == 0 || getScheduleId() == BattlePassScheduleData.currentId());
     }
 
     @Override
     public void onLoad() {
-        if (this.getTriggerConfig() != null) {
+        mainParams = Set.of();
+        if (this.getTriggerConfig() != null
+                && getTriggerConfig().getParamList() != null
+                && getTriggerConfig().getParamList().length > 0) {
             var params = getTriggerConfig().getParamList()[0];
             if ((params != null) && !params.isEmpty()) {
-                this.mainParams = Arrays.stream(params.split("[:;,]"))
-                .filter(s -> s.matches("\\d+"))
-                .map(Integer::parseInt)
-                .collect(Collectors.toSet());
+                this.mainParams =
+                        Arrays.stream(params.split("[:;,]"))
+                                .filter(s -> s.matches("\\d+"))
+                                .map(Integer::parseInt)
+                                .collect(Collectors.toSet());
             }
         }
     }
@@ -67,7 +77,8 @@ public class BattlePassMissionData extends GameResource {
 
     @Getter
     public static class TriggerConfig {
-        private WatcherTriggerType triggerType;
+        // New resource names must survive even before their numeric watcher enum is known.
+        private String triggerType;
         private String[] paramList;
     }
 }
