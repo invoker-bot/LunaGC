@@ -888,6 +888,9 @@ Setting the last three to `1`, `1` and `0` gives you plain, unweighted domain ro
   saves with leftover trial records or oversized parties, preserves owned characters
   and equipment, and restores a character reward missed because of a trial copy.
   Permanently obtained Amber and Kaeya remain available in the character roster.
+- **Crates drop piles of ingredients** — wooden crate drops use the resource table's
+  individual probabilities (typically 3–6% per ingredient). A crate's death is settled
+  once, including overlapping lethal hits and self-destruction notifications.
 - **No account / login refused** — create one first. The server has no web panel
   by default; use the console command `account create <name> <uid>`.
 - **MongoDB connection timeout** — check the service. On Windows, `Win+R` →

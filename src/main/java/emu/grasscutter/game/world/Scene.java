@@ -557,6 +557,10 @@ public class Scene {
     }
 
     public void killEntity(GameEntity target, int attackerId) {
+        if (target == null || target.getScene() != this) return;
+        // Ability self-destruction and lethal hits can arrive together or repeat after removal.
+        if (!(target instanceof EntityAvatar) && entities.get(target.getId()) != target) return;
+        if (!target.tryBeginDeath()) return;
         GameEntity attacker = null;
 
         if (attackerId > 0) {

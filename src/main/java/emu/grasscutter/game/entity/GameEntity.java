@@ -32,6 +32,7 @@ import emu.grasscutter.data.GameData;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 import lombok.*;
@@ -63,9 +64,9 @@ public abstract class GameEntity {
     private boolean limbo;
     private float limboHpThreshold;
 
-    @Setter(AccessLevel.PROTECTED)
     @Getter
-    private boolean isDead = false;
+    private volatile boolean isDead = false;
+    private final AtomicBoolean deathProcessed = new AtomicBoolean();
 
     @Getter @Setter private EntityController entityController;
     @Getter private ElementType lastAttackType = ElementType.None;
@@ -122,6 +123,16 @@ public abstract class GameEntity {
 
     public boolean isAlive() {
         return !this.isDead;
+    }
+
+    // HP reaches zero before Scene.killEntity runs, so the HP flag cannot guard settlement.
+    public boolean tryBeginDeath() {
+        return deathProcessed.compareAndSet(false, true);
+    }
+
+    protected void setDead(boolean dead) {
+        this.isDead = dead;
+        if (!dead) deathProcessed.set(false);
     }
     public LifeState getLifeState() {
         return this.isAlive() ? LifeState.LIFE_ALIVE : LifeState.LIFE_DEAD;
@@ -321,6 +332,7 @@ public abstract class GameEntity {
 
     public void damage(float amount, int killerId, ElementType attackType, PropChangeReason propChangeReason, ChangeHpReason changeHpReason) {
 
+        if (this.isDead || deathProcessed.get()) return;
         if (this.getFightProperties() == null || !hasFightProperty(FightProperty.FIGHT_PROP_CUR_HP)) {
             return;
         }
@@ -428,6 +440,10 @@ public abstract class GameEntity {
     }
 
     public boolean dropSubfieldItem(int dropId) {
+        return dropSubfieldItem(dropId, new Random());
+    }
+
+    boolean dropSubfieldItem(int dropId, Random random) {
         var drop = GameData.getDropSubfieldMappingMap().get(dropId);
         if (drop == null) return false;
         var dropTableEntry = GameData.getDropTableExcelConfigDataMap().get(drop.getItemId());
@@ -438,17 +454,24 @@ public abstract class GameEntity {
             case 0:
                 {
                     int weightCount = 0;
-                    for (var entry : dropTableEntry.getDropVec()) weightCount += entry.getWeight();
+                    for (var entry : dropTableEntry.getDropVec()) {
+                        weightCount += Math.max(0, entry.getWeight());
+                    }
 
-                    int randomValue = new Random().nextInt(weightCount);
+                    if (weightCount == 0) return true;
+
+                    int randomValue = random.nextInt(weightCount);
 
                     weightCount = 0;
                     for (var entry : dropTableEntry.getDropVec()) {
-                        if (randomValue >= weightCount && randomValue < (weightCount + entry.getWeight())) {
+                        weightCount += Math.max(0, entry.getWeight());
+                        if (randomValue < weightCount) {
+                            if (entry.getItemId() == 0) break;
                             var countRange = parseCountRange(entry.getCountRange());
                             itemsToDrop.put(
                                     entry.getItemId(),
-                                    Integer.valueOf((new Random().nextBoolean() ? countRange[0] : countRange[1])));
+                                    Integer.valueOf((random.nextBoolean() ? countRange[0] : countRange[1])));
+                            break;
                         }
                     }
                 }
@@ -456,11 +479,11 @@ public abstract class GameEntity {
             case 1:
                 {
                     for (var entry : dropTableEntry.getDropVec()) {
-                        if (entry.getWeight() < new Random().nextInt(10000)) {
+                        if (entry.getItemId() != 0 && random.nextInt(10000) < entry.getWeight()) {
                             var countRange = parseCountRange(entry.getCountRange());
                             itemsToDrop.put(
                                     entry.getItemId(),
-                                    Integer.valueOf((new Random().nextBoolean() ? countRange[0] : countRange[1])));
+                                    Integer.valueOf((random.nextBoolean() ? countRange[0] : countRange[1])));
                         }
                     }
                 }
@@ -468,19 +491,23 @@ public abstract class GameEntity {
         }
 
         for (var entry : itemsToDrop.int2ObjectEntrySet()) {
-            var item =
-                    new EntityItem(
-                            scene,
-                            null,
-                            GameData.getItemDataMap().get(entry.getIntKey()),
-                            getPosition().nearby2d(1f).addY(0.5f),
-                            entry.getValue(),
-                            true);
-
-            scene.addEntity(item);
+            if (entry.getValue() > 0) spawnSubfieldItem(entry.getIntKey(), entry.getValue());
         }
 
         return true;
+    }
+
+    protected void spawnSubfieldItem(int itemId, int count) {
+        var item =
+                new EntityItem(
+                        scene,
+                        null,
+                        GameData.getItemDataMap().get(itemId),
+                        getPosition().nearby2d(1f).addY(0.5f),
+                        count,
+                        true);
+
+        scene.addEntity(item);
     }
 
     public boolean dropSubfield(String subfieldName) {
@@ -511,14 +538,13 @@ public abstract class GameEntity {
 
     public void onDeath(int killerId) {
 
+        this.isDead = true;
         EntityDeathEvent event = new EntityDeathEvent(this, killerId);
         event.call();
 
         if (entityController != null) {
             entityController.onDie(this, getLastAttackType());
         }
-
-        this.isDead = true;
     }
 
     public void onAbilityValueUpdate() {
