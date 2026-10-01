@@ -1,0 +1,4 @@
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GetBattlePassProductRspOuterClass";
+message GetBattlePassProductRsp { int32 retcode = 2; string price_tier = 4; uint32 play_type = 6; string product_id = 15; }

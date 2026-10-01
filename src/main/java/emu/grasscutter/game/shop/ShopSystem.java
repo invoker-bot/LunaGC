@@ -7,10 +7,10 @@ import emu.grasscutter.data.*;
 import emu.grasscutter.data.common.ItemParamData;
 import emu.grasscutter.data.excels.ShopGoodsData;
 import emu.grasscutter.server.game.*;
+import emu.grasscutter.utils.FileUtils;
 import emu.grasscutter.utils.Utils;
 import it.unimi.dsi.fastutil.ints.*;
 import java.util.*;
-// import java.util.stream.Collectors;
 import lombok.Getter;
 
 public class ShopSystem extends BaseGameSystem {
@@ -18,6 +18,12 @@ public class ShopSystem extends BaseGameSystem {
     private static final String TIME_ZONE = "Asia/Shanghai"; // GMT+8 Timezone
     private final Int2ObjectMap<List<ShopInfo>> shopData;
     private final Int2ObjectMap<List<ItemParamData>> shopChestData;
+
+    @Getter
+    private final ShopCatalog catalog =
+            new ShopCatalog(FileUtils.getDataUserPath("ShopOverrides.json"));
+
+    @Getter private final FreeStore freeStore = new FreeStore(catalog);
 
     @Getter private final ArtifactShop artifactShop = new ArtifactShop();
 
@@ -41,7 +47,7 @@ public class ShopSystem extends BaseGameSystem {
     }
 
     public Int2ObjectMap<List<ShopInfo>> getShopData() {
-        return shopData;
+        return catalog.active();
     }
 
     public List<ItemParamData> getShopChestData(int chestId) {
@@ -49,19 +55,23 @@ public class ShopSystem extends BaseGameSystem {
     }
 
     private void loadShop() {
-        getShopData().clear();
+        shopData.clear();
         try {
             List<ShopTable> banners = DataLoader.loadList("Shop.json", ShopTable.class);
             if (banners.size() > 0) {
                 for (ShopTable shopTable : banners) {
                     shopTable.getItems().forEach(ShopInfo::removeVirtualCosts);
-                    getShopData().put(shopTable.getShopId(), shopTable.getItems());
+                    shopData.put(shopTable.getShopId(), shopTable.getItems());
                 }
                 Grasscutter.getLogger().debug("Shop data successfully loaded.");
             } else {
                 Grasscutter.getLogger().error("Unable to load shop data. Shop data size is 0.");
             }
 
+        } catch (Exception e) {
+            Grasscutter.getLogger().error("Unable to load curated shop data", e);
+        }
+        try {
             if (GAME_OPTIONS.enableShopItems) {
                 // Shop.json is a curated snapshot, not the whole catalogue: it trails the excel by
                 // hundreds of goods in the city shops and misses 53 shops outright. Fill what it
@@ -71,8 +81,7 @@ public class ShopSystem extends BaseGameSystem {
                         .forEach(
                                 (k, v) -> {
                                     int shopId = k.intValue();
-                                    var items =
-                                            getShopData().computeIfAbsent(shopId, x -> new ArrayList<>());
+                                    var items = shopData.computeIfAbsent(shopId, x -> new ArrayList<>());
                                     var known = new HashMap<Integer, ShopInfo>();
                                     for (ShopInfo curated : items) known.put(curated.getGoodsId(), curated);
 
@@ -135,6 +144,7 @@ public class ShopSystem extends BaseGameSystem {
         loadShop();
         loadShopChest();
         loadArtifactShop();
+        freeStore.load();
     }
 
     /**
@@ -142,7 +152,8 @@ public class ShopSystem extends BaseGameSystem {
      * shop system is built before them and has no item data to work from yet.
      */
     public synchronized void loadArtifactShop() {
-        this.artifactShop.install(getShopData());
+        this.artifactShop.install(shopData);
+        catalog.replaceBase(shopData);
     }
 
     public GameServer getServer() {

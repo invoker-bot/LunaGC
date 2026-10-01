@@ -1,0 +1,5 @@
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "GetShopBatchRspOuterClass";
+import "Shop.proto";
+message GetShopBatchRsp { repeated Shop shop_list = 4; int32 retcode = 10; }

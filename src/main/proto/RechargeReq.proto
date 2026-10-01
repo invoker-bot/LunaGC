@@ -1,0 +1,11 @@
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "RechargeReqOuterClass";
+import "ShopPlayProduct.proto";
+import "ShopCardProduct.proto";
+import "ShopMcoinProduct.proto";
+message RechargeReq {
+  ShopPlayProduct play_product = 1;
+  ShopCardProduct card_product = 12;
+  ShopMcoinProduct mcoin_product = 14;
+}

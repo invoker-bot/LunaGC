@@ -176,6 +176,31 @@ public final class GmHandler implements Router {
         javalin.post("/gm/api/banners", GmHandler::setBanner);
         javalin.get("/gm/api/activities", GmHandler::listActivities);
         javalin.post("/gm/api/activities", GmHandler::setActivity);
+        javalin.get("/gm/api/shops", ctx -> shopRequest(ctx, GmShop::list));
+        javalin.post("/gm/api/shops", ctx -> shopRequest(ctx, GmShop::edit));
+        javalin.get("/gm/api/store/products", ctx -> shopRequest(ctx, GmShop::products));
+        javalin.post("/gm/api/store/products", ctx -> shopRequest(ctx, GmShop::editProduct));
+        javalin.post("/gm/api/store/purchase", ctx -> shopRequest(ctx, GmShop::purchase));
+    }
+
+    @FunctionalInterface
+    private interface ShopRequest {
+        void run(Context ctx) throws Exception;
+    }
+
+    private static void shopRequest(Context ctx, ShopRequest request) throws Exception {
+        if (!authorize(ctx)) return;
+        try {
+            request.run(ctx);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            ctx.status(400)
+                    .json(
+                            Map.of(
+                                    "retcode", 400, "message", e.getMessage() == null ? "商城参数不完整。" : e.getMessage()));
+        } catch (Exception e) {
+            Grasscutter.getLogger().error("GM shop operation failed", e);
+            ctx.status(500).json(Map.of("retcode", 500, "message", "商城操作未能保存，请检查服务日志。"));
+        }
     }
 
     private static void listActivities(Context ctx) throws Exception {
@@ -458,7 +483,7 @@ public final class GmHandler implements Router {
      * ItemUseOp#ITEM_USE_GAIN_AVATAR} entry, read the granted avatar's name hash from there, and fall
      * back to the card's own hash when that path does not resolve.
      */
-    private static String nameOf(Int2ObjectMap<Language.TextStrings> strings, ItemData data) {
+    static String nameOf(Int2ObjectMap<Language.TextStrings> strings, ItemData data) {
         if (data.getMaterialType() == MaterialType.MATERIAL_AVATAR) {
             long avatarHash = grantedAvatarNameHash(data);
             if (avatarHash != 0) {

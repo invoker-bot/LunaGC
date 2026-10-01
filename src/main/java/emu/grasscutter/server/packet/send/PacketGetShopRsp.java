@@ -21,13 +21,17 @@ public class PacketGetShopRsp extends BasePacket {
     public PacketGetShopRsp(Player player, int shopType) {
         super(PacketOpcodes.GetShopRsp);
 
-        Shop.Builder shop =
-                Shop.newBuilder()
-                        .setShopType(shopType)
-                        .setCityId(1)
-                        .setCityReputationLevel(10);
+        this.setData(
+                GetShopRspOuterClass.GetShopRsp.newBuilder()
+                        .setShop(buildShop(player, Grasscutter.getGameServer().getShopSystem(), shopType))
+                        .build());
+        player.save();
+    }
 
-        ShopSystem manager = Grasscutter.getGameServer().getShopSystem();
+    public static Shop buildShop(Player player, ShopSystem manager, int shopType) {
+        Shop.Builder shop =
+                Shop.newBuilder().setShopType(shopType).setCityId(1).setCityReputationLevel(10);
+
         if (manager.getShopData().get(shopType) != null) {
             List<ShopInfo> list = manager.getShopData().get(shopType);
             List<ShopGoods> goodsList = new ArrayList<>();
@@ -52,11 +56,12 @@ public class PacketGetShopRsp extends BasePacket {
                 if (info.getCostItemList() != null) {
                     goods.addAllCostItemList(
                             info.getCostItemList().stream()
-                                    .map(x ->
-                                            ItemParamOuterClass.ItemParam.newBuilder()
-                                                    .setItemId(x.getId())
-                                                    .setCount(x.getCount())
-                                                    .build())
+                                    .map(
+                                            x ->
+                                                    ItemParamOuterClass.ItemParam.newBuilder()
+                                                            .setItemId(x.getId())
+                                                            .setCount(x.getCount())
+                                                            .build())
                                     .collect(Collectors.toList()));
                 }
 
@@ -69,7 +74,8 @@ public class PacketGetShopRsp extends BasePacket {
                 int nextRefreshTime = ShopSystem.getShopNextRefreshTime(info);
 
                 if (currentShopLimit != null) {
-                    if (currentShopLimit.getNextRefreshTime() < currentTs) {
+                    if (currentShopLimit.getNextRefreshTime() > 0
+                            && currentShopLimit.getNextRefreshTime() <= currentTs) {
                         currentShopLimit.setHasBoughtInPeriod(0);
                         currentShopLimit.setNextRefreshTime(nextRefreshTime);
                     }
@@ -86,7 +92,7 @@ public class PacketGetShopRsp extends BasePacket {
             shop.addAllGoodsList(goodsList);
         }
 
-        player.save();
-        this.setData(GetShopRspOuterClass.GetShopRsp.newBuilder().setShop(shop).build());
+        manager.getFreeStore().addProducts(shop, player);
+        return shop.build();
     }
 }

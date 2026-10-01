@@ -23,7 +23,7 @@ public class ShopInfo {
     @Getter @Setter private int secondarySheetId = 0;
 
     private String refreshType;
-    @Setter private transient ShopRefreshType shopRefreshType;
+    private transient ShopRefreshType shopRefreshType;
     @Getter @Setter private int shopRefreshParam;
 
     public ShopInfo() {
@@ -39,7 +39,7 @@ public class ShopInfo {
         this.buyLimit = sgd.getBuyLimit();
 
         this.minLevel = sgd.getMinPlayerLevel();
-        this.maxLevel = sgd.getMaxPlayerLevel();
+        this.maxLevel = sgd.getMaxPlayerLevel() == 0 ? 61 : sgd.getMaxPlayerLevel();
         var costItems = sgd.getCostItems();
         this.costItemList =
                 costItems == null
@@ -49,7 +49,7 @@ public class ShopInfo {
                                 .map(x -> new ItemParamData(x.getId(), x.getCount()))
                                 .toList();
         this.secondarySheetId = sgd.getSubTabId();
-        this.shopRefreshType = sgd.getRefreshType();
+        setShopRefreshType(sgd.getRefreshType());
         this.shopRefreshParam = sgd.getRefreshParam();
     }
 
@@ -61,6 +61,11 @@ public class ShopInfo {
             case "SHOP_REFRESH_MONTHLY" -> ShopInfo.ShopRefreshType.SHOP_REFRESH_MONTHLY;
             default -> ShopInfo.ShopRefreshType.NONE;
         };
+    }
+
+    public void setShopRefreshType(ShopRefreshType type) {
+        this.shopRefreshType = type;
+        this.refreshType = type == null ? "NONE" : type.name();
     }
 
     private boolean evaluateVirtualCost(ItemParamData item) {

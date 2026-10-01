@@ -1,5 +1,7 @@
 package emu.grasscutter.game.player;
 
+import static emu.grasscutter.config.Configuration.GAME_OPTIONS;
+
 import dev.morphia.annotations.*;
 import emu.grasscutter.*;
 import emu.grasscutter.data.GameData;
@@ -35,14 +37,13 @@ import emu.grasscutter.game.talk.TalkManager;
 import emu.grasscutter.game.tower.*;
 import emu.grasscutter.game.world.*;
 import emu.grasscutter.net.packet.BasePacket;
+import emu.grasscutter.net.proto.*;
 import emu.grasscutter.net.proto.AbilityInvokeEntryOuterClass.AbilityInvokeEntry;
 import emu.grasscutter.net.proto.AttackResultOuterClass.AttackResult;
 import emu.grasscutter.net.proto.CombatInvokeEntryOuterClass.CombatInvokeEntry;
-import emu.grasscutter.net.proto.AbilityScalarValueEntryOuterClass.AbilityScalarValueEntry;
 import emu.grasscutter.net.proto.GadgetInteractReqOuterClass.GadgetInteractReq;
 import emu.grasscutter.net.proto.MpSettingTypeOuterClass.MpSettingType;
 import emu.grasscutter.net.proto.OnlinePlayerInfoOuterClass.OnlinePlayerInfo;
-import emu.grasscutter.net.proto.*;
 import emu.grasscutter.net.proto.PlayerLocationInfoOuterClass.PlayerLocationInfo;
 import emu.grasscutter.net.proto.ProfilePictureOuterClass.ProfilePicture;
 import emu.grasscutter.net.proto.PropChangeReasonOuterClass.PropChangeReason;
@@ -53,20 +54,14 @@ import emu.grasscutter.scripts.data.SceneRegion;
 import emu.grasscutter.server.event.player.*;
 import emu.grasscutter.server.game.*;
 import emu.grasscutter.server.game.GameSession.SessionState;
-import emu.grasscutter.net.proto.AbilityScalarTypeOuterClass.AbilityScalarType;
 import emu.grasscutter.server.packet.send.*;
 import emu.grasscutter.utils.*;
-import emu.grasscutter.utils.helpers.DateHelper;
 import emu.grasscutter.utils.objects.FieldFetch;
 import it.unimi.dsi.fastutil.ints.*;
-
-import lombok.*;
-
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
-
-import static emu.grasscutter.config.Configuration.GAME_OPTIONS;
+import lombok.*;
 
 @Entity(value = "players", useDiscriminator = false)
 public class Player implements PlayerHook, FieldFetch {
@@ -75,8 +70,11 @@ public class Player implements PlayerHook, FieldFetch {
     private static final float LOGIN_FLOOR_MARGIN = 100f;
 
     @Id private int id;
+
     @Indexed(options = @IndexOptions(unique = true))
-    @Getter private String accountId;
+    @Getter
+    private String accountId;
+
     @Setter private transient Account account;
     @Getter @Setter private transient GameSession session;
     @Transient private String sessionKey;
@@ -138,10 +136,10 @@ public class Player implements PlayerHook, FieldFetch {
     /**
      * Main quests marked finished for the CLIENT only, with no quest data behind them.
      *
-     * <p>Region access is quest-gated, and a region released after this server's resource set was
-     * cut has no quest data here - the quest system cannot finish what it does not know about, so
-     * the client keeps the barrier up. These ids are replayed to the client on every login, which is
-     * what makes the unlock survive a relog.
+     * <p>Region access is quest-gated, and a region released after this server's resource set was cut
+     * has no quest data here - the quest system cannot finish what it does not know about, so the
+     * client keeps the barrier up. These ids are replayed to the client on every login, which is what
+     * makes the unlock survive a relog.
      */
     @Getter private Set<Integer> forcedFinishedQuests;
 
@@ -207,6 +205,9 @@ public class Player implements PlayerHook, FieldFetch {
     @Getter @Setter private Date moonCardStartTime;
     @Getter @Setter private int moonCardDuration;
     @Getter @Setter private Set<Date> moonCardGetTimes;
+    private int moonCardDailyPrimogems = 90;
+    @Getter private Map<String, Integer> freeProductPurchases = new HashMap<>();
+    @Getter private Map<String, String> freePurchaseReceipts = new LinkedHashMap<>();
 
     @Transient @Getter private boolean paused;
     @Transient @Getter @Setter private Future<?> queuedTeleport;
@@ -214,13 +215,13 @@ public class Player implements PlayerHook, FieldFetch {
     @Transient @Getter @Setter private SceneLoadState sceneLoadState = SceneLoadState.NONE;
     @Transient private boolean hasSentLoginPackets;
     @Transient private long nextSendPlayerLocTime = 0;
-    @Getter private transient final Int2ObjectMap<EnterHomeRequest> enterHomeRequests;
+    @Getter private final transient Int2ObjectMap<EnterHomeRequest> enterHomeRequests;
 
-    private transient final Int2ObjectMap<CoopRequest> coopRequests;
-    @Getter private transient final Queue<AttackResult> attackResults;
-    @Getter private transient final InvokeHandler<CombatInvokeEntry> combatInvokeHandler;
-    @Getter private transient final InvokeHandler<AbilityInvokeEntry> abilityInvokeHandler;
-    @Getter private transient final InvokeHandler<AbilityInvokeEntry> clientAbilityInitFinishHandler;
+    private final transient Int2ObjectMap<CoopRequest> coopRequests;
+    @Getter private final transient Queue<AttackResult> attackResults;
+    @Getter private final transient InvokeHandler<CombatInvokeEntry> combatInvokeHandler;
+    @Getter private final transient InvokeHandler<AbilityInvokeEntry> abilityInvokeHandler;
+    @Getter private final transient InvokeHandler<AbilityInvokeEntry> clientAbilityInitFinishHandler;
 
     @Getter @Setter private long springLastUsed;
     private HashMap<String, MapMark> mapMarks;
@@ -228,7 +229,11 @@ public class Player implements PlayerHook, FieldFetch {
     @Getter @Setter private int resinBuyCount;
     @Getter @Setter private int lastDailyReset;
     @Getter @Setter private int lastBirthdayMailYear;
-    @Getter private transient MpSettingType mpSetting = MpSettingType.MpSettingType_MP_SETTING_ENTER_AFTER_APPLY;
+
+    @Getter
+    private transient MpSettingType mpSetting =
+            MpSettingType.MpSettingType_MP_SETTING_ENTER_AFTER_APPLY;
+
     @Getter private long playerGameTime = 540000;
 
     @Getter private PlayerProgress playerProgress;
@@ -296,7 +301,8 @@ public class Player implements PlayerHook, FieldFetch {
         this.enterHomeRequests = new Int2ObjectOpenHashMap<>();
         this.combatInvokeHandler = new InvokeHandler(PacketCombatInvocationsNotify.class);
         this.abilityInvokeHandler = new InvokeHandler(PacketAbilityInvocationsNotify.class);
-        this.clientAbilityInitFinishHandler = new InvokeHandler(PacketClientAbilityInitFinishNotify.class);
+        this.clientAbilityInitFinishHandler =
+                new InvokeHandler(PacketClientAbilityInitFinishNotify.class);
 
         this.birthday = new PlayerBirthday();
         this.rewardedLevels = new HashSet<>();
@@ -339,8 +345,8 @@ public class Player implements PlayerHook, FieldFetch {
         this.getFlyCloakList().add(140001);
         this.getNameCardList().add(210001);
         setPhlogistonValue(100);
-        for(int t=0; t < 20; t++){
-            this.getTraceEffectList().add(215001+t);
+        for (int t = 0; t < 20; t++) {
+            this.getTraceEffectList().add(215001 + t);
         }
         this.mapMarksManager = new MapMarksManager(this);
         this.staminaManager = new StaminaManager(this);
@@ -360,10 +366,10 @@ public class Player implements PlayerHook, FieldFetch {
     public Player getPlayer() {
         return this;
     }
+
     public float addPhlogistonValue(float amount) {
         setPhlogistonValue(getPhlogistonValue() + amount);
         return getPhlogistonValue();
-
     }
 
     public void updatePlayerGameTime(long gameTime) {
@@ -393,8 +399,7 @@ public class Player implements PlayerHook, FieldFetch {
     }
 
     public Account getAccount() {
-        if (this.account == null)
-            this.account = DatabaseHelper.getAccountById(this.accountId);
+        if (this.account == null) this.account = DatabaseHelper.getAccountById(this.accountId);
         return this.account;
     }
 
@@ -436,7 +441,7 @@ public class Player implements PlayerHook, FieldFetch {
         this.scene = scene;
     }
 
-    synchronized public void setClimate(ClimateType climate) {
+    public synchronized void setClimate(ClimateType climate) {
         this.climate = climate;
         this.session.send(new PacketSceneAreaWeatherNotify(this));
     }
@@ -523,8 +528,7 @@ public class Player implements PlayerHook, FieldFetch {
         var levelMap = GameData.getPlayerLevelDataMap();
         for (int i = 1; i <= this.getLevel(); i++) {
             var data = levelMap.get(i);
-            if (data != null)
-                expeditionLimit += data.getExpeditionLimitAdd();
+            if (data != null) expeditionLimit += data.getExpeditionLimitAdd();
         }
         return expeditionLimit;
     }
@@ -570,8 +574,7 @@ public class Player implements PlayerHook, FieldFetch {
 
     public boolean setWorldLevel(int level) {
         if (this.setProperty(PlayerProperty.PROP_PLAYER_WORLD_LEVEL, level)) {
-            if (this.world.getHost() == this)
-                this.world.setWorldLevel(level);
+            if (this.world.getHost() == this) this.world.setWorldLevel(level);
             this.updateProfile();
             return true;
         }
@@ -596,43 +599,41 @@ public class Player implements PlayerHook, FieldFetch {
         this.setOrFetch(PlayerProperty.PROP_PLAYER_LEVEL, 1);
         this.setOrFetch(PlayerProperty.PROP_IS_SPRING_AUTO_USE, 1);
         this.setOrFetch(PlayerProperty.PROP_SPRING_AUTO_USE_PERCENT, 50);
-        this.setOrFetch(PlayerProperty.PROP_IS_FLYABLE,
-            withQuesting ? 0 : 1);
-        this.setOrFetch(PlayerProperty.PROP_PLAYER_CAN_DIVE,
-                withQuesting ? 0 : 1);
+        this.setOrFetch(PlayerProperty.PROP_IS_FLYABLE, withQuesting ? 0 : 1);
+        this.setOrFetch(PlayerProperty.PROP_PLAYER_CAN_DIVE, withQuesting ? 0 : 1);
         this.setOrFetch(PlayerProperty.PROP_IS_TRANSFERABLE, 1);
-        this.setOrFetch(PlayerProperty.PROP_MAX_STAMINA,
-            withQuesting ? 10000 : 24000);
-        this.setOrFetch(PlayerProperty.PROP_DIVE_MAX_STAMINA,
-                withQuesting ? 10000 : 0);
+        this.setOrFetch(PlayerProperty.PROP_MAX_STAMINA, withQuesting ? 10000 : 24000);
+        this.setOrFetch(PlayerProperty.PROP_DIVE_MAX_STAMINA, withQuesting ? 10000 : 0);
         this.setOrFetch(PlayerProperty.PROP_PLAYER_RESIN, 200);
 
         this.setProperty(PlayerProperty.PROP_PHLOGISTON_ENABLE, 1);
 
-        this.setProperty(PlayerProperty.PROP_CUR_PERSIST_STAMINA,
-            this.getProperty(PlayerProperty.PROP_MAX_STAMINA));
-        this.setProperty(PlayerProperty.PROP_DIVE_CUR_STAMINA,
+        this.setProperty(
+                PlayerProperty.PROP_CUR_PERSIST_STAMINA, this.getProperty(PlayerProperty.PROP_MAX_STAMINA));
+        this.setProperty(
+                PlayerProperty.PROP_DIVE_CUR_STAMINA,
                 this.getProperty(PlayerProperty.PROP_DIVE_MAX_STAMINA));
-        this.setProperty(PlayerProperty.PROP_CUR_PHLOGISTON,
-            this.getProperty(PlayerProperty.PROP_PHLOGISTON_MAX_VALUE));
+        this.setProperty(
+                PlayerProperty.PROP_CUR_PHLOGISTON,
+                this.getProperty(PlayerProperty.PROP_PHLOGISTON_MAX_VALUE));
     }
 
     private void applyStartingSceneTags() {
         GameData.getSceneTagDataMap().values().stream()
                 .filter(sceneTag -> sceneTag.isDefaultValid())
-                .forEach(sceneTag -> {
-                    if (this.getSceneTags().get(sceneTag.getSceneId()) == null) {
-                        this.getSceneTags().put(sceneTag.getSceneId(), new HashSet<>());
-                    }
-                    this.getSceneTags().get(sceneTag.getSceneId()).add(sceneTag.getId());
-                });
+                .forEach(
+                        sceneTag -> {
+                            if (this.getSceneTags().get(sceneTag.getSceneId()) == null) {
+                                this.getSceneTags().put(sceneTag.getSceneId(), new HashSet<>());
+                            }
+                            this.getSceneTags().get(sceneTag.getSceneId()).add(sceneTag.getId());
+                        });
     }
 
     private void setOrFetch(PlayerProperty property, int defaultValue) {
         var exists = this.properties.containsKey(property.getId());
         if (exists) exists = this.getProperty(property) != 0;
-        this.setProperty(property, exists ? this.getProperty(property)
-            : defaultValue, false);
+        this.setProperty(property, exists ? this.getProperty(property) : defaultValue, false);
     }
 
     public int getPrimogems() {
@@ -703,16 +704,21 @@ public class Player implements PlayerHook, FieldFetch {
         int currentLevel = this.getLevel();
 
         int newWorldLevel =
-            (currentLevel >= 58) ? 9 :
-                (currentLevel >= 55) ? 8 :
-                    (currentLevel >= 50) ? 7 :
-                        (currentLevel >= 45) ? 6 :
-                            (currentLevel >= 40) ? 5 :
-                                (currentLevel >= 35) ? 4 :
-                                    (currentLevel >= 30) ? 3 :
-                                        (currentLevel >= 25) ? 2 :
-                                            (currentLevel >= 20) ? 1 :
-                                                0;
+                (currentLevel >= 58)
+                        ? 9
+                        : (currentLevel >= 55)
+                                ? 8
+                                : (currentLevel >= 50)
+                                        ? 7
+                                        : (currentLevel >= 45)
+                                                ? 6
+                                                : (currentLevel >= 40)
+                                                        ? 5
+                                                        : (currentLevel >= 35)
+                                                                ? 4
+                                                                : (currentLevel >= 30)
+                                                                        ? 3
+                                                                        : (currentLevel >= 25) ? 2 : (currentLevel >= 20) ? 1 : 0;
 
         if (newWorldLevel != currentWorldLevel) {
             this.setWorldLevel(newWorldLevel);
@@ -737,34 +743,45 @@ public class Player implements PlayerHook, FieldFetch {
 
     public void onEnterRegion(SceneRegion region) {
         var enterRegionName = "ENTER_REGION_" + region.config_id;
-        this.getQuestManager().forEachActiveQuest(quest -> {
-            if (quest.getTriggerData() != null &&
-                quest.getTriggers().containsKey(enterRegionName) &&
-                region.getGroupId() == quest.getTriggerData().get(enterRegionName).getGroupId()) {
+        this.getQuestManager()
+                .forEachActiveQuest(
+                        quest -> {
+                            if (quest.getTriggerData() != null
+                                    && quest.getTriggers().containsKey(enterRegionName)
+                                    && region.getGroupId()
+                                            == quest.getTriggerData().get(enterRegionName).getGroupId()) {
 
-                if (!Boolean.TRUE.equals(quest.getTriggers().put(enterRegionName, true))) {
-                    this.getSession().send(new PacketServerCondMeetQuestListUpdateNotify());
-                    this.getQuestManager().queueEvent(QuestContent.QUEST_CONTENT_TRIGGER_FIRE,
-                        quest.getTriggerData().get(enterRegionName).getId(), 0);
-                }
-            }
-        });
-
+                                if (!Boolean.TRUE.equals(quest.getTriggers().put(enterRegionName, true))) {
+                                    this.getSession().send(new PacketServerCondMeetQuestListUpdateNotify());
+                                    this.getQuestManager()
+                                            .queueEvent(
+                                                    QuestContent.QUEST_CONTENT_TRIGGER_FIRE,
+                                                    quest.getTriggerData().get(enterRegionName).getId(),
+                                                    0);
+                                }
+                            }
+                        });
     }
 
     public void onLeaveRegion(SceneRegion region) {
         var leaveRegionName = "LEAVE_REGION_" + region.config_id;
-        this.getQuestManager().forEachActiveQuest(quest -> {
-            if (quest.getTriggers().containsKey(leaveRegionName) &&
-                region.getGroupId() == quest.getTriggerData().get(leaveRegionName).getGroupId()) {
+        this.getQuestManager()
+                .forEachActiveQuest(
+                        quest -> {
+                            if (quest.getTriggers().containsKey(leaveRegionName)
+                                    && region.getGroupId()
+                                            == quest.getTriggerData().get(leaveRegionName).getGroupId()) {
 
-                if (!Boolean.TRUE.equals(quest.getTriggers().put(leaveRegionName, true))) {
-                    this.getSession().send(new PacketServerCondMeetQuestListUpdateNotify());
-                    this.getQuestManager().queueEvent(QuestContent.QUEST_CONTENT_TRIGGER_FIRE,
-                        quest.getTriggerData().get(leaveRegionName).getId(), 0);
-                }
-            }
-        });
+                                if (!Boolean.TRUE.equals(quest.getTriggers().put(leaveRegionName, true))) {
+                                    this.getSession().send(new PacketServerCondMeetQuestListUpdateNotify());
+                                    this.getQuestManager()
+                                            .queueEvent(
+                                                    QuestContent.QUEST_CONTENT_TRIGGER_FIRE,
+                                                    quest.getTriggerData().get(leaveRegionName).getId(),
+                                                    0);
+                                }
+                            }
+                        });
     }
 
     public PlayerProfile getProfile() {
@@ -829,8 +846,17 @@ public class Player implements PlayerHook, FieldFetch {
         return this.getWorld() != null && this.getWorld().isMultiplayer();
     }
 
+    /** The same 04:00 Asia/Shanghai day boundary in development and Docker. */
+    protected LocalDate moonCardToday() {
+        return ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).minusHours(4).toLocalDate();
+    }
+
+    private static Date moonCardDate(LocalDate day) {
+        return Date.from(day.atStartOfDay(ZoneId.of("Asia/Shanghai")).toInstant());
+    }
+
     public boolean inMoonCard() {
-        return moonCard;
+        return moonCard && getMoonCardRemainDays() > 0;
     }
 
     public void addMoonCardDays(int days) {
@@ -838,51 +864,62 @@ public class Player implements PlayerHook, FieldFetch {
     }
 
     public int getMoonCardRemainDays() {
-        Calendar remainCalendar = Calendar.getInstance();
-        remainCalendar.setTime(moonCardStartTime);
-        remainCalendar.add(Calendar.DATE, moonCardDuration);
-        Date theLastDay = remainCalendar.getTime();
-        Date now = DateHelper.onlyYearMonthDay(new Date());
-        return (int) ((theLastDay.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
+        if (!moonCard || moonCardStartTime == null) return 0;
+        var start = moonCardStartTime.toInstant().atZone(ZoneId.of("Asia/Shanghai")).toLocalDate();
+        return Math.max(
+                0,
+                (int)
+                        java.time.temporal.ChronoUnit.DAYS.between(
+                                moonCardToday(), start.plusDays(moonCardDuration)));
     }
 
     public boolean rechargeMoonCard() {
-        if (this.moonCardDuration > 150) return false;
-        inventory.addItem(new GameItem(203, 300));
-        if (!moonCard) {
-            moonCard = true;
-            Date now = new Date();
-            moonCardStartTime = DateHelper.onlyYearMonthDay(now);
-            moonCardDuration = 30;
-        } else {
-            moonCardDuration += 30;
-        }
-        moonCardGetTimes.add(moonCardStartTime);
+        return rechargeMoonCard(30, 300, 90, 180);
+    }
+
+    public synchronized boolean rechargeMoonCard(
+            int days, int crystals, int dailyPrimogems, int maxDays) {
+        int remain = getMoonCardRemainDays();
+        if (days <= 0
+                || crystals < 0
+                || dailyPrimogems <= 0
+                || (long) remain + days > maxDays
+                || (long) getCrystals() + crystals > Integer.MAX_VALUE) return false;
+        if (!getInventory().addItem(new GameItem(203, crystals))) return false;
+        moonCard = true;
+        moonCardStartTime = moonCardDate(moonCardToday());
+        moonCardDuration = remain + days;
+        moonCardDailyPrimogems = dailyPrimogems;
+        getTodayMoonCard();
+        save();
         return true;
     }
 
-    public void getTodayMoonCard() {
-        if (!moonCard) {
-            return;
-        }
-        Date now = DateHelper.onlyYearMonthDay(new Date());
-        if (moonCardGetTimes.contains(now)) {
-            return;
-        }
-        Date stopTime = new Date();
-        Calendar stopCalendar = Calendar.getInstance();
-        stopCalendar.setTime(stopTime);
-        stopCalendar.add(Calendar.DATE, moonCardDuration);
-        stopTime = stopCalendar.getTime();
-        if (now.after(stopTime)) {
+    public synchronized void getTodayMoonCard() {
+        if (!moonCard) return;
+        if (getMoonCardRemainDays() == 0) {
             moonCard = false;
+            save();
             return;
         }
-        moonCardGetTimes.add(now);
-        addMoonCardDays(1);
-        GameItem item = new GameItem(201, 90);
-        getInventory().addItem(item, ActionReason.BlessingRedeemReward);
-        session.send(new PacketCardProductRewardNotify(getMoonCardRemainDays()));
+        if (moonCardGetTimes == null) moonCardGetTimes = new HashSet<>();
+        Date today = moonCardDate(moonCardToday());
+        // Existing saves used JVM-local midnight. Compare calendar days to preserve old claims.
+        if (moonCardGetTimes.stream()
+                .anyMatch(
+                        d ->
+                                d.toInstant()
+                                        .atZone(ZoneId.of("Asia/Shanghai"))
+                                        .toLocalDate()
+                                        .equals(moonCardToday()))) return;
+        int reward = moonCardDailyPrimogems > 0 ? moonCardDailyPrimogems : 90;
+        if ((long) getPrimogems() + reward > Integer.MAX_VALUE) return;
+        if (!getInventory().addItem(new GameItem(201, reward), ActionReason.BlessingRedeemReward))
+            return;
+        moonCardGetTimes.clear();
+        moonCardGetTimes.add(today);
+        save();
+        sendPacket(new PacketCardProductRewardNotify(getMoonCardRemainDays(), reward));
     }
 
     public void addExpeditionInfo(long avatarGuid, int expId, int hourTime, int startTime) {
@@ -903,9 +940,9 @@ public class Player implements PlayerHook, FieldFetch {
     }
 
     public ShopLimit getGoodsLimit(int goodsId) {
-        Optional<ShopLimit> shopLimit = this.shopLimit.stream().filter(x -> x.getShopGoodId() == goodsId).findFirst();
-        if (shopLimit.isEmpty())
-            return null;
+        Optional<ShopLimit> shopLimit =
+                this.shopLimit.stream().filter(x -> x.getShopGoodId() == goodsId).findFirst();
+        if (shopLimit.isEmpty()) return null;
         return shopLimit.get();
     }
 
@@ -941,7 +978,9 @@ public class Player implements PlayerHook, FieldFetch {
 
                 avatar.recalcStats();
 
-                sendPacket(new PacketAvatarAddNotify(avatar, addToCurrentTeam && this.getTeamManager().canAddAvatarToCurrentTeam()));
+                sendPacket(
+                        new PacketAvatarAddNotify(
+                                avatar, addToCurrentTeam && this.getTeamManager().canAddAvatarToCurrentTeam()));
                 if (addToCurrentTeam) {
 
                     this.getTeamManager().addAvatarToCurrentTeam(avatar);
@@ -988,7 +1027,10 @@ public class Player implements PlayerHook, FieldFetch {
 
     public void addPersonalLine(int personalLineId) {
         this.getPersonalLineList().add(personalLineId);
-        session.getPlayer().getQuestManager().queueEvent(QuestCond.QUEST_COND_PERSONAL_LINE_UNLOCK, personalLineId);
+        session
+                .getPlayer()
+                .getQuestManager()
+                .queueEvent(QuestCond.QUEST_COND_PERSONAL_LINE_UNLOCK, personalLineId);
     }
 
     public void addNameCard(int nameCardId) {
@@ -1061,14 +1103,15 @@ public class Player implements PlayerHook, FieldFetch {
     }
 
     public OnlinePlayerInfo getOnlinePlayerInfo() {
-        OnlinePlayerInfo.Builder onlineInfo = OnlinePlayerInfo.newBuilder()
-            .setUid(this.getUid())
-            .setNickname(this.getNickname())
-            .setPlayerLevel(this.getLevel())
-            .setMpSettingType(this.getMpSetting())
-            .setNameCardId(this.getNameCardId())
-            .setSignature(this.getSignature())
-            .setProfilePicture(ProfilePicture.newBuilder().setAvatarId(this.getHeadImage()));
+        OnlinePlayerInfo.Builder onlineInfo =
+                OnlinePlayerInfo.newBuilder()
+                        .setUid(this.getUid())
+                        .setNickname(this.getNickname())
+                        .setPlayerLevel(this.getLevel())
+                        .setMpSettingType(this.getMpSetting())
+                        .setNameCardId(this.getNameCardId())
+                        .setSignature(this.getSignature())
+                        .setProfilePicture(ProfilePicture.newBuilder().setAvatarId(this.getHeadImage()));
 
         if (this.getWorld() != null) {
             onlineInfo.setCurPlayerNumInWorld(getWorld().getPlayerCount());
@@ -1089,18 +1132,18 @@ public class Player implements PlayerHook, FieldFetch {
     }
 
     public SocialDetail.Builder getSocialDetail() {
-        List<SocialShowAvatarInfoOuterClass.SocialShowAvatarInfo> socialShowAvatarInfoList = new ArrayList<>();
+        List<SocialShowAvatarInfoOuterClass.SocialShowAvatarInfo> socialShowAvatarInfoList =
+                new ArrayList<>();
         if (this.isOnline()) {
             if (this.getShowAvatarList() != null) {
                 for (int avatarId : this.getShowAvatarList()) {
                     socialShowAvatarInfoList.add(
-                        socialShowAvatarInfoList.size(),
-                        SocialShowAvatarInfoOuterClass.SocialShowAvatarInfo.newBuilder()
-                            .setAvatarId(avatarId)
-                            .setLevel(getAvatars().getAvatarById(avatarId).getLevel())
-                            .setCostumeId(getAvatars().getAvatarById(avatarId).getCostume())
-                            .build()
-                    );
+                            socialShowAvatarInfoList.size(),
+                            SocialShowAvatarInfoOuterClass.SocialShowAvatarInfo.newBuilder()
+                                    .setAvatarId(avatarId)
+                                    .setLevel(getAvatars().getAvatarById(avatarId).getLevel())
+                                    .setCostumeId(getAvatars().getAvatarById(avatarId).getCostume())
+                                    .build());
                 }
             }
         } else {
@@ -1110,31 +1153,31 @@ public class Player implements PlayerHook, FieldFetch {
             if (showAvatarList != null) {
                 for (int avatarId : showAvatarList) {
                     socialShowAvatarInfoList.add(
-                        socialShowAvatarInfoList.size(),
-                        SocialShowAvatarInfoOuterClass.SocialShowAvatarInfo.newBuilder()
-                            .setAvatarId(avatarId)
-                            .setLevel(avatars.getAvatarById(avatarId).getLevel())
-                            .setCostumeId(avatars.getAvatarById(avatarId).getCostume())
-                            .build()
-                    );
+                            socialShowAvatarInfoList.size(),
+                            SocialShowAvatarInfoOuterClass.SocialShowAvatarInfo.newBuilder()
+                                    .setAvatarId(avatarId)
+                                    .setLevel(avatars.getAvatarById(avatarId).getLevel())
+                                    .setCostumeId(avatars.getAvatarById(avatarId).getCostume())
+                                    .build());
                 }
             }
         }
 
         return SocialDetail.newBuilder()
-            .setUid(this.getUid())
-            .setProfilePicture(ProfilePicture.newBuilder().setAvatarId(this.getHeadImage()))
-            .setNickname(this.getNickname())
-            .setSignature(this.getSignature())
-            .setLevel(this.getLevel())
-            .setBirthday(this.getBirthday().getFilledProtoWhenNotEmpty())
-            .setWorldLevel(this.getWorldLevel())
-            .setNameCardId(this.getNameCardId())
-            .setIsShowAvatar(this.isShowAvatars())
-            .addAllShowAvatarInfoList(socialShowAvatarInfoList)
-            .addAllShowNameCardIdList(this.getShowNameCardInfoList())
-            .setFinishAchievementNum(this.getFinishedAchievementNum())
-            .setFriendEnterHomeOptionValue(this.getHome() == null ? 0 : this.getHome().getEnterHomeOption());
+                .setUid(this.getUid())
+                .setProfilePicture(ProfilePicture.newBuilder().setAvatarId(this.getHeadImage()))
+                .setNickname(this.getNickname())
+                .setSignature(this.getSignature())
+                .setLevel(this.getLevel())
+                .setBirthday(this.getBirthday().getFilledProtoWhenNotEmpty())
+                .setWorldLevel(this.getWorldLevel())
+                .setNameCardId(this.getNameCardId())
+                .setIsShowAvatar(this.isShowAvatars())
+                .addAllShowAvatarInfoList(socialShowAvatarInfoList)
+                .addAllShowNameCardIdList(this.getShowNameCardInfoList())
+                .setFinishAchievementNum(this.getFinishedAchievementNum())
+                .setFriendEnterHomeOptionValue(
+                        this.getHome() == null ? 0 : this.getHome().getEnterHomeOption());
     }
 
     public int getFinishedAchievementNum() {
@@ -1177,17 +1220,17 @@ public class Player implements PlayerHook, FieldFetch {
 
     public PlayerWorldLocationInfoOuterClass.PlayerWorldLocationInfo getWorldPlayerLocationInfo() {
         return PlayerWorldLocationInfoOuterClass.PlayerWorldLocationInfo.newBuilder()
-            .setSceneId(this.getSceneId())
-            .setPlayerLoc(this.getPlayerLocationInfo())
-            .build();
+                .setSceneId(this.getSceneId())
+                .setPlayerLoc(this.getPlayerLocationInfo())
+                .build();
     }
 
     public PlayerLocationInfo getPlayerLocationInfo() {
         return PlayerLocationInfo.newBuilder()
-            .setUid(this.getUid())
-            .setPos(this.getPosition().toProto())
-            .setRot(this.getRotation().toProto())
-            .build();
+                .setUid(this.getUid())
+                .setPos(this.getPosition().toProto())
+                .setRot(this.getRotation().toProto())
+                .build();
     }
 
     /** Loaded the same way the battle pass is, since both are per player and persisted. */
@@ -1199,6 +1242,7 @@ public class Player implements PlayerHook, FieldFetch {
     public void loadBattlePassManager() {
         if (this.battlePassManager != null) return;
         this.battlePassManager = DatabaseHelper.loadBattlePass(this);
+        this.battlePassManager.synchronizeSchedule();
         this.battlePassManager.getMissions().values().removeIf(mission -> mission.getData() == null);
     }
 
@@ -1218,10 +1262,10 @@ public class Player implements PlayerHook, FieldFetch {
 
     private boolean expireCoopRequest(CoopRequest req) {
         if (!req.isExpired()) return false;
-        req.getRequester().sendPacket(new PacketPlayerApplyEnterMpResultNotify(
-            this,
-            false,
-            ReasonOuterClass.Reason.Reason_SYSTEM_JUDGE));
+        req.getRequester()
+                .sendPacket(
+                        new PacketPlayerApplyEnterMpResultNotify(
+                                this, false, ReasonOuterClass.Reason.Reason_SYSTEM_JUDGE));
         return true;
     }
 
@@ -1231,11 +1275,14 @@ public class Player implements PlayerHook, FieldFetch {
 
     private boolean expireEnterHomeRequest(EnterHomeRequest req, boolean force) {
         if (!req.isExpired() && !force) return false;
-        req.getRequester().sendPacket(new PacketPlayerApplyEnterHomeResultNotify(
-            this.getUid(),
-            this.getNickname(),
-            false,
-            PlayerApplyEnterHomeResultNotifyOuterClass.PlayerApplyEnterHomeResultNotify.Reason.SYSTEM_JUDGE));
+        req.getRequester()
+                .sendPacket(
+                        new PacketPlayerApplyEnterHomeResultNotify(
+                                this.getUid(),
+                                this.getNickname(),
+                                false,
+                                PlayerApplyEnterHomeResultNotifyOuterClass.PlayerApplyEnterHomeResultNotify.Reason
+                                        .SYSTEM_JUDGE));
         req.getRequester().sendPacket(new PacketTryEnterHomeRsp());
         return true;
     }
@@ -1259,7 +1306,9 @@ public class Player implements PlayerHook, FieldFetch {
             this.sendPacket(new PacketWorldPlayerRTTNotify(this.getWorld()));
 
             long time = System.currentTimeMillis();
-            if (this.getWorld().isMultiplayer() && this.getScene() != null && time > nextSendPlayerLocTime) {
+            if (this.getWorld().isMultiplayer()
+                    && this.getScene() != null
+                    && time > nextSendPlayerLocTime) {
                 this.sendPacket(new PacketWorldPlayerLocationNotify(this.getWorld()));
                 this.sendPacket(new PacketScenePlayerLocationNotify(this.getScene()));
                 this.resetSendPlayerLocTime();
@@ -1302,8 +1351,11 @@ public class Player implements PlayerHook, FieldFetch {
 
         int currentTime = Utils.getCurrentSeconds();
 
-        var currentDate = LocalDate.ofInstant(Instant.ofEpochSecond(currentTime), ZoneId.systemDefault());
-        var lastResetDate = LocalDate.ofInstant(Instant.ofEpochSecond(this.getLastDailyReset()), ZoneId.systemDefault());
+        var currentDate =
+                LocalDate.ofInstant(Instant.ofEpochSecond(currentTime), ZoneId.systemDefault());
+        var lastResetDate =
+                LocalDate.ofInstant(
+                        Instant.ofEpochSecond(this.getLastDailyReset()), ZoneId.systemDefault());
 
         if (!currentDate.isAfter(lastResetDate)) {
             return;
@@ -1377,13 +1429,14 @@ public class Player implements PlayerHook, FieldFetch {
         var runner = Grasscutter.getThreadPool();
         runner.submit(() -> this.achievements = Achievements.getByPlayer(this));
 
-        runner.submit(() -> {
-            this.getAvatars().loadFromDatabase();
-            this.getQuestManager().loadFromDatabase();
-            // Recover earned characters before inventory resolves saved equipment owners.
-            this.getAvatars().recoverLegacyTrialAvatars();
-            this.getInventory().loadFromDatabase();
-        });
+        runner.submit(
+                () -> {
+                    this.getAvatars().loadFromDatabase();
+                    this.getQuestManager().loadFromDatabase();
+                    // Recover earned characters before inventory resolves saved equipment owners.
+                    this.getAvatars().recoverLegacyTrialAvatars();
+                    this.getInventory().loadFromDatabase();
+                });
 
         runner.submit(this.getFriendsList()::loadFromDatabase);
         runner.submit(this.getMailHandler()::loadFromDatabase);
@@ -1395,9 +1448,7 @@ public class Player implements PlayerHook, FieldFetch {
                     this.dailyTaskManager.onPlayerLogin();
                 });
 
-        Utils.waitFor(() ->
-            this.getAvatars().isLoaded() &&
-                this.getInventory().isLoaded());
+        Utils.waitFor(() -> this.getAvatars().isLoaded() && this.getInventory().isLoaded());
 
         this.getPlayerProgress().setPlayer(this);
     }
@@ -1460,7 +1511,8 @@ public class Player implements PlayerHook, FieldFetch {
             this.getTeamManager().applyAbilities(loginScene);
         }
 
-        this.setProperty(PlayerProperty.PROP_PLAYER_MP_SETTING_TYPE, this.getMpSetting().getNumber(), false);
+        this.setProperty(
+                PlayerProperty.PROP_PLAYER_MP_SETTING_TYPE, this.getMpSetting().getNumber(), false);
         this.setProperty(PlayerProperty.PROP_IS_MP_MODE_AVAILABLE, 1, false);
 
         this.doDailyReset();
@@ -1579,18 +1631,17 @@ public class Player implements PlayerHook, FieldFetch {
     public void unfreezeUnlockedScenePoints(int sceneId) {
 
         GameData.getScenePointEntryMap().values().stream()
-                .filter(scenePointEntry ->
-
-                        "DungeonEntry".equals(scenePointEntry.getPointData().getType())
-
-                        && scenePointEntry.getPointData().isGroupLimit())
-                .forEach(scenePointEntry -> {
-
-                        val pointId = scenePointEntry.getPointData().getId();
-                        if (unlockedScenePoints.get(sceneId).contains(pointId)) {
-                            this.sendPacket(new PacketUnfreezeGroupLimitNotify(pointId, sceneId));
-                        }
-                });
+                .filter(
+                        scenePointEntry ->
+                                "DungeonEntry".equals(scenePointEntry.getPointData().getType())
+                                        && scenePointEntry.getPointData().isGroupLimit())
+                .forEach(
+                        scenePointEntry -> {
+                            val pointId = scenePointEntry.getPointData().getId();
+                            if (unlockedScenePoints.get(sceneId).contains(pointId)) {
+                                this.sendPacket(new PacketUnfreezeGroupLimitNotify(pointId, sceneId));
+                            }
+                        });
     }
 
     public void unfreezeUnlockedScenePoints() {
@@ -1645,13 +1696,27 @@ public class Player implements PlayerHook, FieldFetch {
             if (sendPacket) {
 
                 switch (prop) {
-                    case PROP_PLAYER_EXP -> this.sendPacket(new PacketPlayerPropChangeReasonNotify(this, prop, currentValue, value,
-                        PropChangeReason.PropChangeReason_PROP_CHANGE_PLAYER_ADD_EXP));
-                    case PROP_PLAYER_LEVEL -> this.sendPacket(new PacketPlayerPropChangeReasonNotify(this, prop, currentValue, value,
-                        PropChangeReason.PropChangeReason_PROP_CHANGE_LEVELUP));
-                    case PROP_MAX_STAMINA -> this.sendPacket(new PacketPlayerPropChangeReasonNotify(this, prop, currentValue, value,
-                        PropChangeReason.PropChangeReason_PROP_CHANGE_CITY_LEVELUP));
-
+                    case PROP_PLAYER_EXP -> this.sendPacket(
+                            new PacketPlayerPropChangeReasonNotify(
+                                    this,
+                                    prop,
+                                    currentValue,
+                                    value,
+                                    PropChangeReason.PropChangeReason_PROP_CHANGE_PLAYER_ADD_EXP));
+                    case PROP_PLAYER_LEVEL -> this.sendPacket(
+                            new PacketPlayerPropChangeReasonNotify(
+                                    this,
+                                    prop,
+                                    currentValue,
+                                    value,
+                                    PropChangeReason.PropChangeReason_PROP_CHANGE_LEVELUP));
+                    case PROP_MAX_STAMINA -> this.sendPacket(
+                            new PacketPlayerPropChangeReasonNotify(
+                                    this,
+                                    prop,
+                                    currentValue,
+                                    value,
+                                    PropChangeReason.PropChangeReason_PROP_CHANGE_CITY_LEVELUP));
                 }
 
                 this.sendPacket(new PacketPlayerPropNotify(this, prop));
@@ -1665,8 +1730,7 @@ public class Player implements PlayerHook, FieldFetch {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof Player otherPlayer &&
-            this.id == otherPlayer.getUid();
+        return obj instanceof Player otherPlayer && this.id == otherPlayer.getUid();
     }
 
     @Override
@@ -1676,10 +1740,12 @@ public class Player implements PlayerHook, FieldFetch {
     }
 
     public enum SceneLoadState {
-        NONE(0), LOADING(1), INIT(2), LOADED(3);
+        NONE(0),
+        LOADING(1),
+        INIT(2),
+        LOADED(3);
 
-        @Getter
-        private final int value;
+        @Getter private final int value;
 
         SceneLoadState(int value) {
             this.value = value;

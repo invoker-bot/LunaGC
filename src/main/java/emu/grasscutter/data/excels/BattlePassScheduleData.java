@@ -13,6 +13,9 @@ public class BattlePassScheduleData extends GameResource {
 
     private List<Integer> cycleList;
     private int cyclePointUpperLimit;
+    private int levelRewardIndexId;
+    private int extraPaidRewardId;
+    private int extraPaidAddPoint;
 
     // Schedules are keyed by version, so 7.0 is 7000.
     public static int currentId() {

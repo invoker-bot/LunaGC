@@ -1,0 +1,4 @@
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ShopPlayProductOuterClass";
+message ShopPlayProduct { string product_id = 1; string price_tier = 2; uint32 play_type = 3; }

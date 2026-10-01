@@ -3,9 +3,9 @@ package emu.grasscutter.game.battlepass;
 import dev.morphia.annotations.*;
 import emu.grasscutter.*;
 import emu.grasscutter.data.GameData;
-import emu.grasscutter.data.excels.BattlePassScheduleData;
 import emu.grasscutter.data.common.ItemParamData;
 import emu.grasscutter.data.excels.*;
+import emu.grasscutter.data.excels.BattlePassScheduleData;
 import emu.grasscutter.database.DatabaseHelper;
 import emu.grasscutter.game.inventory.*;
 import emu.grasscutter.game.player.*;
@@ -32,6 +32,8 @@ public class BattlePassManager extends BasePlayerDataManager {
 
     @Getter private boolean viewed;
     private boolean paid;
+    @Getter private boolean extraPaidRewardTaken;
+    private int scheduleId;
 
     private Map<Integer, BattlePassMission> missions;
     private Map<Integer, BattlePassReward> takenRewards;
@@ -51,6 +53,22 @@ public class BattlePassManager extends BasePlayerDataManager {
 
     public void updateViewed() {
         this.viewed = true;
+    }
+
+    /** Older saves have no schedule ID; keep their progress when first assigning it. */
+    public void synchronizeSchedule() {
+        int current = BattlePassScheduleData.currentId();
+        if (scheduleId != 0 && scheduleId != current) {
+            paid = false;
+            extraPaidRewardTaken = false;
+            viewed = false;
+            level = 0;
+            point = 0;
+            cyclePoints = 0;
+            getMissions().clear();
+            getTakenRewards().clear();
+        }
+        scheduleId = current;
     }
 
     public boolean setLevel(int level) {
@@ -82,19 +100,20 @@ public class BattlePassManager extends BasePlayerDataManager {
         }
 
         this.point += amount;
-        this.cyclePoints += amount;
+        if (isWeekly) this.cyclePoints += amount;
 
         if (this.point >= GameConstants.BATTLE_PASS_POINT_PER_LEVEL
                 && this.getLevel() < GameConstants.BATTLE_PASS_MAX_LEVEL) {
             int levelups = Math.floorDiv(this.point, GameConstants.BATTLE_PASS_POINT_PER_LEVEL);
 
             // Make sure player cant go above max BP level
-            levelups = Math.min(levelups, GameConstants.BATTLE_PASS_MAX_LEVEL - levelups);
+            levelups = Math.min(levelups, GameConstants.BATTLE_PASS_MAX_LEVEL - this.level);
 
             // Set new points after level up
             this.point = this.point - (levelups * GameConstants.BATTLE_PASS_POINT_PER_LEVEL);
             this.level += levelups;
         }
+        if (this.level == GameConstants.BATTLE_PASS_MAX_LEVEL) this.point = 0;
     }
 
     public Map<Integer, BattlePassMission> getMissions() {
@@ -112,7 +131,32 @@ public class BattlePassManager extends BasePlayerDataManager {
     }
 
     public boolean isPaid() {
-        // ToDo: Change this when we actually support unlocking "paid" BP.
+        // Preserve earned premium access on saves produced by the old always-paid implementation.
+        return paid || getTakenRewards().values().stream().anyMatch(BattlePassReward::isPaid);
+    }
+
+    public synchronized boolean unlockPaid(boolean extra) {
+        if (extra ? extraPaidRewardTaken : isPaid()) return false;
+        var schedule = GameData.getBattlePassScheduleDataMap().get(BattlePassScheduleData.currentId());
+        if (extra
+                && (schedule == null
+                        || GameData.getRewardDataMap().get(schedule.getExtraPaidRewardId()) == null))
+            throw new IllegalArgumentException("当前纪行的珍珠之歌奖励资源不完整。");
+        if (extra) {
+            var reward = GameData.getRewardDataMap().get(schedule.getExtraPaidRewardId());
+            var items = new ArrayList<GameItem>();
+            for (var item : reward.getRewardItemList()) {
+                if (!GameData.getItemDataMap().containsKey(item.getItemId()))
+                    throw new IllegalArgumentException("纪行奖励物品资源缺失：" + item.getItemId());
+                items.add(new GameItem(item.getItemId(), item.getItemCount()));
+            }
+            getPlayer().getInventory().addItems(items, ActionReason.BattlePassPaidReward);
+            addPointsDirectly(schedule.getExtraPaidAddPoint(), false);
+            extraPaidRewardTaken = true;
+        }
+        this.paid = true;
+        save();
+        getPlayer().sendPacket(new PacketBattlePassCurScheduleUpdateNotify(getPlayer()));
         return true;
     }
 
@@ -228,9 +272,15 @@ public class BattlePassManager extends BasePlayerDataManager {
                 continue;
             }
 
+            var scheduleData =
+                    GameData.getBattlePassScheduleDataMap().get(BattlePassScheduleData.currentId());
+            int rewardIndex =
+                    scheduleData != null && scheduleData.getLevelRewardIndexId() > 0
+                            ? scheduleData.getLevelRewardIndexId()
+                            : GameConstants.BATTLE_PASS_CURRENT_INDEX;
             BattlePassRewardData rewardData =
-                    GameData.getBattlePassRewardDataMap()
-                            .get(GameConstants.BATTLE_PASS_CURRENT_INDEX * 100 + option.getTag().getLevel());
+                    GameData.getBattlePassRewardDataMap().get(rewardIndex * 100 + option.getTag().getLevel());
+            if (rewardData == null) continue;
 
             // Sanity check with excel data
             if (rewardData.getFreeRewardIdList().contains(option.getTag().getRewardId())) {
@@ -279,7 +329,8 @@ public class BattlePassManager extends BasePlayerDataManager {
                         new BattlePassReward(
                                 tag.getLevel(),
                                 tag.getRewardId(),
-                                tag.getUnlockStatus() == BattlePassUnlockStatus.BattlePassUnlockSTATUS_BATTLE_PASS_UNLOCK_PAID);
+                                tag.getUnlockStatus()
+                                        == BattlePassUnlockStatus.BattlePassUnlockSTATUS_BATTLE_PASS_UNLOCK_PAID);
                 this.getTakenRewards().put(bpReward.getRewardId(), bpReward);
             }
 
@@ -295,7 +346,7 @@ public class BattlePassManager extends BasePlayerDataManager {
     }
 
     public int buyLevels(int buyLevel) {
-        int boughtLevels = Math.min(buyLevel, GameConstants.BATTLE_PASS_MAX_LEVEL - buyLevel);
+        int boughtLevels = Math.min(buyLevel, GameConstants.BATTLE_PASS_MAX_LEVEL - this.level);
 
         if (boughtLevels > 0) {
             int price = GameConstants.BATTLE_PASS_LEVEL_PRICE * boughtLevels;
@@ -304,6 +355,7 @@ public class BattlePassManager extends BasePlayerDataManager {
                 return 0;
             }
 
+            getPlayer().setPrimogems(getPlayer().getPrimogems() - price);
             this.level += boughtLevels;
             this.save();
 
@@ -369,6 +421,7 @@ public class BattlePassManager extends BasePlayerDataManager {
                         .setScheduleId(BattlePassScheduleData.currentId())
                         .setLevel(this.getLevel())
                         .setPoint(this.getPoint())
+                        .setIsExtraPaidRewardTaken(this.extraPaidRewardTaken)
                         .setBeginTime(0)
                         .setEndTime(2059483200)
                         .setUnlockStatus(

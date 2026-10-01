@@ -77,7 +77,7 @@
   @keyframes sp { to { transform: rotate(360deg); } }
 
   /* Tabs */
-  .tabs { display: flex; gap: 4px; margin-bottom: 12px; border-bottom: 1px solid var(--line);
+  .tabs { flex-wrap: wrap; display: flex; gap: 4px; margin-bottom: 12px; border-bottom: 1px solid var(--line);
           padding-bottom: 8px; flex-wrap: wrap; }
   .tab { background: transparent; color: var(--dim); border: 1px solid transparent;
          border-radius: 6px 6px 0 0; padding: 6px 14px; }
@@ -154,6 +154,9 @@
     .eq-grid { grid-template-columns: 1fr; }
     dialog { padding: 14px; }
   }
+  #shopDialog { width:min(720px,calc(100vw - 24px)); max-height:90vh; overflow:auto; }
+  #freeProducts .activity-card,#shopList .activity-card { border:1px solid var(--line); border-radius:6px; padding:12px; margin-bottom:10px; background:var(--panel2); }
+  #goodsCosts { background:#12161c; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px; }
 </style>
 </head>
 <body>
@@ -189,6 +192,7 @@
     <div class="tabs">
       <button class="tab sel" data-tab="cmd">命令</button>
       <button class="tab" data-tab="items">物品</button>
+      <button class="tab" data-tab="shop">商城</button>
       <button class="tab" data-tab="history">历史卡池</button>
       <button class="tab" data-tab="activities">往期活动</button>
     </div>
@@ -227,6 +231,26 @@
         <button id="pgPrev" class="ghost">上一页</button>
         <span id="pgInfo"></span>
         <button id="pgNext" class="ghost">下一页</button>
+      </div>
+    </div>
+
+    <div class="pane" id="pane-shop">
+      <h2>商城 <button id="shopRefresh" class="ghost">刷新</button></h2>
+      <p class="eq-note">现金商品价格统一为 0。选择顶部在线玩家 UID 后，可直接领取月卡、纪行、原石或结晶。</p>
+      <div class="row" style="margin-bottom:10px">
+        <label for="shopMode">商品目录</label><select id="shopMode"><option value="free">免费充值商品</option><option value="goods">普通商店商品</option></select>
+      </div>
+      <p id="shopStatus" role="status" aria-live="polite" class="eq-note"></p>
+      <div id="freeProducts"></div>
+      <div id="shopGoods" hidden>
+        <p class="eq-note">默认商品来自资源与服务端配置。更改会保存，游戏内重新打开商店刷新。普通商品的摩拉、星尘等兑换价格可自行调整。</p>
+        <div class="row" style="margin-bottom:10px">
+          <input id="shopQ" placeholder="搜索物品名称、物品 ID 或商品编号" aria-label="搜索商城商品" style="flex:1;min-width:180px">
+          <select id="shopType" aria-label="选择商店"><option value="">全部商店</option></select>
+          <select id="shopFilter" aria-label="商品状态"><option value="all">全部状态</option><option value="enabled">已上架</option><option value="disabled">已下架</option><option value="modified">已修改</option></select>
+          <button id="shopAdd">新增商品</button>
+        </div>
+        <div class="pager" id="shopPagerTop"></div><div id="shopList"></div><div class="pager" id="shopPagerBottom"></div>
       </div>
     </div>
 
@@ -298,6 +322,31 @@
     <p id="eqPreview" class="eq-note"></p>
     <div id="eqStatus" role="status" aria-live="polite"></div>
     <div class="eq-actions"><button type="button" class="ghost" id="eqCancel">取消</button><button type="submit" id="eqGive" disabled>给予装备</button></div>
+  </form>
+</dialog>
+
+<dialog id="shopDialog" aria-labelledby="shopTitle">
+  <form id="shopForm">
+    <div class="eq-heading"><h3 id="shopTitle">编辑商品</h3><button type="button" class="ghost" id="shopClose">关闭</button></div>
+    <p class="eq-note">数量表示每次购买收到的物品数。限购为 0 表示不限购；价格为 0 表示免费。</p>
+    <div class="eq-grid">
+      <label>商店 ID<input id="goodsShop" type="number" min="1" required></label>
+      <label>商品编号<input id="goodsId" type="number" readonly value="0"></label>
+      <label>物品 ID<input id="goodsItem" type="number" min="1" required></label>
+      <label>每份数量<input id="goodsCount" type="number" min="1" max="1000000" required></label>
+      <label>摩拉价格<input id="goodsMora" type="number" min="0" required></label>
+      <label>原石价格<input id="goodsGems" type="number" min="0" required></label>
+      <label>结晶价格<input id="goodsCrystals" type="number" min="0" required></label>
+      <label>每期限购<input id="goodsLimit" type="number" min="0" required></label>
+      <label>最低冒险等阶<input id="goodsMin" type="number" min="0" max="61" required></label>
+      <label>最高冒险等阶<input id="goodsMax" type="number" min="0" max="61" required></label>
+      <label>刷新方式<select id="goodsRefresh"><option value="NONE">不刷新</option><option value="SHOP_REFRESH_DAILY">每隔指定天数</option><option value="SHOP_REFRESH_WEEKLY">每隔指定周数（周一）</option><option value="SHOP_REFRESH_MONTHLY">每隔指定月数（1 日）</option></select></label>
+      <label>刷新参数<input id="goodsRefreshParam" type="number" min="0" value="1" required></label>
+    </div>
+    <label class="eq-note" for="goodsCosts">额外兑换材料（JSON 数组；例如星尘：[{"id":222,"count":75}]）</label>
+    <textarea id="goodsCosts" rows="3" style="width:100%;margin:8px 0" aria-label="额外兑换材料">[]</textarea>
+    <p id="goodsStatus" role="status" aria-live="polite"></p>
+    <div class="eq-actions"><button id="goodsSave" type="submit">保存商品</button></div>
   </form>
 </dialog>
 
@@ -471,6 +520,7 @@ document.querySelectorAll(".tab").forEach(t => {
   t.onclick = () => {
     document.querySelectorAll(".tab").forEach(x => x.classList.toggle("sel", x === t));
     document.querySelectorAll(".pane").forEach(p => p.classList.toggle("sel", p.id === "pane-" + t.dataset.tab));
+    if (t.dataset.tab === "shop") loadShop();
     if (t.dataset.tab === "items") ensureItems();
     if (t.dataset.tab === "history") loadHistory();
     if (t.dataset.tab === "activities") loadActivities();
@@ -764,7 +814,7 @@ function pageRows(rows, state, prefix, render) {
     add("下一页", state.page + 1, state.page === pages - 1);
     add("末页", pages - 1, state.page === pages - 1);
     const size = document.createElement("select");
-    size.setAttribute("aria-label", prefix === "history" ? "历史卡池每页条数" : "往期活动每页条数");
+    size.setAttribute("aria-label", prefix === "history" ? "历史卡池每页条数" : prefix === "shop" ? "商城每页条数" : "往期活动每页条数");
     for (const count of [10, 20, 50]) {
       const option = document.createElement("option");
       option.value = String(count);
@@ -777,6 +827,98 @@ function pageRows(rows, state, prefix, render) {
   }
   return visible;
 }
+
+// --- shop -------------------------------------------------------------
+let shopRows = [], freeProducts = [], editingGoods = null;
+const shopPage = {page:0, size:20};
+function shopMessage(text, error=false) { $("shopStatus").textContent=text; $("shopStatus").style.color=error?"var(--err)":"var(--dim)"; }
+async function shopPost(path, payload) {
+  const r=await api(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  if (!r.ok || !r.json || r.json.retcode) throw new Error(r.json?.message || "商城操作失败");
+  return r.json;
+}
+async function loadShop() {
+  $("shopRefresh").disabled=true;
+  try {
+    const [goods, products]=await Promise.all([api("/gm/api/shops"),api("/gm/api/store/products")]);
+    if (!goods.ok || !products.ok) throw new Error("商城目录加载失败");
+    shopRows=goods.json.goods; freeProducts=products.json.products;
+    const selected=$("shopType").value; $("shopType").replaceChildren(new Option("全部商店",""));
+    for(const shop of goods.json.shops) $("shopType").add(new Option(shop.name+" · "+shop.id,String(shop.id)));
+    $("shopType").value=selected;
+    renderShop(); renderFreeProducts();
+  } catch(e) { shopMessage(e.message,true); }
+  finally { $("shopRefresh").disabled=false; }
+}
+function shopButton(text, action) {
+  const b=document.createElement("button"); b.className="ghost"; b.textContent=text;
+  b.onclick=async()=>{b.disabled=true;try{await action();}catch(e){shopMessage(e.message,true);}finally{b.disabled=false;}};
+  return b;
+}
+function renderFreeProducts() {
+  $("freeProducts").replaceChildren();
+  for (const row of freeProducts) {
+    const p=row.product, el=document.createElement("div"); el.className="activity-card";
+    const name=document.createElement("h3"); name.textContent=p.name+" · 价格 0"; el.appendChild(name);
+    const desc=document.createElement("p"); desc.className="eq-note";
+    desc.textContent=p.kind==="card" ? `${p.days} 天 · 立即 ${p.amount} 结晶 · 每日 ${p.dailyAmount} 原石 · 最多 ${p.maxDays} 天` :
+      p.kind==="crystals" ? `基础 ${p.amount} 结晶 · 首次额外 ${p.firstBonus} · 后续额外 ${p.bonus}` :
+      p.kind==="pass" ? "解锁本期纪行。珍珠之歌额外奖励与等级来自当前资源；同一档位不可重复领取。" : `立即获得 ${p.amount} 原石`;
+    el.appendChild(desc);
+    const actions=document.createElement("div"); actions.className="row";
+    const status=document.createElement("span"); status.className="badge";status.textContent=row.enabled?"已上架":"已下架";actions.appendChild(status);
+    const receipt=()=>crypto.randomUUID();
+    const buy=shopButton("免费购买",async()=>{
+      const target=Number(targetOf());if(!Number.isSafeInteger(target)||target<=0)throw new Error("请先填写顶部目标 UID，或选择在线玩家。");
+      const result=await shopPost("/gm/api/store/purchase",{target,key:p.key,receipt:receipt()});
+      shopMessage(result.message+` 月卡剩余 ${result.moonCardDays} 天 · 原石 ${result.primogems} · 结晶 ${result.crystals} · 纪行等级 ${result.battlePassLevel}`);
+      out(result.message,"ok");
+    });buy.disabled=!row.enabled;actions.appendChild(buy);
+    actions.appendChild(shopButton(row.enabled?"下架":"上架",async()=>{
+      const result=await shopPost("/gm/api/store/products",{key:p.key,enabled:!row.enabled});shopMessage(result.message);await loadShop();
+    }));el.appendChild(actions);$("freeProducts").appendChild(el);
+  }
+}
+function renderShop() {
+  const q=$("shopQ").value.trim().toLowerCase(), type=Number($("shopType").value), filter=$("shopFilter").value;
+  const rows=shopRows.filter(r=>(!type||r.shopType===type)&&(!q||`${r.name} ${r.goods.goodsId} ${r.goods.goodsItem.id}`.toLowerCase().includes(q))&&
+    (filter==="all"||filter==="enabled"&&r.enabled||filter==="disabled"&&!r.enabled||filter==="modified"&&r.modified));
+  const list=$("shopList");list.replaceChildren();
+  for(const r of pageRows(rows,shopPage,"shop",renderShop)) {
+    const el=document.createElement("div");el.className="activity-card";
+    const title=document.createElement("h3");title.textContent=`${r.name||"未命名物品"} × ${r.goods.goodsItem.count}`;el.appendChild(title);
+    const detail=document.createElement("p");detail.className="eq-note";
+    const g=r.goods,costs=[g.scoin?g.scoin+" 摩拉":"",g.hcoin?g.hcoin+" 原石":"",g.mcoin?g.mcoin+" 结晶":"",...(g.costItemList||[]).map(c=>`${c.id} × ${c.count}`)].filter(Boolean);
+    detail.textContent=`${r.shopName} · 商品 ${g.goodsId} · 物品 ${g.goodsItem.id} · ${costs.join(" + ")||"免费"} · 限购 ${g.buyLimit||"不限"} · ${r.enabled?"已上架":"已下架"}${r.custom?" · 自定义":r.modified?" · 已修改":" · 默认"}`;
+    el.appendChild(detail);const actions=document.createElement("div");actions.className="row";
+    actions.appendChild(shopButton("编辑",()=>openShopEditor(r)));
+    actions.appendChild(shopButton(r.enabled?"下架":"上架",async()=>{const result=await shopPost("/gm/api/shops",{shopType:r.shopType,goodsId:g.goodsId,action:r.enabled?"disable":"enable"});shopMessage(result.message);await loadShop();}));
+    if(r.modified)actions.appendChild(shopButton(r.custom?"删除自定义商品":"恢复默认",async()=>{const result=await shopPost("/gm/api/shops",{shopType:r.shopType,goodsId:g.goodsId,action:"reset"});shopMessage(result.message);await loadShop();}));
+    el.appendChild(actions);list.appendChild(el);
+  }
+  if(!rows.length)list.textContent="没有符合筛选条件的商品。";
+}
+function openShopEditor(row) {
+  editingGoods=row?structuredClone(row.goods):{goodsId:0,goodsItem:{id:201,count:60},scoin:0,hcoin:0,mcoin:0,buyLimit:0,minLevel:0,maxLevel:61,costItemList:[],beginTime:0,endTime:1924992000,refreshType:"NONE",shopRefreshParam:0};
+  const g=editingGoods;$("shopTitle").textContent=row?"编辑商品 · "+(row.name||g.goodsItem.id):"新增商品";
+  $("goodsShop").value=row?row.shopType:Number($("shopType").value)||902;$("goodsShop").readOnly=!!row;
+  for(const [id,value] of Object.entries({goodsId:g.goodsId,goodsItem:g.goodsItem.id,goodsCount:g.goodsItem.count,goodsMora:g.scoin,goodsGems:g.hcoin,goodsCrystals:g.mcoin,goodsLimit:g.buyLimit,goodsMin:g.minLevel,goodsMax:g.maxLevel,goodsRefresh:g.refreshType||"NONE",goodsRefreshParam:g.shopRefreshParam||1}))$(id).value=value;
+  $("goodsCosts").value=JSON.stringify(g.costItemList||[],null,2);$("goodsStatus").textContent="";$("shopDialog").showModal();
+}
+$("shopForm").onsubmit=async e=>{
+  e.preventDefault();$("goodsSave").disabled=true;
+  try {
+    const g=structuredClone(editingGoods);g.goodsItem={id:Number($("goodsItem").value),count:Number($("goodsCount").value)};
+    for(const [key,id] of Object.entries({scoin:"goodsMora",hcoin:"goodsGems",mcoin:"goodsCrystals",buyLimit:"goodsLimit",minLevel:"goodsMin",maxLevel:"goodsMax",shopRefreshParam:"goodsRefreshParam"}))g[key]=Number($(id).value);
+    g.refreshType=$("goodsRefresh").value;g.costItemList=JSON.parse($("goodsCosts").value);
+    if(!Array.isArray(g.costItemList))throw new Error("兑换材料应为 JSON 数组。");
+    const result=await shopPost("/gm/api/shops",{shopType:Number($("goodsShop").value),goodsId:g.goodsId,action:"save",goods:g});
+    $("shopDialog").close();shopMessage(result.message);await loadShop();
+  }catch(e){$("goodsStatus").textContent=e.message;}finally{$("goodsSave").disabled=false;}
+};
+$("shopClose").onclick=()=>$("shopDialog").close();$("shopAdd").onclick=()=>openShopEditor(null);$("shopRefresh").onclick=loadShop;
+$("shopMode").onchange=()=>{$("freeProducts").hidden=$("shopMode").value!=="free";$("shopGoods").hidden=$("shopMode").value!=="goods";};
+for(const id of ["shopQ","shopType","shopFilter"])$(id).addEventListener(id==="shopQ"?"input":"change",()=>{shopPage.page=0;renderShop();});
 
 // --- banners ----------------------------------------------------------
 const BANNER_TYPES = {

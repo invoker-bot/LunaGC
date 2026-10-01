@@ -169,7 +169,7 @@ public final class Grasscutter {
 
             // The game server, and with it the shop system, is built before the resources are, so
             // the shops that come out of the game data are listed now.
-            if (gameServer != null) gameServer.getShopSystem().loadArtifactShop();
+            if (gameServer != null) gameServer.getShopSystem().load();
 
             // Generate handbooks.
             Tools.createGmHandbooks(false);

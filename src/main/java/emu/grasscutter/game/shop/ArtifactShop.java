@@ -23,7 +23,7 @@ import lombok.Getter;
  */
 public class ArtifactShop {
     /** Well clear of the ~101,070,304 the excel goods ids reach. */
-    private static final int GOODS_ID_BASE = 200_000_000;
+    public static final int GOODS_ID_BASE = 200_000_000;
 
     /** The substat pool every 5-star piece draws from. */
     private static final int FIVE_STAR_AFFIX_DEPOT = 501;
@@ -85,8 +85,8 @@ public class ArtifactShop {
     /**
      * Appends the artifact goods to the configured shop, replacing any listed by an earlier call.
      *
-     * <p>Safe to call more than once, and it has to be: the shop system is built before the
-     * resources are loaded, so the first attempt finds no artifacts to list.
+     * <p>Safe to call more than once, and it has to be: the shop system is built before the resources
+     * are loaded, so the first attempt finds no artifacts to list.
      */
     public void install(Int2ObjectMap<List<ShopInfo>> shopData) {
         var options = GAME_OPTIONS.artifactShop;
