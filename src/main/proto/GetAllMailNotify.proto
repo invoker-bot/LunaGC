@@ -4,5 +4,5 @@ option java_package = "emu.grasscutter.net.proto";
 option java_outer_classname = "GetAllMailNotifyOuterClass";
 
 message GetAllMailNotify {
-	bool is_collected = 4;
+	bool is_collected = 2;
 }

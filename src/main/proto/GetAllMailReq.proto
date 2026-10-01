@@ -1,4 +1,4 @@
-// Recovered from GetAllMailReqOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+// 7.1 client EPAGNKFMKHD writer, CmdId 5495.
 syntax = "proto3";
 
 package recovered.p_GetAllMailReq;
@@ -6,5 +6,5 @@ option java_package = "emu.grasscutter.net.proto";
 option java_outer_classname = "GetAllMailReqOuterClass";
 
 message GetAllMailReq {
-  bool is_collected = 10;
+  bool is_collected = 2;
 }

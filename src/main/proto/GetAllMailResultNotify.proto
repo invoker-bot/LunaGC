@@ -10,6 +10,6 @@ message GetAllMailResultNotify {
 	repeated MailData mail_list = 10;
 	int32 retcode = 2;
 	string transaction = 9;
-	uint32 page_index = 50000;
-	uint32 total_page_count = 50001;
+	uint32 page_index = 5;
+	uint32 total_page_count = 12;
 }

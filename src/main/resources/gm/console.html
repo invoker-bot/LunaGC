@@ -32,9 +32,9 @@
   button.ghost { background: var(--panel2); color: var(--text); border: 1px solid var(--line); }
   button.ghost:hover { background: #31404f; }
   button:disabled { opacity: .5; cursor: not-allowed; }
-  input, select { background: #12161c; color: var(--text); border: 1px solid var(--line);
+  input, select, textarea { background: #12161c; color: var(--text); border: 1px solid var(--line);
                   border-radius: 6px; padding: 6px 10px; font: inherit; outline: none; }
-  input:focus, select:focus { border-color: var(--accent); }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
   input[type="password"] { width: 220px; }
   main { display: grid; grid-template-columns: 340px 1fr; gap: 1px; background: var(--line);
          height: calc(100vh - 53px); }
@@ -193,6 +193,8 @@
       <button class="tab sel" data-tab="cmd">命令</button>
       <button class="tab" data-tab="items">物品</button>
       <button class="tab" data-tab="shop">商城</button>
+      <button class="tab" data-tab="notices">公告</button>
+      <button class="tab" data-tab="mail">邮件</button>
       <button class="tab" data-tab="history">历史卡池</button>
       <button class="tab" data-tab="activities">往期活动</button>
     </div>
@@ -252,6 +254,47 @@
         </div>
         <div class="pager" id="shopPagerTop"></div><div id="shopList"></div><div class="pager" id="shopPagerBottom"></div>
       </div>
+    </div>
+
+    <div class="pane" id="pane-notices">
+      <h2>公告管理 <button id="noticeRefresh" class="ghost">刷新</button> <a href="/hk4e/announcement/index.html" target="_blank" rel="noopener">查看游戏公告页</a></h2>
+      <p class="eq-note">草稿不会显示在游戏中。发布后按照开始、结束时间开放；公告正文按普通文字显示。</p>
+      <form id="noticeForm" class="activity-card">
+        <input id="noticeId" type="hidden" value="0">
+        <div class="eq-grid">
+          <label>公告标题<input id="noticeTitle" maxlength="100" required></label>
+          <label>分类<select id="noticeCategory"><option value="2">系统公告</option><option value="1">活动公告</option></select></label>
+          <label>开始时间<input id="noticeBegin" type="datetime-local" required></label>
+          <label>结束时间<input id="noticeEnd" type="datetime-local" required></label>
+          <label>发布状态<select id="noticeEnabled"><option value="false">草稿 / 已撤下</option><option value="true">已发布</option></select></label>
+        </div>
+        <label for="noticeContent">公告正文</label><textarea id="noticeContent" rows="6" maxlength="20000" required style="width:100%;margin:8px 0"></textarea>
+        <div class="row"><button type="submit" id="noticeSave">保存公告</button><button type="button" id="noticeNew" class="ghost">新建公告</button><span id="noticeEditing" class="eq-note">新公告</span></div>
+      </form>
+      <p id="noticeStatus" role="status" aria-live="polite" class="eq-note"></p>
+      <div class="row"><input id="noticeQ" placeholder="搜索公告标题或正文" aria-label="搜索公告" style="flex:1"></div>
+      <div class="pager" id="noticePagerTop"></div><div id="noticeList"></div><div class="pager" id="noticePagerBottom"></div>
+    </div>
+
+    <div class="pane" id="pane-mail">
+      <h2>发送游戏邮件</h2>
+      <p class="eq-note">支持离线投递。多个 UID 用逗号或空格分隔，一次最多 100 个。附件由玩家在游戏内领取。</p>
+      <form id="mailForm" class="activity-card">
+        <div class="eq-grid">
+          <label>收件 UID<input id="mailTargets" required placeholder="10001, 10002"></label>
+          <label>发件人<input id="mailSender" value="LunaGC" maxlength="50" required></label>
+          <label>邮件标题<input id="mailTitle" maxlength="100" required></label>
+          <label>有效天数<input id="mailDays" type="number" min="1" max="365" value="7" required></label>
+        </div>
+        <label for="mailContent">邮件正文</label><textarea id="mailContent" rows="5" maxlength="5000" required style="width:100%;margin:8px 0"></textarea>
+        <h3>附件（可留空）</h3><p class="eq-note">最多 10 种物品。材料等级为 1；武器 1–90 级；圣遗物等级按星级限制。装备详细属性请使用「物品」中的装备配置。</p>
+        <div id="mailAttachments"></div><button id="mailAddItem" class="ghost" type="button">添加附件</button>
+        <div class="row" style="margin-top:12px"><button type="submit" id="mailSend">发送邮件</button><button type="button" id="mailNew" class="ghost">新建邮件</button></div>
+      </form>
+      <p id="mailStatus" role="status" aria-live="polite" class="eq-note"></p>
+      <h2>查看玩家邮箱</h2><div class="row"><input id="mailInspectUid" inputmode="numeric" placeholder="玩家 UID" aria-label="查看邮箱的 UID"><button id="mailInspect" class="ghost">获取邮件</button></div>
+      <p id="mailInboxStatus" role="status" class="eq-note"></p><div id="mailInbox"></div>
+      <div class="pager"><button id="mailPrev" class="ghost" disabled>上一页</button><span id="mailPageInfo"></span><button id="mailNext" class="ghost" disabled>下一页</button></div>
     </div>
 
     <div class="pane" id="pane-history">
@@ -521,6 +564,11 @@ document.querySelectorAll(".tab").forEach(t => {
     document.querySelectorAll(".tab").forEach(x => x.classList.toggle("sel", x === t));
     document.querySelectorAll(".pane").forEach(p => p.classList.toggle("sel", p.id === "pane-" + t.dataset.tab));
     if (t.dataset.tab === "shop") loadShop();
+    if (t.dataset.tab === "notices") loadNotices();
+    if (t.dataset.tab === "mail") {
+      if (!$("mailTargets").value) $("mailTargets").value=$("target").value.replace(/^@/,"");
+      if (!$("mailInspectUid").value) $("mailInspectUid").value=$("target").value.replace(/^@/,"");
+    }
     if (t.dataset.tab === "items") ensureItems();
     if (t.dataset.tab === "history") loadHistory();
     if (t.dataset.tab === "activities") loadActivities();
@@ -814,7 +862,7 @@ function pageRows(rows, state, prefix, render) {
     add("下一页", state.page + 1, state.page === pages - 1);
     add("末页", pages - 1, state.page === pages - 1);
     const size = document.createElement("select");
-    size.setAttribute("aria-label", prefix === "history" ? "历史卡池每页条数" : prefix === "shop" ? "商城每页条数" : "往期活动每页条数");
+    size.setAttribute("aria-label", prefix === "history" ? "历史卡池每页条数" : prefix === "shop" ? "商城每页条数" : prefix === "notice" ? "公告每页条数" : "往期活动每页条数");
     for (const count of [10, 20, 50]) {
       const option = document.createElement("option");
       option.value = String(count);
@@ -827,6 +875,96 @@ function pageRows(rows, state, prefix, render) {
   }
   return visible;
 }
+
+// --- announcements and mail ------------------------------------------
+let noticeRows=[], noticeActive=new Set();
+const noticePage={page:0,size:20};
+function messageStatus(id,text,error=false){$(id).textContent=text;$(id).style.color=error?'var(--err)':'var(--dim)';}
+async function messagePost(path,payload){
+ const response=await api(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+ if(!response.ok || !response.json)throw Error(response.json?.message||'操作失败');
+ return response.json;
+}
+function localDate(seconds){const date=new Date(seconds*1000);return new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);}
+function newNotice(){
+ $('noticeForm').reset();$('noticeId').value='0';$('noticeBegin').value=localDate(Date.now()/1000);
+ $('noticeEnd').value=localDate(Date.now()/1000+30*86400);$('noticeEditing').textContent='新公告';
+}
+function editNotice(row){
+ $('noticeId').value=row.id;$('noticeTitle').value=row.title;$('noticeContent').value=row.content;
+ $('noticeCategory').value=String(row.category);$('noticeEnabled').value=String(row.enabled);
+ $('noticeBegin').value=localDate(row.beginTime);$('noticeEnd').value=localDate(row.endTime);
+ $('noticeEditing').textContent='编辑公告 #'+row.id;$('noticeForm').scrollIntoView({block:'start'});
+}
+async function loadNotices(){
+ $('noticeRefresh').disabled=true;
+ try{const r=await api('/gm/api/notices');if(!r.ok)throw Error(r.json?.message||'公告加载失败');
+ noticeRows=r.json.notices;noticeActive=new Set(r.json.activeIds);renderNotices();}
+ catch(e){messageStatus('noticeStatus',e.message,true);}finally{$('noticeRefresh').disabled=false;}
+}
+function noticeButton(text,action){const b=document.createElement('button');b.className='ghost';b.textContent=text;
+ b.onclick=async()=>{b.disabled=true;try{await action();}catch(e){messageStatus('noticeStatus',e.message,true);}finally{b.disabled=false;}};return b;}
+function renderNotices(){
+ const q=$('noticeQ').value.trim().toLowerCase();const rows=noticeRows.filter(n=>(n.title+' '+n.content).toLowerCase().includes(q)).sort((a,b)=>b.id-a.id);
+ $('noticeList').replaceChildren();
+ for(const row of pageRows(rows,noticePage,'notice',renderNotices)){
+  const card=document.createElement('div');card.className='activity-card';const heading=document.createElement('h3');
+  heading.textContent=row.title+' · #'+row.id;card.appendChild(heading);
+  const state=document.createElement('p');state.className='eq-note';state.textContent=(noticeActive.has(row.id)?'生效中':!row.enabled?'草稿 / 已撤下':row.beginTime>Date.now()/1000?'待开放':'已过期')+' · '+new Date(row.beginTime*1000).toLocaleString()+' — '+new Date(row.endTime*1000).toLocaleString();card.appendChild(state);
+  const preview=document.createElement('p');preview.textContent=row.content.slice(0,150)+(row.content.length>150?'…':'');card.appendChild(preview);
+  const actions=document.createElement('div');actions.className='row';actions.appendChild(noticeButton('编辑',()=>editNotice(row)));
+  actions.appendChild(noticeButton(row.enabled?'撤下':'发布',async()=>{const r=await messagePost('/gm/api/notices',{action:row.enabled?'withdraw':'publish',notice:{id:row.id}});messageStatus('noticeStatus',r.message);await loadNotices();}));
+  actions.appendChild(noticeButton('删除',async()=>{if(!confirm('删除公告「'+row.title+'」？'))return;await messagePost('/gm/api/notices',{action:'delete',notice:{id:row.id}});if(Number($('noticeId').value)===row.id)newNotice();messageStatus('noticeStatus','公告已删除。');await loadNotices();}));
+  card.appendChild(actions);$('noticeList').appendChild(card);
+ }
+ if(!rows.length)$('noticeList').textContent='暂无匹配的公告。';
+}
+$('noticeForm').onsubmit=async event=>{event.preventDefault();$('noticeSave').disabled=true;
+ try{const r=await messagePost('/gm/api/notices',{action:'save',notice:{id:Number($('noticeId').value),title:$('noticeTitle').value,content:$('noticeContent').value,category:Number($('noticeCategory').value),enabled:$('noticeEnabled').value==='true',beginTime:Math.floor(new Date($('noticeBegin').value).getTime()/1000),endTime:Math.floor(new Date($('noticeEnd').value).getTime()/1000)}});
+ editNotice(r.notice);messageStatus('noticeStatus',r.message);await loadNotices();}
+ catch(e){messageStatus('noticeStatus',e.message,true);}finally{$('noticeSave').disabled=false;}};
+$('noticeNew').onclick=newNotice;$('noticeRefresh').onclick=loadNotices;$('noticeQ').oninput=()=>{noticePage.page=0;renderNotices();};newNotice();
+
+let mailPayload=null, mailOffset=0;
+function addMailItem(){
+ if($('mailAttachments').children.length>=10)return;
+ const row=document.createElement('div');row.className='eq-grid';row.style.marginBottom='10px';
+ for(const [key,label,value,min] of [['id','物品 ID','',1],['count','数量',1,1],['level','等级',1,0]]){
+  const l=document.createElement('label');l.textContent=label;const input=document.createElement('input');input.type='number';input.min=min;input.required=true;input.value=value;input.dataset.mailField=key;l.appendChild(input);row.appendChild(l);
+ }
+ const remove=document.createElement('button');remove.type='button';remove.className='ghost';remove.textContent='移除附件';remove.onclick=()=>row.remove();row.appendChild(remove);$('mailAttachments').appendChild(row);
+}
+function freezeMail(frozen){
+ for(const input of $('mailForm').querySelectorAll('input,textarea,select,button'))input.disabled=frozen;
+ $('mailSend').disabled=false;$('mailNew').disabled=false;
+}
+function newMail(){mailPayload=null;$('mailForm').reset();$('mailAttachments').replaceChildren();freezeMail(false);$('mailSend').textContent='发送邮件';messageStatus('mailStatus','');}
+$('mailNew').onclick=newMail;$('mailAddItem').onclick=addMailItem;
+$('mailForm').onsubmit=async event=>{
+ event.preventDefault();
+ if(!mailPayload){mailPayload={receipt:crypto.randomUUID(),targets:$('mailTargets').value.trim().split(/[\s,，]+/).filter(Boolean).map(Number),sender:$('mailSender').value,title:$('mailTitle').value,content:$('mailContent').value,durationDays:Number($('mailDays').value),attachments:Array.from($('mailAttachments').children).map(row=>({itemId:Number(row.querySelector('[data-mail-field=id]').value),itemCount:Number(row.querySelector('[data-mail-field=count]').value),itemLevel:Number(row.querySelector('[data-mail-field=level]').value)}))};}
+ freezeMail(true);$('mailSend').disabled=true;messageStatus('mailStatus','正在投递…');
+ try{
+  const r=await api('/gm/api/mail',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(mailPayload)});
+  if(!r.ok){if(r.json?.retcode===400){mailPayload=null;freezeMail(false);}throw Error(r.json?.message||'发送失败');}
+  messageStatus('mailStatus',r.json.message,r.json.retcode!==0);
+  if(r.json.result.failed.length){$('mailSend').disabled=false;$('mailSend').textContent='重试失败投递';}
+  else{$('mailSend').textContent='已发送';messageStatus('mailStatus',r.json.message+' 点击「新建邮件」开始下一批。');}
+ }catch(e){messageStatus('mailStatus',e.message+'（可重试）',true);$('mailSend').disabled=false;if(mailPayload)$('mailSend').textContent='重试本次投递';}
+};
+async function loadInbox(){
+ const uid=$('mailInspectUid').value.trim().replace(/^@/,'');$('mailInspect').disabled=true;
+ try{const r=await api('/gm/api/mail?target='+encodeURIComponent(uid)+'&offset='+mailOffset);if(!r.ok)throw Error(r.json?.message||'邮箱获取失败');
+  $('mailInbox').replaceChildren();messageStatus('mailInboxStatus','UID '+uid+' · '+r.json.total+' 封有效邮件');
+  for(const m of r.json.mail){const card=document.createElement('details');card.className='activity-card';const title=document.createElement('summary');title.textContent=m.title+' · #'+m.id+' · '+(m.read?'已读':'未读')+' · '+(m.claimInProgress?'附件领取中断，需核对服务日志':m.claimed?'附件已领取':'附件未领取');card.appendChild(title);
+   const text=document.createElement('p');text.style.whiteSpace='pre-wrap';text.textContent=m.content;card.appendChild(text);
+   const info=document.createElement('p');info.className='eq-note';info.textContent='发件人：'+m.sender+' · 到期：'+new Date(m.expireTime*1000).toLocaleString()+' · 附件：'+(m.attachments.map(a=>a.itemId+' × '+a.itemCount+'（等级 '+a.itemLevel+'）').join('、')||'无');card.appendChild(info);$('mailInbox').appendChild(card);
+  }
+  if(!r.json.total)$('mailInbox').textContent='邮箱为空。';
+  $('mailPrev').disabled=mailOffset===0;$('mailNext').disabled=mailOffset+50>=r.json.total;$('mailPageInfo').textContent='第 '+(Math.floor(mailOffset/50)+1)+' / '+Math.max(1,Math.ceil(r.json.total/50))+' 页 · 每页 50 封';
+ }catch(e){messageStatus('mailInboxStatus',e.message,true);}finally{$('mailInspect').disabled=false;}
+}
+$('mailInspect').onclick=()=>{mailOffset=0;loadInbox();};$('mailPrev').onclick=()=>{mailOffset=Math.max(0,mailOffset-50);loadInbox();};$('mailNext').onclick=()=>{mailOffset+=50;loadInbox();};
 
 // --- shop -------------------------------------------------------------
 let shopRows = [], freeProducts = [], editingGoods = null;

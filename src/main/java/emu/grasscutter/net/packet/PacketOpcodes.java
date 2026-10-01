@@ -486,7 +486,7 @@ public final class PacketOpcodes {
     public static final int GetFriendShowAvatarInfoRsp = 22730;
     public static final int FurnitureCurModuleArrangeCountNotify = 4138;
     public static final int CodexDataFullNotify = 3723;
-    public static final int GetAllMailNotify = -101;
+    public static final int GetAllMailNotify = 28960;
     public static final int PlayerApplyEnterMpResultNotify = 28155;
     public static final int PlayerApplyEnterMpNotify = 6425;
     public static final int PlayerApplyEnterMpReq = -102;
@@ -507,12 +507,12 @@ public final class PacketOpcodes {
     public static final int GetWorldMpInfoReq = -107;
     public static final int GetWorldMpInfoRsp = 9016;
     public static final int ResinChangeNotify = 8226;
-    public static final int GetMailItemReq = -108;
+    public static final int GetMailItemReq = 3404;
     public static final int GetMailItemRsp = 22901;
     public static final int MailChangeNotify = 23925;
-    public static final int ReadMailNotify = -109;
+    public static final int ReadMailNotify = 8592;
     public static final int ChangeMailStarNotify = 8766;
-    public static final int DelMailReq = -110;
+    public static final int DelMailReq = 3042;
     public static final int DelMailRsp = 28591;
     public static final int HitTreeNotify = 2874;
     public static final int TheaterLobbySceneJumpReq = -111;
@@ -1059,7 +1059,7 @@ public final class PacketOpcodes {
     public static final int GearActivityFinishPlayPictureRsp = 24010;
     public static final int GetActivityScheduleRsp = 22111;
     public static final int GetAllH5ActivityInfoRsp = 25724;
-    public static final int GetAllMailReq = -220;
+    public static final int GetAllMailReq = 5495;
     public static final int GetAllMailRsp = 29682;
     public static final int GetBattlePassProductReq = 29251;
     public static final int GetBattlePassProductRsp = 20122;
@@ -3220,57 +3220,6 @@ public final class PacketOpcodes {
     public static final int _WeaponAwakenPointReq = 21891;
     public static final int _WeaponAwakenPointRsp = 4399;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // Names retained for local 7.0 handlers that have no verified 7.1 CmdId.
     // Distinct negative values keep those handlers inactive without colliding with live packets.
     public static final int AddCustomTeamReq = -100001;
@@ -3308,11 +3257,12 @@ public final class PacketOpcodes {
     public static final int UnnamedOpcode9980 = -100033;
     public static final int UseWidgetCreateGadgetRsp = -100034;
 
-    public static final HashSet<Integer> BANNED_PACKETS = new HashSet<>() {
-        {
-            add(PacketOpcodes.WorldOwnerBlossomScheduleInfoNotify);
-            add(PacketOpcodes.SceneEntityDrownReq);
-            add(PacketOpcodes.SetEntityClientDataNotify);
-        }
-    };
+    public static final HashSet<Integer> BANNED_PACKETS =
+            new HashSet<>() {
+                {
+                    add(PacketOpcodes.WorldOwnerBlossomScheduleInfoNotify);
+                    add(PacketOpcodes.SceneEntityDrownReq);
+                    add(PacketOpcodes.SetEntityClientDataNotify);
+                }
+            };
 }

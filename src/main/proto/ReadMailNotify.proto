@@ -4,5 +4,5 @@ option java_package = "emu.grasscutter.net.proto";
 option java_outer_classname = "ReadMailNotifyOuterClass";
 
 message ReadMailNotify {
-	repeated uint32 mail_id_list = 8;
+	repeated uint32 mail_id_list = 14;
 }

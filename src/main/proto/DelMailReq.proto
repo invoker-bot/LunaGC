@@ -4,5 +4,5 @@ option java_package = "emu.grasscutter.net.proto";
 option java_outer_classname = "DelMailReqOuterClass";
 
 message DelMailReq {
-	repeated uint32 mail_id_list = 4;
+	repeated uint32 mail_id_list = 12;
 }

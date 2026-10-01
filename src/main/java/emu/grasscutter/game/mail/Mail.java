@@ -17,6 +17,15 @@ import org.bson.types.ObjectId;
 public final class Mail {
     @Id private ObjectId id;
     @Indexed private int ownerUid;
+    public int mailId;
+
+    @Indexed(options = @IndexOptions(unique = true, sparse = true))
+    public String deliveryKey;
+
+    public String deliveryDigest;
+    /** A durable reservation blocks a second grant after an interrupted inventory write. */
+    public boolean claimInProgress;
+
     public MailContent mailContent;
     public List<MailItem> itemList;
     public long sendTime;
@@ -71,9 +80,26 @@ public final class Mail {
         this.ownerUid = ownerUid;
     }
 
+    public Mail copyForDelivery() {
+        if (mailContent == null || itemList == null) throw new IllegalArgumentException("邮件内容不完整。");
+        var copy =
+                new Mail(
+                        new MailContent(mailContent.title, mailContent.content, mailContent.sender),
+                        new ArrayList<>(
+                                itemList.stream()
+                                        .map(a -> new MailItem(a.itemId, a.itemCount, a.itemLevel))
+                                        .toList()),
+                        expireTime,
+                        importance,
+                        stateValue);
+        copy.deliveryKey = deliveryKey;
+        copy.deliveryDigest = deliveryDigest;
+        return copy;
+    }
+
     public MailDataOuterClass.MailData toProto(Player player) {
         return MailDataOuterClass.MailData.newBuilder()
-				.setMailId(player.getMailHandler().toClientMailId(player.getMailId(this)))
+                .setMailId(this.mailId)
                 .setMailTextContent(this.mailContent.toProto())
                 .addAllItemList(this.itemList.stream().map(MailItem::toProto).toList())
                 .setSendTime((int) this.sendTime)
@@ -81,7 +107,10 @@ public final class Mail {
                 .setImportance(this.importance)
                 .setIsRead(this.isRead)
                 .setIsAttachmentGot(this.isAttachmentGot)
-                .setCollectState(MailCollectState.MailCollectState_MAIL_NOT_COLLECTIBLE)
+                .setCollectState(
+                        this.stateValue == 3
+                                ? MailCollectState.MailCollectState_MAIL_COLLECTIBLE_COLLECTED
+                                : MailCollectState.MailCollectState_MAIL_NOT_COLLECTIBLE)
                 .build();
     }
 
@@ -113,9 +142,9 @@ public final class Mail {
 
         public MailTextContent toProto() {
             return MailTextContent.newBuilder()
-                    .setTitle(this.title)
-                    .setContent(this.content)
-                    .setSender(this.sender)
+                    .setTitle(Objects.requireNonNullElse(this.title, ""))
+                    .setContent(Objects.requireNonNullElse(this.content, ""))
+                    .setSender(Objects.requireNonNullElse(this.sender, ""))
                     .build();
         }
     }

@@ -1,4 +1,4 @@
-// Recovered from GetAllMailRspOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+// 7.1 client OEJGFDGDICJ reader, CmdId 29682.
 syntax = "proto3";
 
 package recovered.p_GetAllMailRsp;
@@ -7,8 +7,8 @@ option java_outer_classname = "GetAllMailRspOuterClass";
 import "MailData.proto";
 
 message GetAllMailRsp {
-  repeated .MailData mail_list = 2;
-  bool is_collected = 8;
-  bool is_truncated = 10;
-  int32 retcode = 13;
+  repeated .MailData mail_list = 15;
+  bool is_collected = 14;
+  bool is_truncated = 7;
+  int32 retcode = 1;
 }

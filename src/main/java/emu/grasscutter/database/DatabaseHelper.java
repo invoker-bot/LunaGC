@@ -4,9 +4,8 @@ import static com.mongodb.client.model.Filters.eq;
 
 import com.mongodb.MongoWriteException;
 import com.mongodb.WriteConcern;
-import dev.morphia.InsertOneOptions;
 import dev.morphia.DeleteOptions;
-
+import dev.morphia.InsertOneOptions;
 import dev.morphia.query.*;
 import dev.morphia.query.experimental.filters.Filters;
 import emu.grasscutter.*;
@@ -34,6 +33,8 @@ import javax.annotation.Nullable;
 import lombok.Getter;
 
 public final class DatabaseHelper {
+    private static volatile boolean mailCounterInitialized;
+
     @Getter
     private static final ExecutorService eventExecutor =
             new ThreadPoolExecutor(
@@ -60,14 +61,15 @@ public final class DatabaseHelper {
      * @param object The object to save.
      */
     public static void saveGameAsync(Object object) {
-        DatabaseHelper.eventExecutor.submit(() -> {
-            synchronized (object) {
-                // A queued stack save must respect a subsequent removal instead of recreating it.
-                if (object instanceof GameItem item && item.getCount() <= 0)
-                    DatabaseManager.getGameDatastore().delete(item);
-                else saveWithRetry(object);
-            }
-        });
+        DatabaseHelper.eventExecutor.submit(
+                () -> {
+                    synchronized (object) {
+                        // A queued stack save must respect a subsequent removal instead of recreating it.
+                        if (object instanceof GameItem item && item.getCount() <= 0)
+                            DatabaseManager.getGameDatastore().delete(item);
+                        else saveWithRetry(object);
+                    }
+                });
     }
 
     /** Acknowledged writes for economic reservations; errors must reach the caller. */
@@ -76,7 +78,9 @@ public final class DatabaseHelper {
             var concern = WriteConcern.MAJORITY.withJournal(true);
             if (object instanceof GameItem item && item.getCount() <= 0)
                 DatabaseManager.getGameDatastore().delete(item, new DeleteOptions().writeConcern(concern));
-            else DatabaseManager.getGameDatastore().save(object, new InsertOneOptions().writeConcern(concern));
+            else
+                DatabaseManager.getGameDatastore()
+                        .save(object, new InsertOneOptions().writeConcern(concern));
         }
     }
 
@@ -449,9 +453,12 @@ public final class DatabaseHelper {
     }
 
     public static void deleteItem(GameItem item) {
-        DatabaseHelper.asyncOperation(() -> {
-            synchronized (item) { DatabaseManager.getGameDatastore().delete(item); }
-        });
+        DatabaseHelper.asyncOperation(
+                () -> {
+                    synchronized (item) {
+                        DatabaseManager.getGameDatastore().delete(item);
+                    }
+                });
     }
 
     /**
@@ -544,6 +551,73 @@ public final class DatabaseHelper {
                 .toList();
     }
 
+    /** Atomic across offline deliveries and live sessions; IDs never depend on mailbox positions. */
+    public static int nextMailId() {
+        var counters =
+                DatabaseManager.getGameDatabase()
+                        .getCollection("mailCounters")
+                        .withWriteConcern(WriteConcern.MAJORITY.withJournal(true));
+        if (!mailCounterInitialized)
+            synchronized (DatabaseHelper.class) {
+                if (!mailCounterInitialized) {
+                    var highest =
+                            DatabaseManager.getGameDatabase()
+                                    .getCollection("mail")
+                                    .find()
+                                    .sort(com.mongodb.client.model.Sorts.descending("mailId"))
+                                    .limit(1)
+                                    .first();
+                    long max =
+                            highest != null && highest.get("mailId") instanceof Number number
+                                    ? number.longValue()
+                                    : 0;
+                    counters.updateOne(
+                            eq("_id", "sequence"),
+                            new org.bson.Document("$max", new org.bson.Document("value", max)),
+                            new com.mongodb.client.model.UpdateOptions().upsert(true));
+                    mailCounterInitialized = true;
+                }
+            }
+        var result =
+                counters.findOneAndUpdate(
+                        eq("_id", "sequence"),
+                        new org.bson.Document("$inc", new org.bson.Document("value", 1L)),
+                        new com.mongodb.client.model.FindOneAndUpdateOptions()
+                                .upsert(true)
+                                .returnDocument(com.mongodb.client.model.ReturnDocument.AFTER));
+        long value = ((Number) result.get("value")).longValue();
+        if (value <= 0 || value > Integer.MAX_VALUE)
+            throw new IllegalStateException("Mail ID sequence exhausted");
+        return (int) value;
+    }
+
+    public static Mail getMailByDeliveryKey(String key) {
+        return DatabaseManager.getGameDatastore()
+                .find(Mail.class)
+                .filter(Filters.eq("deliveryKey", key))
+                .first();
+    }
+
+    public static int assignLegacyMailId(Mail message, int proposed) {
+        var collection =
+                DatabaseManager.getGameDatabase()
+                        .getCollection("mail")
+                        .withWriteConcern(WriteConcern.MAJORITY.withJournal(true));
+        var changed =
+                collection.findOneAndUpdate(
+                        com.mongodb.client.model.Filters.and(
+                                eq("_id", message.getId()),
+                                com.mongodb.client.model.Filters.or(
+                                        eq("mailId", 0), com.mongodb.client.model.Filters.exists("mailId", false))),
+                        new org.bson.Document("$set", new org.bson.Document("mailId", proposed)),
+                        new com.mongodb.client.model.FindOneAndUpdateOptions()
+                                .returnDocument(com.mongodb.client.model.ReturnDocument.AFTER));
+        if (changed == null) changed = collection.find(eq("_id", message.getId())).first();
+        if (changed == null || !(changed.get("mailId") instanceof Number))
+            throw new IllegalStateException("Legacy mail disappeared while assigning its ID");
+        return ((Number) changed.get("mailId")).intValue();
+    }
+
     public static void saveMail(Mail mail) {
         DatabaseHelper.saveGameAsync(mail);
     }
@@ -579,7 +653,8 @@ public final class DatabaseHelper {
         DatabaseHelper.saveGameAsync(gameHome);
     }
 
-    public static emu.grasscutter.game.dailytask.DailyTaskManager loadDailyTaskManager(Player player) {
+    public static emu.grasscutter.game.dailytask.DailyTaskManager loadDailyTaskManager(
+            Player player) {
         var manager =
                 DatabaseManager.getGameDatastore()
                         .find(emu.grasscutter.game.dailytask.DailyTaskManager.class)
