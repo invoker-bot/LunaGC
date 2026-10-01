@@ -143,6 +143,11 @@
   .hrev-hd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
   .hrev-hd .gt { font-family: var(--mono); font-size: 12px; color: var(--dim); }
   .hrev-hd .dim { font-size: 12px; color: var(--dim); }
+  .banner .pool { margin-top: 8px; font-size: 12px; border-top: 1px solid var(--line); padding-top: 8px; }
+  .banner .pool summary { color: #9fc0ff; cursor: pointer; }
+  .banner .pool-group { margin-top: 10px; }
+  .banner .pool-group strong { display: block; margin-bottom: 3px; }
+  .banner .pool-items { color: var(--dim); overflow-wrap: anywhere; line-height: 1.8; }
   .hrev-body > .banner { margin-bottom: 8px; }
   .hrev-body > .banner:last-child { margin-bottom: 0; }
 
@@ -305,6 +310,7 @@
       <div style="margin-bottom:10px;color:var(--dim);font-size:12px">
         当前配置和历史归档统一列出，历史按版本从新到旧排列。复刻时可指定 1–365 天，默认 30 天；当前卡池可修改到期时间。
         「生效中」表示客户端祈愿界面会展示它；历史月份为近似时间，归档仍待逐期核实。
+        未标 UP 的星级会展示候选角色和武器，展开可查看全部可抽取内容。
       </div>
       <div class="row" style="margin-bottom:10px">
         <input id="historyQ" placeholder="搜索版本、角色、武器或卡池 ID" style="flex:1;min-width:180px" aria-label="搜索历史卡池">
@@ -1059,7 +1065,7 @@ for(const id of ["shopQ","shopType","shopFilter"])$(id).addEventListener(id==="s
 
 // --- banners ----------------------------------------------------------
 const BANNER_TYPES = {
-  STANDARD: "常驻", WEAPON: "武器", CHARACTER: "角色",
+  STANDARD: "常驻", BEGINNER: "新手", EVENT: "角色", WEAPON: "武器", CHARACTER: "角色",
   CHARACTER2: "角色", CHRONICLE: "集录",
 };
 const COST_ITEMS = { 223: "纠缠之缘", 224: "相遇之缘" };
@@ -1076,6 +1082,34 @@ function fmtUp(items, fallbackIds) {
     return items.map(x => `${x.name || "(无名)"}·${x.id}`).join("  ");
   }
   return (fallbackIds || []).join(" ");
+}
+
+function bannerPoolGroups(b, rarity) {
+  const names = b[`poolItems${rarity}Names`];
+  const items = Array.isArray(names) ? names : (b[`poolItems${rarity}`] || []).map(id => ({ id }));
+  return [
+    { kind: "character", label: "角色", items: items.filter(x => x.kind === "character") },
+    { kind: "weapon", label: "武器", items: items.filter(x => x.kind === "weapon") },
+    { kind: "unknown", label: "其他", items: items.filter(x => !["character", "weapon"].includes(x.kind)) },
+  ].filter(group => group.items.length);
+}
+
+function bannerPoolSummary(groups) {
+  return groups.map(group => `${group.label}：${fmtUp(group.items.slice(0, 2))}`
+    + (group.items.length > 2 ? ` 等 ${group.items.length} 种` : "")).join("；");
+}
+
+function renderBannerPools(b) {
+  const rarities = [5, 4, 3].map(rarity => {
+    const groups = bannerPoolGroups(b, rarity);
+    return { rarity, groups, count: groups.reduce((total, group) => total + group.items.length, 0) };
+  }).filter(pool => pool.count);
+  if (!rarities.length) return '<div class="up">候选列表暂未提供，请刷新页面。</div>';
+  const stars = { 5: "五星", 4: "四星", 3: "三星" };
+  return `<details class="pool"><summary>查看全部可抽取内容（${rarities.map(pool => `${stars[pool.rarity]} ${pool.count}`).join(" · ")}）</summary>`
+    + rarities.map(pool => `<div class="pool-group"><strong>${stars[pool.rarity]}候选 · ${pool.count} 种</strong>`
+      + pool.groups.map(group => `<div class="pool-items">${group.label}：${esc(fmtUp(group.items))}</div>`).join("") + "</div>").join("")
+    + (b.removeC6FromPool ? '<div class="pool-items">已启用满命过滤，实际候选会随目标玩家持有的角色变化。</div>' : "") + "</details>";
 }
 
 function renderBanner(b, opts) {
@@ -1104,6 +1138,9 @@ function renderBanner(b, opts) {
     <div class="tm">${fmtTime(b.beginTime)} ~ ${fmtTime(b.endTime)}</div>
     ${up5 ? `<div class="up">五星 UP: ${esc(up5)}</div>` : ""}
     ${up4 ? `<div class="up">四星 UP: ${esc(up4)}</div>` : ""}
+    ${!up5 ? `<div class="up">五星候选：${esc(bannerPoolSummary(bannerPoolGroups(b, 5)))}</div>` : ""}
+    ${!up4 ? `<div class="up">四星候选：${esc(bannerPoolSummary(bannerPoolGroups(b, 4)))}</div>` : ""}
+    ${renderBannerPools(b)}
     <div class="ops"></div>`;
 
   const ops = el.querySelector(".ops");
@@ -1208,7 +1245,8 @@ function renderHistory() {
     if (filter === "history" && rev.current) return false;
     return !needle || [rev.current ? "当前配置" : rev.version, rev.subject, b.scheduleId,
       BANNER_TYPES[b.bannerType], b.phase, fmtUp(b.rateUpItems4Names, b.rateUpItems4),
-      fmtUp(b.rateUpItems5Names, b.rateUpItems5)].join(" ").toLowerCase().includes(needle);
+      fmtUp(b.rateUpItems5Names, b.rateUpItems5), ...[5, 4, 3].map(rarity =>
+        fmtUp(b[`poolItems${rarity}Names`], b[`poolItems${rarity}`]))].join(" ").toLowerCase().includes(needle);
   });
   $("historySummary").textContent = `匹配 ${rows.length} 条；当前配置 ${currentBanners.length} 个，`
     + `${currentBanners.filter(b => b.active).length} 个生效中，历史记录 ${entries.length - currentBanners.length} 个。`;

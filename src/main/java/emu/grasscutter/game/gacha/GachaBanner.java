@@ -8,6 +8,8 @@ import emu.grasscutter.game.player.Player;
 import emu.grasscutter.net.proto.GachaInfoOuterClass.GachaInfo;
 import emu.grasscutter.net.proto.GachaUpInfoOuterClass.GachaUpInfo;
 import emu.grasscutter.utils.Utils;
+import java.util.Arrays;
+import java.util.stream.IntStream;
 import lombok.Getter;
 
 public class GachaBanner {
@@ -199,6 +201,40 @@ public class GachaBanner {
             case 4 -> eventChance4;
             default -> eventChance5;
         };
+    }
+
+    /** Configured candidates for GM, including defaults, without changing this banner. */
+    public int[] getPossibleItems(int rarity) {
+        if (rarity == 3)
+            return Arrays.stream(fallbackItems3 == null ? EMPTY_POOL : fallbackItems3)
+                    .filter(id -> id > 0)
+                    .distinct()
+                    .toArray();
+        if (rarity != 4 && rarity != 5) throw new IllegalArgumentException("Unsupported gacha rarity");
+        var type = bannerType == null ? BannerType.STANDARD : bannerType;
+        int[] featured = rarity == 4 ? rateUpItems4 : rateUpItems5;
+        if (featured == null) featured = EMPTY_POOL;
+        int[] first = rarity == 4 ? fallbackItems4Pool1 : fallbackItems5Pool1;
+        int[] second = rarity == 4 ? fallbackItems4Pool2 : fallbackItems5Pool2;
+        if (first == null) first = rarity == 5 ? type.fallbackItems5Pool1 : EMPTY_POOL;
+        if (second == null) second = rarity == 5 ? type.fallbackItems5Pool2 : EMPTY_POOL;
+        if (autoStripRateUpFromFallback) {
+            first = Utils.setSubtract(first, featured);
+            second = Utils.setSubtract(second, featured);
+        }
+        int chance = getEventChance(rarity);
+        if (chance < 0) chance = rarity == 4 ? type.eventChance4 : type.eventChance5;
+        var candidates = Arrays.stream(featured);
+        if (featured.length == 0 || chance < 100) {
+            // Matches GachaSystem.doFallbackRarePull when both fallback pools are empty.
+            if (first.length == 0 && second.length == 0)
+                first = rarity == 5 ? DEFAULT_FALLBACK_ITEMS_5_POOL_2 : DEFAULT_FALLBACK_ITEMS_4_POOL_2;
+            candidates =
+                    IntStream.concat(
+                            candidates,
+                            IntStream.concat(Arrays.stream(first), Arrays.stream(second)));
+        }
+        return candidates.filter(id -> id > 0).distinct().toArray();
     }
 
     public GachaInfo toProto(Player player) {

@@ -15,6 +15,7 @@ import emu.grasscutter.game.activity.ActivityScheduleStore;
 import emu.grasscutter.game.activity.HistoricalActivityService;
 import emu.grasscutter.game.gacha.BannerConfig;
 import emu.grasscutter.game.gacha.GachaBanner;
+import emu.grasscutter.game.inventory.ItemType;
 import emu.grasscutter.game.inventory.MaterialType;
 import emu.grasscutter.game.player.Player;
 import emu.grasscutter.game.props.ItemUseOp;
@@ -620,6 +621,12 @@ public final class GmHandler implements Router {
         row.put("rateUpItems5", banner.getRateUpItems5());
         row.put("rateUpItems4Names", upSlots(strings, banner.getRateUpItems4()));
         row.put("rateUpItems5Names", upSlots(strings, banner.getRateUpItems5()));
+        for (int rarity : new int[] {5, 4, 3}) {
+            int[] items = banner.getPossibleItems(rarity);
+            row.put("poolItems" + rarity, items);
+            row.put("poolItems" + rarity + "Names", upSlots(strings, items));
+        }
+        row.put("removeC6FromPool", banner.isRemoveC6FromPool());
         row.put("disabled", banner.isDisabled());
         row.put("loaded", loaded);
         row.put("active", loaded && banner.isActive(now));
@@ -660,6 +667,12 @@ public final class GmHandler implements Router {
         var row = new LinkedHashMap<String, Object>();
         row.put("id", id);
         row.put("name", data != null ? nameOf(strings, data) : null);
+        String kind = "unknown";
+        if (data != null) {
+            if (data.getItemType() == ItemType.ITEM_WEAPON) kind = "weapon";
+            else if (data.getMaterialType() == MaterialType.MATERIAL_AVATAR) kind = "character";
+        }
+        row.put("kind", kind);
         return row;
     }
 
