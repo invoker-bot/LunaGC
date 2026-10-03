@@ -60,4 +60,44 @@ class TextMapLoaderTest {
         for (int i = 0; i < hashes.length; i++)
             assertEquals(names[i], TextMapLoader.resolve(strings, hashes[i]));
     }
+
+    @Test
+    void resolvesVersion71CharactersCardsAndFeaturedWeaponsFromActualResources() throws Exception {
+        long[] hashes = {
+            3992521194L,
+            3775698260L,
+            1692132714L,
+            4172378124L,
+            4086029419L,
+            2677592067L,
+            1359826123L,
+            2998374891L,
+            3763051755L
+        };
+        String[] names = {"薇斯纳", "薇斯纳", "沃雅妮莎", "沃雅妮莎", "蝶变", "漩流颂歌", "新枝", "凝雪沉心", "柔风游弦"};
+        var wanted = new IntOpenHashSet();
+        for (long hash : hashes) wanted.add((int) hash);
+        var strings = TextMapLoader.load(Path.of("resources/TextMap"), "CHS", wanted);
+        for (int i = 0; i < hashes.length; i++)
+            assertEquals(names[i], TextMapLoader.resolve(strings, (int) hashes[i]));
+        var english = TextMapLoader.load(Path.of("resources/TextMap"), "EN", wanted);
+        assertEquals("Vesna", TextMapLoader.resolve(english, (int) hashes[0]));
+        assertEquals("Vodyanitsa", TextMapLoader.resolve(english, (int) hashes[2]));
+        assertEquals("Beyond the Chrysalis", TextMapLoader.resolve(english, (int) hashes[4]));
+    }
+
+    @Test
+    void supplementalNamesYieldToExactAndDriftedResourceNames() throws Exception {
+        Files.writeString(
+                directory.resolve("TextMapCHS.json"),
+                "{\"3992521194\":\"资源中的薇斯纳\",\"1692132202\":\"新版角色名称\",\"4086029419\":\"新版武器名称\",\"921623202\":\"旧称\"}");
+        var hashes = new IntOpenHashSet(new int[] {(int) 3992521194L, 1692132714, (int) 4086029419L});
+        var strings = TextMapLoader.load(directory, "CHS", hashes);
+        assertEquals("资源中的薇斯纳", TextMapLoader.resolve(strings, (int) 3992521194L));
+        assertEquals("新版角色名称", TextMapLoader.resolve(strings, 1692132714));
+        assertEquals("新版武器名称", TextMapLoader.resolve(strings, (int) 4086029419L));
+        assertNull(
+                TextMapLoader.resolve(strings, (int) 2677592067L),
+                "Only requested hashes should be supplemented");
+    }
 }

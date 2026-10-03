@@ -7,6 +7,7 @@ import emu.grasscutter.data.*;
 import emu.grasscutter.data.common.ItemParamData;
 import emu.grasscutter.data.excels.ShopGoodsData;
 import emu.grasscutter.server.game.*;
+import emu.grasscutter.server.packet.send.PacketPlayerRechargeDataNotify;
 import emu.grasscutter.utils.FileUtils;
 import emu.grasscutter.utils.Utils;
 import it.unimi.dsi.fastutil.ints.*;
@@ -26,6 +27,8 @@ public class ShopSystem extends BaseGameSystem {
     @Getter private final FreeStore freeStore = new FreeStore(catalog);
 
     @Getter private final ArtifactShop artifactShop = new ArtifactShop();
+    private final CostumeShop costumeShop = new CostumeShop();
+    private final SpecialCosmeticShop specialCosmeticShop = new SpecialCosmeticShop();
 
     public ShopSystem(GameServer server) {
         super(server);
@@ -48,6 +51,10 @@ public class ShopSystem extends BaseGameSystem {
 
     public Int2ObjectMap<List<ShopInfo>> getShopData() {
         return catalog.active();
+    }
+
+    public void sendProductPriceCatalog(GameSession session) {
+        session.send(new PacketPlayerRechargeDataNotify(freeStore));
     }
 
     public List<ItemParamData> getShopChestData(int chestId) {
@@ -102,8 +109,8 @@ public class ShopSystem extends BaseGameSystem {
                                             continue;
                                         }
                                         // A curated good that costs nothing at all is not a giveaway, it
-                                        // is a price someone scrubbed: Shop.json ships shop 902 (the
-                                        // package shop) and 1052 with every good free. Charge nothing and
+                                        // is a price someone scrubbed. Character outfits are made free
+                                        // explicitly by CostumeShop after this merge. Charge nothing and
                                         // payItems waves any count through, so this was the other half of
                                         // the purchase exploit. Only currency is restored - costItemList
                                         // is left alone because the fork prices some shops in materials on
@@ -158,11 +165,13 @@ public class ShopSystem extends BaseGameSystem {
     }
 
     /**
-     * Lists the 5-star artifacts. Called on its own after the resources finish loading, because the
+     * Lists artifacts and character outfits. Called after the resources finish loading, because the
      * shop system is built before them and has no item data to work from yet.
      */
     public synchronized void loadArtifactShop() {
         this.artifactShop.install(shopData);
+        this.costumeShop.install(shopData);
+        this.specialCosmeticShop.install(shopData);
         catalog.replaceBase(shopData);
     }
 

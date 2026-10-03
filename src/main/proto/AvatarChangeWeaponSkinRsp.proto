@@ -1,0 +1,9 @@
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "AvatarChangeWeaponSkinRspOuterClass";
+message AvatarChangeWeaponSkinRsp {
+  repeated uint64 avatar_guid_list = 7;
+  repeated uint64 failed_avatar_guid_list = 10;
+  uint32 weapon_skin_id = 11;
+  int32 retcode = 12;
+}

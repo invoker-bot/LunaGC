@@ -4,8 +4,11 @@ option java_outer_classname = "RechargeReqOuterClass";
 import "ShopPlayProduct.proto";
 import "ShopCardProduct.proto";
 import "ShopMcoinProduct.proto";
+import "_ShopBeyondMcoinProduct.proto";
 message RechargeReq {
   ShopPlayProduct play_product = 1;
   ShopCardProduct card_product = 12;
   ShopMcoinProduct mcoin_product = 14;
+  // Client type 67538 writes this product at tag 0x1a.
+  _ShopBeyondMcoinProduct beyond_mcoin_product = 3;
 }

@@ -18,6 +18,8 @@ message ShopGoods {
 	uint32 next_refresh_time = 10;
 	uint32 end_time = 12;
 	uint32 mcoin = 15;
+	// 7.1 reader 0x14c846ab0, cost-list consumer 0x149a58d60.
+	uint32 beyond_mcoin = 1068;
 	uint32 hcoin = 6;
 	uint32 OCFMGIPGLDK = 50004;
 	uint32 scoin = 9;

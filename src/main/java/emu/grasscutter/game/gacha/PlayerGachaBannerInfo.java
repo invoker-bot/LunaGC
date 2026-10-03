@@ -15,6 +15,7 @@ public class PlayerGachaBannerInfo {
     private int pity4Pool1 = 0;
     private int pity4Pool2 = 0;
 
+    // Legacy save fields. Active paths now live in PlayerGachaInfo.bannerWishes.
     @Getter @Setter private int failedChosenItemPulls = 0;
     @Getter @Setter private int wishItemId = 0;
 

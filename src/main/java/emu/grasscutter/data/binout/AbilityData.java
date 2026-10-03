@@ -98,6 +98,10 @@ public class AbilityData {
             return;
         }
 
+        // ModifierChange indexes and action local IDs use the same alphabetical order.
+        // Keep the map in that order too: JSON insertion order otherwise picks a different
+        // modifier when AbilityManager resolves a client modifierLocalId.
+        this.modifiers = new TreeMap<>(this.modifiers);
         var _modifiers =
                 modifiers.entrySet().stream()
                         .sorted(Map.Entry.comparingByKey())

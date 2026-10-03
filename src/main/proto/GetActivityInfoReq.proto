@@ -4,5 +4,5 @@ option java_package = "emu.grasscutter.net.proto";
 option java_outer_classname = "GetActivityInfoReqOuterClass";
 
 message GetActivityInfoReq {
-	repeated uint32 activity_id_list = 4;
+	repeated uint32 activity_id_list = 14;
 }

@@ -1,12 +1,15 @@
 package emu.grasscutter.game.ability.actions;
 
 import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
 
 import com.google.protobuf.ByteString;
 import emu.grasscutter.Grasscutter;
 import emu.grasscutter.data.binout.AbilityModifier.AbilityModifierAction;
 import emu.grasscutter.game.ability.Ability;
 import emu.grasscutter.game.ability.AbilityManager;
+import emu.grasscutter.game.ability.PredicateEvaluator;
 import emu.grasscutter.game.entity.*;
 import emu.grasscutter.game.props.FightProperty;
 import it.unimi.dsi.fastutil.objects.Object2FloatMap;
@@ -22,6 +25,12 @@ public abstract class AbilityActionHandler {
                 this.abilityManager = mgr;
                 return this;
             }
+
+    protected static boolean conditionsPass(Ability ability, AbilityModifierAction action, GameEntity target) {
+        @SuppressWarnings("unchecked")
+        var predicates = (List<Map<String, Object>>) (List<?>) action.predicates;
+        return PredicateEvaluator.all(predicates, ability, ability.getOwner(), target, action);
+    }
     /**
      * Returns the target entity.
      *
@@ -39,7 +48,7 @@ public abstract class AbilityActionHandler {
      * shape - resolved against nothing and came out as zero. Globals go in first so that a name
      * defined in both places still resolves the way it always did.
      */
-    protected static Object2FloatMap<String> propertiesFor(Ability ability) {
+    public static Object2FloatMap<String> propertiesFor(Ability ability) {
         var properties = new Object2FloatOpenHashMap<String>();
         var owner = ability.getOwner();
 

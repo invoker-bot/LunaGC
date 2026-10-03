@@ -5,11 +5,7 @@ import emu.grasscutter.data.binout.AbilityModifier.AbilityModifierAction;
 import emu.grasscutter.game.ability.Ability;
 import emu.grasscutter.game.ability.AbilityManager;
 import emu.grasscutter.game.ability.PredicateEvaluator;
-import emu.grasscutter.data.common.DynamicFloat;
 import emu.grasscutter.game.entity.GameEntity;
-import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
-import emu.grasscutter.Grasscutter;
-import emu.grasscutter.game.props.FightProperty;
 import emu.grasscutter.server.packet.send.PacketServerGlobalValueChangeNotify;
 import java.util.List;
 import java.util.Map;
@@ -30,24 +26,20 @@ public final class ActionAddGlobalValue extends AbilityActionHandler {
         float maxValue = action.maxValue.get(properties, 0f);
         float minValue = action.minValue.get(properties, 0f);
 
-        float currentGlobalValue = target.getGlobalAbilityValues().getOrDefault(valueKey, 0f);
-
-        float newValue = currentGlobalValue + valueToAdd;
-        if (newValue > maxValue) {
-            newValue = maxValue;
-        }
-        if (newValue < minValue) {
-            newValue = minValue;
-        }
-
-        target.getGlobalAbilityValues().put(valueKey, newValue);
+        // Hit actions can arrive on different ability workers. Updating within compute avoids
+        // losing an increment when both workers read the same previous value.
+        float newValue = target.getGlobalAbilityValues().compute(valueKey, (key, current) -> {
+            float updated = (current == null ? 0f : current) + valueToAdd;
+            return action.useLimitRange ? Math.max(minValue, Math.min(maxValue, updated)) : updated;
+        });
 
         target.onAbilityValueUpdate();
         if (!AbilityManager.isServerOwnedChain()) {
-            target
-                    .getScene()
-                    .getHost()
-                    .sendPacket(new PacketServerGlobalValueChangeNotify(target, valueKey, newValue));
+            var scene = target.getScene();
+            var host = scene == null ? null : scene.getHost();
+            if (host != null) {
+                host.sendPacket(new PacketServerGlobalValueChangeNotify(target, valueKey, newValue));
+            }
         }
 
         return true;

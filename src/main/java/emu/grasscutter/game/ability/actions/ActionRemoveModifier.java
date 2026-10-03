@@ -13,12 +13,11 @@ public final class ActionRemoveModifier extends AbilityActionHandler {
             Ability ability, AbilityModifierAction action, ByteString abilityData, GameEntity target) {
         Grasscutter.getLogger().debug("[Ability] Removing Modifier: {}", action.modifierName);
 
-        if (!ability.getModifiers().containsKey(action.modifierName)) {
+        if (!ability.removeModifier(target, action.modifierName)) {
             Grasscutter.getLogger().debug("Modifier {} not found for removal", action.modifierName);
             return false;
         }
 
-        ability.getModifiers().remove(action.modifierName);
         return true;
     }
 }

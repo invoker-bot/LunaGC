@@ -64,11 +64,21 @@ public enum PlayerProperty {
     PROP_DIVE_MAX_STAMINA(
             10049, 0, 10000), // The maximum stamina of the player when diving. [0, 10000]
     PROP_DIVE_CUR_STAMINA(
-        10050, 0, 10000), // The current stamina of the player when diving. [0, 10000]
-        PROP_PHLOGISTON_ENABLE(10052, 0, 1), 
-        PROP_PHLOGISTON_MAX_VALUE(
-                10053, 0, 10000),
-                PROP_CUR_PHLOGISTON                     (10054);   // The current stamina of the player when diving. [0, 10000]
+            10050, 0, 10000), // The current stamina of the player when diving. [0, 10000]
+    PROP_PHLOGISTON_ENABLE(10052, 0, 1),
+    PROP_PHLOGISTON_MAX_VALUE(10053, 0, 10000),
+    PROP_CUR_PHLOGISTON(10054), // The current stamina of the player when diving. [0, 10000]
+    PROP_PLAYER_BEYOND_COSTUME_TRANS_COIN(10061, 0),
+    PROP_PLAYER_BEYOND_MCOIN(10063, 0),
+    PROP_PLAYER_BEYOND_COSTUME_GACHA_COIN(10065, 0),
+    PROP_PLAYER_BEYOND_COSTUME_GACHA_FREE_COIN(10067, 0),
+    PROP_PLAYER_BEYOND_ATTENDANCE_COIN(10069, 0),
+    PROP_PLAYER_BEYOND_LEVEL(10073, 1, 99),
+    PROP_PLAYER_BEYOND_CREATOR_LEVEL(10074, 0),
+    PROP_PLAYER_BEYOND_EXP(10075, 0),
+    PROP_PLAYER_BEYOND_DLC_COIN(10076, 0),
+    PROP_PLAYER_BEYOND_DLC_FREE_COIN(10078, 0),
+    PROP_PLAYER_BEYOND_FREE_MCOIN(10082, 0);
 
     private static final int inf = Integer.MAX_VALUE; // Maybe this should be something else?
     private static final Int2ObjectMap<PlayerProperty> map = new Int2ObjectOpenHashMap<>();

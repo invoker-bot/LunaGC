@@ -81,19 +81,20 @@ public final class AbilityTargetSelector {
     }
 
     /**
-     * Camps are only approximated: the caster's own avatars and the gadgets they spawned are not
-     * enemies, and everything else in the scene is. That is enough to tell "is there something to
-     * shoot at nearby" apart from "I am looking at my own bullets".
+     * Player-owned avatars and summons are allied when their owners share the caster's world.
+     * This includes co-op partners; an absent owner must not compare equal to an absent caster.
+     * Non-player camps still use the existing enemy fallback.
      */
     private static boolean matchesCamp(GameEntity entity, String camp, Ability ability) {
         var player = ability != null ? ability.getPlayerOwner() : null;
-        boolean own =
-                entity instanceof EntityAvatar avatar && avatar.getPlayer() == player
-                        || entity instanceof EntityClientGadget gadget && gadget.getOwner() == player;
+        var owner = entity instanceof EntityAvatar avatar ? avatar.getPlayer()
+                : entity instanceof EntityClientGadget gadget ? gadget.getOwner() : null;
+        boolean allied = player != null && owner != null
+                && (owner == player || player.getWorld() != null && player.getWorld() == owner.getWorld());
 
         return switch (camp) {
-            case "Enemy" -> !own;
-            case "Alliance", "SelfCamp" -> own;
+            case "Enemy" -> !allied;
+            case "Alliance", "SelfCamp" -> allied;
             default -> true;
         };
     }

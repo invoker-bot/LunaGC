@@ -95,6 +95,18 @@ class GmBannerContentsTest {
   }
 
   @Test
+  void parallelCharacterWishDoesNotImplyTheSecondHalfOfTheVersion() throws Exception {
+    assertEquals("角色池", row("{\"bannerType\":\"CHARACTER\"}").get("phase"));
+    assertEquals("角色池-2", row("{\"bannerType\":\"CHARACTER2\"}").get("phase"));
+  }
+
+  @Test
+  void verifiedArchivePhaseCanBeShownForBothParallelCharacterWishes() throws Exception {
+    assertEquals("首期", row("{\"bannerType\":\"CHARACTER\",\"phase\":\"首期\"}").get("phase"));
+    assertEquals("首期", row("{\"bannerType\":\"CHARACTER2\",\"phase\":\"首期\"}").get("phase"));
+  }
+
+  @Test
   @SuppressWarnings("unchecked")
   void candidatesResolveNamesAndKindsAndKeepUnknownIdsVisible() throws Exception {
     var gson = new Gson();

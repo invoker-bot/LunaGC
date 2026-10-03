@@ -3,8 +3,8 @@ package emu.grasscutter.game.activity.condition;
 import emu.grasscutter.Grasscutter;
 import emu.grasscutter.data.excels.activity.ActivityCondExcelConfigData;
 import emu.grasscutter.game.activity.*;
-import emu.grasscutter.game.activity.salesman.SalesmanActivityHandler;
 import emu.grasscutter.game.activity.condition.all.UnknownActivityConditionHandler;
+import emu.grasscutter.game.activity.salesman.SalesmanActivityHandler;
 import emu.grasscutter.game.quest.enums.LogicType;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import java.util.*;
@@ -55,9 +55,20 @@ public class BasicActivityConditionExecutor implements ActivityConditionExecutor
             return false;
         }
         ActivityConfigItem activityConfig = activityConfigItemMap.get(activity.getActivityId());
-        if (activityConfig != null && activityConfig.getActivityHandler() instanceof SalesmanActivityHandler) {
-            return activity.getPlayer() != null && SalesmanActivityHandler.conditions(activity, activityConfig,
-                    activity.getPlayer().getLevel(), System.currentTimeMillis()).contains(activityCondId);
+        if (activityConfig != null
+                && activityConfig.getActivityHandler() instanceof SalesmanActivityHandler) {
+            return activity.getPlayer() != null
+                    && SalesmanActivityHandler.conditions(
+                                    activity,
+                                    activityConfig,
+                                    activity.getPlayer().getLevel(),
+                                    System.currentTimeMillis())
+                            .contains(activityCondId);
+        }
+        // Resource padding (NEW_ACTIVITY_COND_NONE) is removed by onLoad. A LOGIC_NONE
+        // row with no remaining predicates is unconditional, not an unsupported operation.
+        if (condComb == LogicType.LOGIC_NONE && condData.getCond().isEmpty()) {
+            return true;
         }
         List<BooleanSupplier> predicates =
                 condData.getCond().stream()

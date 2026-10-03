@@ -5,7 +5,7 @@ import lombok.*;
 
 @ResourceType(name = "AvatarTraceEffectExcelConfigData.json")
 public class AvatarTraceEffectData extends GameResource {
-    private int avatarId;
+    @Getter private int avatarId;
     private int itemId;
 
     @Override

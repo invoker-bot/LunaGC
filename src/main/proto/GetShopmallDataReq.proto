@@ -1,4 +1,4 @@
-// Recovered from GetShopmallDataReqOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+// Verified 7.1 sender 0x147256a80 and serializer 65749.
 syntax = "proto3";
 
 package recovered.p_GetShopmallDataReq;
@@ -6,4 +6,6 @@ option java_package = "emu.grasscutter.net.proto";
 option java_outer_classname = "GetShopmallDataReqOuterClass";
 
 message GetShopmallDataReq {
+	uint32 param = 10;
+	uint32 shop_type = 14;
 }

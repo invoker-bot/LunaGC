@@ -45,6 +45,8 @@ public class GachaBanner {
     @Getter private String prefabPath;
     @Getter private String previewPrefabPath;
     @Getter private String titlePath;
+    // Optional verified archive phase; wish type 400 is a parallel wish, not a later phase.
+    @Getter private String phase;
     private int costItemId = 0;
     private int costItemAmount = 1;
     private int costItemId10 = 0;
@@ -181,6 +183,10 @@ public class GachaBanner {
         return bannerType.equals(BannerType.WEAPON) || bannerType.equals(BannerType.CHRONICLE);
     }
 
+    public boolean isWishItemAllowed(int itemId) {
+        return hasEpitomized() && itemId != 0 && Arrays.stream(rateUpItems5).anyMatch(id -> id == itemId);
+    }
+
     public int getWeight(int rarity, int pity) {
         return switch (rarity) {
             case 4 -> Utils.lerp(pity, weights4);
@@ -237,8 +243,7 @@ public class GachaBanner {
                 first = rarity == 5 ? DEFAULT_FALLBACK_ITEMS_5_POOL_2 : DEFAULT_FALLBACK_ITEMS_4_POOL_2;
             candidates =
                     IntStream.concat(
-                            candidates,
-                            IntStream.concat(Arrays.stream(first), Arrays.stream(second)));
+                            candidates, IntStream.concat(Arrays.stream(first), Arrays.stream(second)));
         }
         return candidates.filter(id -> id > 0).distinct().toArray();
     }
@@ -300,8 +305,9 @@ public class GachaBanner {
                         .setIsNewWish(true);
 
         if (hasEpitomized()) {
-            info.setWishItemId(gachaInfo.getWishItemId())
-                    .setWishProgress(gachaInfo.getFailedChosenItemPulls())
+            var wish = player.getGachaInfo().getWishInfo(this);
+            info.setWishItemId(wish.getWishItemId())
+                    .setWishProgress(wish.getFatePoints())
                     .setWishMaxProgress(this.getWishMaxProgress());
         }
 

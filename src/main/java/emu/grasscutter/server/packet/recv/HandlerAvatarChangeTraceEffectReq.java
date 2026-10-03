@@ -8,15 +8,21 @@ import emu.grasscutter.server.game.GameSession;
 import emu.grasscutter.server.packet.send.PacketAvatarChangeTraceEffectRsp;
 
 @Opcodes(PacketOpcodes.AvatarChangeTraceEffectReq)
-public class HandlerAvatarChangeTraceEffectReq
-extends PacketHandler {
+public class HandlerAvatarChangeTraceEffectReq extends PacketHandler {
     @Override
     public void handle(GameSession session, byte[] header, byte[] payload) throws Exception {
-        AvatarChangeTraceEffectReqOuterClass.AvatarChangeTraceEffectReq req = AvatarChangeTraceEffectReqOuterClass.AvatarChangeTraceEffectReq.parseFrom(payload);
-        boolean success = session.getPlayer().getAvatars().changeTraceEffect(req.getAvatarGuid(), req.getTraceEffectId());
+        AvatarChangeTraceEffectReqOuterClass.AvatarChangeTraceEffectReq req =
+                AvatarChangeTraceEffectReqOuterClass.AvatarChangeTraceEffectReq.parseFrom(payload);
+        boolean success =
+                session
+                        .getPlayer()
+                        .getAvatars()
+                        .changeTraceEffect(req.getAvatarGuid(), req.getTraceEffectId());
         if (success) {
-            session.getPlayer().sendPacket(new PacketAvatarChangeTraceEffectRsp(req.getAvatarGuid(), req.getTraceEffectId()));
-        }
+            session
+                    .getPlayer()
+                    .sendPacket(
+                            new PacketAvatarChangeTraceEffectRsp(req.getAvatarGuid(), req.getTraceEffectId()));
+        } else session.send(new PacketAvatarChangeTraceEffectRsp());
     }
 }
-

@@ -23,6 +23,7 @@ public class ShopInfo {
     @Getter @Setter private int maxLevel = 61;
     @Getter @Setter private List<Integer> preGoodsIdList = new ArrayList<>();
     @Getter @Setter private int mcoin = 0;
+    @Getter @Setter private int beyondMcoin = 0;
     @Getter @Setter private int hcoin = 0;
     @Getter @Setter private int disableType = 0;
     @Getter @Setter private int secondarySheetId = 0;
@@ -41,6 +42,7 @@ public class ShopInfo {
         this.goodsItem = new ItemParamData(sgd.getItemId(), sgd.getItemCount());
         this.scoin = sgd.getCostScoin();
         this.mcoin = sgd.getCostMcoin();
+        this.beyondMcoin = sgd.getCostBeyondMcoin();
         this.hcoin = sgd.getCostHcoin();
         this.buyLimit = sgd.getBuyLimit();
         this.rotateId = sgd.getRotateId();

@@ -3,16 +3,9 @@ package emu.grasscutter.game.ability.actions;
 import com.google.protobuf.ByteString;
 import emu.grasscutter.data.binout.AbilityModifier.AbilityModifierAction;
 import emu.grasscutter.game.ability.Ability;
-import emu.grasscutter.game.entity.GameEntity;
 import emu.grasscutter.game.entity.EntityAvatar;
-import emu.grasscutter.game.entity.EntityClientGadget;
-import emu.grasscutter.Grasscutter;
-import emu.grasscutter.game.player.Player;
+import emu.grasscutter.game.entity.GameEntity;
 import emu.grasscutter.game.props.FightProperty;
-import emu.grasscutter.net.proto.AbilityInvokeEntryOuterClass.AbilityInvokeEntry;
-import emu.grasscutter.server.packet.send.PacketAvatarFightPropUpdateNotify;
-import emu.grasscutter.server.packet.send.PacketAvatarLifeStateChangeNotify;
-import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
 import java.util.List;
 
 @AbilityAction(AbilityModifierAction.Type.ReviveAvatar)
@@ -20,37 +13,28 @@ public final class ActionReviveAvatar extends AbilityActionHandler {
     @Override
     public boolean execute(
             Ability ability, AbilityModifierAction action, ByteString abilityData, GameEntity target) {
-            Player player = ability.getPlayerOwner();
+        var player = ability.getPlayerOwner();
+        if (player == null) return false;
 
-            var owner = ability.getOwner();
-            if (owner instanceof EntityClientGadget ownerGadget) {
-                owner = ownerGadget.getScene().getEntityById(ownerGadget.getOwnerEntityId());
+        float ratio = action.amountByTargetMaxHPRatio.get(propertiesFor(ability), 0f);
+        if (!Float.isFinite(ratio) || ratio <= 0f) return true;
+
+        List<EntityAvatar> recipients;
+        if ("AllPlayerAvatars".equals(action.target) || "CurTeamAvatars".equals(action.target)) {
+            recipients = List.copyOf(player.getTeamManager().getActiveTeam());
+        } else {
+            // Reading the current avatar on an empty team otherwise creates an unrelated avatar.
+            if (("CurLocalAvatar".equals(action.target) || "OriginOwner".equals(action.target))
+                    && player.getTeamManager().getActiveTeam().isEmpty()) return true;
+            var recipient = resolveTarget(ability, target, action.target);
+            recipients = recipient instanceof EntityAvatar avatar ? List.of(avatar) : List.of();
+        }
+
+        for (var avatar : recipients) {
+            if (conditionsPass(ability, action, avatar)) {
+                avatar.revive(avatar.getFightProperty(FightProperty.FIGHT_PROP_MAX_HP) * ratio);
             }
-            var properties = new Object2FloatOpenHashMap<String>();
-            for (var property : FightProperty.values()) {
-                var name = property.name();
-                var value = owner.getFightProperty(property);
-                properties.put(name, value);
-            }
-    
-        properties.putAll(ability.getAbilitySpecials());
-
-        float ratio = action.amountByTargetMaxHPRatio.get(properties, 0.0f);
-        player.getTeamManager().getActiveTeam().forEach(entityAvatar -> {
-            boolean wasDead = !entityAvatar.isAlive(); // Check if alive but idrk sob
-
-            if (wasDead) {
-                float maxHp = entityAvatar.getFightProperty(FightProperty.FIGHT_PROP_MAX_HP);
-                float healAmount = maxHp * ratio;
-
-                // tthis should work, plz
-                entityAvatar.getWorld().broadcastPacket(
-                    new PacketAvatarLifeStateChangeNotify(entityAvatar.getAvatar())
-                );
-                entityAvatar.heal(healAmount, false);
-            }
-
-        });
+        }
         return true;
     }
 }

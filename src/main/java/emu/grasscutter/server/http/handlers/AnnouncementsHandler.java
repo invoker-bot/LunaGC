@@ -2,14 +2,30 @@ package emu.grasscutter.server.http.handlers;
 
 import emu.grasscutter.Grasscutter;
 import emu.grasscutter.game.notice.NoticeCatalog;
+import emu.grasscutter.game.shop.FreeStore;
 import emu.grasscutter.server.http.Router;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Supplier;
 
 /** A self-contained announcement page; no official CDN or absent asset tree is required. */
 public final class AnnouncementsHandler implements Router {
+    private final Supplier<FreeStore> store;
+
+    public AnnouncementsHandler() {
+        this(
+                () -> {
+                    var server = Grasscutter.getGameServer();
+                    return server == null ? null : server.getShopSystem().getFreeStore();
+                });
+    }
+
+    AnnouncementsHandler(Supplier<FreeStore> store) {
+        this.store = store;
+    }
+
     public static void sdkConfig(Context ctx) {
         var info = emu.grasscutter.config.Configuration.HTTP_INFO;
         var encryption = emu.grasscutter.config.Configuration.HTTP_ENCRYPTION;
@@ -69,19 +85,29 @@ public final class AnnouncementsHandler implements Router {
                                         "remind",
                                         true));
                     });
-            allRoutes(
-                    app,
-                    "/" + region + "/mdk/shopwindow/shopwindow/listPriceTier",
-                    ctx -> {
-                        var server = Grasscutter.getGameServer();
-                        if (server == null) {
-                            ctx.status(503).json(Map.of("retcode", 1, "message", "Game server unavailable"));
-                            return;
-                        }
-                        response(
-                                ctx,
-                                server.getShopSystem().getFreeStore().priceTiers(region.equals("hk4e_global")));
-                    });
+            // The desktop SDK can select V2 independently of the game shop protocol.
+            // Returning the generic empty success body leaves its product lookup unready.
+            for (String api : List.of("listPriceTier", "listPriceTierV2")) {
+                allRoutes(
+                        app,
+                        "/" + region + "/mdk/shopwindow/shopwindow/" + api,
+                        ctx -> {
+                            var freeStore = store.get();
+                            if (freeStore == null) {
+                                ctx.status(503).json(Map.of("retcode", 1, "message", "Game server unavailable"));
+                                return;
+                            }
+                            var prices = freeStore.priceTiers(region.equals("hk4e_global"));
+                            // Deliberately omit query strings, account IDs and SDK tokens.
+                            Grasscutter.getLogger()
+                                    .info(
+                                            "SDK price table: region={}, api={}, tiers={}",
+                                            region,
+                                            api,
+                                            ((List<?>) prices.get("tiers")).size());
+                            response(ctx, prices);
+                        });
+            }
         }
         app.get("/hk4e/announcement/index.html", AnnouncementsHandler::page);
         app.get("/hk4e/announcement/", AnnouncementsHandler::page);

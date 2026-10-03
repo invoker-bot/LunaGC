@@ -14,6 +14,7 @@ public final class ActionLoseHP extends AbilityActionHandler {
     @Override
     public boolean execute(
             Ability ability, AbilityModifierAction action, ByteString abilityData, GameEntity target) {
+                if (!conditionsPass(ability, action, target)) return true;
                 var owner = ability.getOwner();
 
                 if (owner instanceof EntityClientGadget ownerGadget) {
@@ -49,7 +50,7 @@ public final class ActionLoseHP extends AbilityActionHandler {
 
         var currentHp = target.getFightProperty(FightProperty.FIGHT_PROP_CUR_HP);
         var maxHp = target.getFightProperty(FightProperty.FIGHT_PROP_MAX_HP);
-        amountToLose += amountByTargetCurrentHPRatio * maxHp;
+        amountToLose += amountByTargetCurrentHPRatio * currentHp;
         amountToLose += amountByTargetMaxHPRatio * maxHp;
 
         if (limboByTargetMaxHPRatio > 1.192093e-07)

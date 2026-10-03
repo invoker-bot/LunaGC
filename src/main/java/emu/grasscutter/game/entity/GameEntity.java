@@ -73,9 +73,22 @@ public abstract class GameEntity {
 
     @Getter private List<Ability> instancedAbilities = new ArrayList<>();
 
+    // Dynamic abilities have no client-list index. Cache by name, independently of active states.
+    @Getter private final Map<String, Ability> dynamicAbilities = new ConcurrentHashMap<>();
+
     @Getter
     private Int2ObjectMap<AbilityModifierController> instancedModifiers =
-            new Int2ObjectOpenHashMap<>();
+            Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>());
+
+    // Named states are attached to an entity, even when their ability belongs to another caster.
+    @Getter private final Map<Ability, Map<String, AbilityModifierController>> appliedAbilityModifiers =
+            new ConcurrentHashMap<>();
+
+    public List<AbilityModifierController> getInstancedModifiersSnapshot() {
+        synchronized (instancedModifiers) {
+            return new ArrayList<>(instancedModifiers.values());
+        }
+    }
 
     // Abilities run on a thread pool, so a plain HashMap here threw ConcurrentModificationException
     // out of whichever action happened to be reading the values while another wrote them
@@ -244,48 +257,44 @@ public abstract class GameEntity {
         return heal(amount, false);
     }
 
-    public float heal(float amount, boolean mute) {
-        if (this.getFightProperties() == null) {
+    public synchronized float heal(float amount, boolean mute) {
+        if (this.getFightProperties() == null || !Float.isFinite(amount) || amount <= 0f) {
             return 0f;
         }
 
-        float toHeal = 0f;
-        float toRepay = 0f;
         float curHp = this.getFightProperty(FightProperty.FIGHT_PROP_CUR_HP);
         float maxHp = this.getFightProperty(FightProperty.FIGHT_PROP_MAX_HP);
         float curHpDebt = this.getFightProperty(FightProperty.FIGHT_PROP_CUR_HP_DEBTS);
-
-        if (curHp >= maxHp && curHpDebt <= 0) {
+        if (!Float.isFinite(curHp) || !Float.isFinite(maxHp) || maxHp <= 0f
+                || !Float.isFinite(curHpDebt)) {
             return 0f;
         }
 
-        toRepay = Math.min(amount, curHpDebt);
-        toHeal = Math.min(maxHp - curHp, amount - toRepay);
-        this.addFightProperty(FightProperty.FIGHT_PROP_CUR_HP, toHeal);
-        this.addFightProperty(FightProperty.FIGHT_PROP_CUR_HP_DEBTS, -toRepay);
-
-        if (toHeal > 0) {
-            this.getScene().broadcastPacket(new PacketEntityFightPropUpdateNotify(this, FightProperty.FIGHT_PROP_CUR_HP));
+        // Healing pays the outstanding debt first; only the remainder can restore health.
+        float toRepay = Math.min(amount, Math.max(0f, curHpDebt));
+        float toHeal = Math.min(Math.max(0f, maxHp - curHp), amount - toRepay);
+        float remainingDebt = curHpDebt - toRepay;
+        if (toHeal > 0f) {
+            this.setFightProperty(FightProperty.FIGHT_PROP_CUR_HP, curHp + toHeal);
         }
-        if (toRepay > 0) {
-            this.getScene().broadcastPacket(new PacketEntityFightPropUpdateNotify(this, FightProperty.FIGHT_PROP_CUR_HP_DEBTS));
+        if (toRepay > 0f) {
+            this.setFightProperty(FightProperty.FIGHT_PROP_CUR_HP_DEBTS, remainingDebt);
+        }
 
-            if (this.getFightProperty(FightProperty.FIGHT_PROP_CUR_HP_DEBTS) > 0) {
-                this.getScene().broadcastPacket(new PacketEntityFightPropChangeReasonNotify(this, FightProperty.FIGHT_PROP_CUR_HP_DEBTS, toRepay,
-                                                        mute
-                                                                ? PropChangeReason.PropChangeReason_PROP_CHANGE_NONE
-                                                                : PropChangeReason.PropChangeReason_PROP_CHANGE_ABILITY,
-
-                                                        ChangeHpDebtsReason.CHANGE_HP_DEBTS_REASON_CHANGE_HP_DEBTS_PAY
-                ));
-            } else {
-                this.getScene().broadcastPacket(new PacketEntityFightPropChangeReasonNotify(this, FightProperty.FIGHT_PROP_CUR_HP_DEBTS, toRepay,
-                                                        mute
-                                                                ? PropChangeReason.PropChangeReason_PROP_CHANGE_NONE
-                                                                : PropChangeReason.PropChangeReason_PROP_CHANGE_ABILITY,
-
-                                                        ChangeHpDebtsReason.CHANGE_HP_DEBTS_REASON_CHANGE_HP_DEBTS_PAY_FINISH
-                                                       ));
+        // Publish only after both values have been settled.
+        if (getScene() != null) {
+            if (toHeal > 0f) {
+                getScene().broadcastPacket(new PacketEntityFightPropUpdateNotify(this, FightProperty.FIGHT_PROP_CUR_HP));
+            }
+            if (toRepay > 0f) {
+                getScene().broadcastPacket(new PacketEntityFightPropUpdateNotify(this, FightProperty.FIGHT_PROP_CUR_HP_DEBTS));
+                getScene().broadcastPacket(new PacketEntityFightPropChangeReasonNotify(
+                        this, FightProperty.FIGHT_PROP_CUR_HP_DEBTS, -toRepay,
+                        mute ? PropChangeReason.PropChangeReason_PROP_CHANGE_NONE
+                                : PropChangeReason.PropChangeReason_PROP_CHANGE_ABILITY,
+                        remainingDebt > 0f
+                                ? ChangeHpDebtsReason.CHANGE_HP_DEBTS_REASON_CHANGE_HP_DEBTS_PAY
+                                : ChangeHpDebtsReason.CHANGE_HP_DEBTS_REASON_CHANGE_HP_DEBTS_PAY_FINISH));
             }
         }
 

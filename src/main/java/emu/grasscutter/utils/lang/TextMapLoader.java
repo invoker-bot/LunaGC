@@ -1,8 +1,10 @@
 package emu.grasscutter.utils.lang;
 
+import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import it.unimi.dsi.fastutil.ints.*;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.ArrayList;
@@ -11,6 +13,19 @@ import java.util.Comparator;
 /** Reads only requested strings, including optional newer and split resource dumps. */
 final class TextMapLoader {
     private static final int HASH_DRIFT = 512;
+    private static final JsonArray NAME_FALLBACKS = readNameFallbacks();
+
+    private static JsonArray readNameFallbacks() {
+        try (var stream =
+                TextMapLoader.class.getResourceAsStream("/languages/game-name-fallbacks.json")) {
+            if (stream == null) throw new IOException("Missing game name fallbacks");
+            return JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8))
+                    .getAsJsonObject()
+                    .getAsJsonArray("entries");
+        } catch (IOException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     static Int2ObjectMap<String> load(Path directory, String language, IntSet hashes)
             throws IOException {
@@ -18,6 +33,16 @@ final class TextMapLoader {
         for (int hash : hashes.toIntArray()) {
             wanted.add(hash + HASH_DRIFT);
             wanted.add(hash - HASH_DRIFT);
+        }
+        // New playable avatars sometimes reuse a story name under a different hash. Request that
+        // name in every language rather than falling back to the English internal icon name.
+        for (var entry : NAME_FALLBACKS) {
+            var row = entry.getAsJsonObject();
+            if (!hashes.contains((int) row.get("hash").getAsLong()) || !row.has("sourceHash")) continue;
+            int source = (int) row.get("sourceHash").getAsLong();
+            wanted.add(source);
+            wanted.add(source + HASH_DRIFT);
+            wanted.add(source - HASH_DRIFT);
         }
         var files = new ArrayList<Path>();
         var base = directory.resolve("TextMap" + language + ".json");
@@ -50,6 +75,19 @@ final class TextMapLoader {
                 }
                 reader.endObject();
             }
+        }
+        for (var entry : NAME_FALLBACKS) {
+            var row = entry.getAsJsonObject();
+            int hash = (int) row.get("hash").getAsLong();
+            // Exact and drifted names in newer resource exports always take precedence.
+            if (!hashes.contains(hash) || resolve(strings, hash) != null) continue;
+            String name =
+                    row.has("sourceHash") ? resolve(strings, (int) row.get("sourceHash").getAsLong()) : null;
+            if (name == null && row.has("names")) {
+                var names = row.getAsJsonObject("names");
+                if (names.has(language)) name = names.get(language).getAsString();
+            }
+            if (name != null && !name.isBlank()) strings.put(hash, name);
         }
         return strings;
     }

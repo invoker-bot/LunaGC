@@ -13,6 +13,7 @@ import emu.grasscutter.net.proto.AbilityStringOuterClass.AbilityString;
 import emu.grasscutter.utils.Utils;
 import it.unimi.dsi.fastutil.objects.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.Getter;
 
 public class Ability {
@@ -22,7 +23,6 @@ public class Ability {
 
     @Getter private AbilityManager manager;
 
-    @Getter private Map<String, AbilityModifierController> modifiers = new HashMap<>();
     @Getter private Object2FloatMap<String> abilitySpecials = new Object2FloatOpenHashMap<>();
 
     @Getter
@@ -30,6 +30,43 @@ public class Ability {
 
     @Getter private int hash;
     @Getter private Set<Integer> avatarSkillStartIds;
+
+    public Map<String, AbilityModifierController> getModifiers() {
+        return getModifiers(owner);
+    }
+
+    public Map<String, AbilityModifierController> getModifiers(GameEntity target) {
+        return target.getAppliedAbilityModifiers().computeIfAbsent(this, key -> new ConcurrentHashMap<>());
+    }
+
+    public void registerModifier(GameEntity target, AbilityModifierController modifier) {
+        synchronized (target.getInstancedModifiers()) {
+            getModifiers(target).put(modifier.getName(), modifier);
+        }
+    }
+
+    public boolean removeModifier(GameEntity target, String name) {
+        var instances = target.getInstancedModifiers();
+        synchronized (instances) {
+            var named = target.getAppliedAbilityModifiers().get(this);
+            boolean removed = named != null && named.remove(name) != null;
+            removed |= instances.int2ObjectEntrySet().removeIf(entry ->
+                    entry.getValue().getAbility() == this && name.equals(entry.getValue().getName()));
+            if (named != null && named.isEmpty()) target.getAppliedAbilityModifiers().remove(this, named);
+            return removed;
+        }
+    }
+
+    public void unregisterModifier(GameEntity target, AbilityModifierController modifier) {
+        synchronized (target.getInstancedModifiers()) {
+            var named = target.getAppliedAbilityModifiers().get(this);
+            // An older client instance may expire after its replacement was already installed.
+            if (named != null) {
+                named.remove(modifier.getName(), modifier);
+                if (named.isEmpty()) target.getAppliedAbilityModifiers().remove(this, named);
+            }
+        }
+    }
 
     public Ability(AbilityData data, GameEntity owner, Player playerOwner) {
         this.data = data;

@@ -4,12 +4,9 @@
 package emu.grasscutter.game.props.ItemUseAction;
 
 import emu.grasscutter.data.GameData;
-import emu.grasscutter.game.props.ItemUseAction.ItemUseInt;
-import emu.grasscutter.game.props.ItemUseAction.UseItemParams;
 import emu.grasscutter.game.props.ItemUseOp;
 
-public class ItemUseGainTraceEffect
-extends ItemUseInt {
+public class ItemUseGainTraceEffect extends ItemUseInt {
     public ItemUseGainTraceEffect(String[] useParam) {
         super(useParam);
     }
@@ -21,10 +18,8 @@ extends ItemUseInt {
 
     @Override
     public boolean useItem(UseItemParams params) {
-        if (GameData.getAvatarTraceEffectDataMap().containsKey(this.i)) {
-            params.player.addTraceEffect(this.i);
-        }
+        if (!GameData.getAvatarTraceEffectDataMap().containsKey(this.i)) return false;
+        params.player.addTraceEffect(this.i);
         return true;
     }
 }
-

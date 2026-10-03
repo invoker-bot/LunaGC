@@ -173,6 +173,7 @@ public final class GmHandler implements Router {
         javalin.post("/gm/api/activities", GmHandler::setActivity);
         javalin.get("/gm/api/shops", ctx -> shopRequest(ctx, GmShop::list));
         javalin.post("/gm/api/shops", ctx -> shopRequest(ctx, GmShop::edit));
+        javalin.post("/gm/api/shops/purchase", ctx -> shopRequest(ctx, GmShop::purchaseCosmetic));
         javalin.get("/gm/api/store/products", ctx -> shopRequest(ctx, GmShop::products));
         javalin.post("/gm/api/store/products", ctx -> shopRequest(ctx, GmShop::editProduct));
         javalin.post("/gm/api/store/purchase", ctx -> shopRequest(ctx, GmShop::purchase));
@@ -631,7 +632,11 @@ public final class GmHandler implements Router {
         row.put("loaded", loaded);
         row.put("active", loaded && banner.isActive(now));
         // Where this banner sat in the official version's schedule, for the history view's ordering.
-        row.put("phase", phaseLabel(effectiveGachaType(banner)));
+        row.put(
+                "phase",
+                banner.getPhase() != null && !banner.getPhase().isBlank()
+                        ? banner.getPhase()
+                        : phaseLabel(effectiveGachaType(banner)));
         return row;
     }
 
@@ -677,29 +682,28 @@ public final class GmHandler implements Router {
     }
 
     /**
-     * Where a banner's gacha type sits in a version's official schedule, so the history view can sort
-     * banners into the order they ran on the official server.
+     * Stable display order by wish type. The two character wishes can run in parallel; their type
+     * alone says nothing about which half of the version they belong to.
      */
     private static int phaseOrder(int gachaType) {
         return switch (gachaType) {
             case 100 -> 0; // 新手祈愿: permanent, opens with the account
             case 200 -> 1; // 常驻祈愿: permanent from launch
-            case 301 -> 2; // 角色活动祈愿: the version's first half
-            case 302 -> 3; // 武器活动祈愿: runs alongside the first half
-            case 400 -> 4; // 角色活动祈愿-2: the version's second half
-            case 500 -> 5; // 集录祈愿: runs alongside the second half
+            case 301, 400 -> 2; // Parallel character wishes
+            case 302 -> 3; // Weapon wish
+            case 500 -> 4; // Chronicle wish
             default -> 9;
         };
     }
 
-    /** A short Chinese label for a banner's slot in the official schedule. */
+    /** Wish type labels for banners without a verified phase annotation. */
     private static String phaseLabel(int gachaType) {
         return switch (gachaType) {
             case 100 -> "新手";
             case 200 -> "常驻";
-            case 301 -> "上半";
+            case 301 -> "角色池";
             case 302 -> "武器池";
-            case 400 -> "下半";
+            case 400 -> "角色池-2";
             case 500 -> "集录";
             default -> "其它";
         };

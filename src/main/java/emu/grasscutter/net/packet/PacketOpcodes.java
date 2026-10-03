@@ -117,7 +117,7 @@ public final class PacketOpcodes {
     public static final int PlayerPropChangeReasonNotify = 20925;
     public static final int PlayerPropNotify = 21436;
     public static final int AchievementAllDataNotify = 24317;
-    public static final int GetActivityInfoReq = -8;
+    public static final int GetActivityInfoReq = 186;
     public static final int GetActivityInfoRsp = 1056;
     public static final int ChangeGameTimeReq = 847;
     public static final int ChangeGameTimeRsp = 6474;
@@ -1285,7 +1285,7 @@ public final class PacketOpcodes {
     public static final int PlayerOfferingRsp = 582;
     public static final int PlayerQuitFromMpNotify = 20318;
     public static final int PlayerRandomCookReq = 22279;
-    public static final int PlayerRechargeDataNotify = -247;
+    public static final int PlayerRechargeDataNotify = 9913;
     public static final int PlayerReportReq = 28427;
     public static final int PlayerReportRsp = 4177;
     public static final int PlayerRoutineDataNotify = 29465;
@@ -1864,7 +1864,7 @@ public final class PacketOpcodes {
     public static final int _WispCageTakeRewardRsp = -311;
     public static final int _WitchNicoleRoomInfoNotify = 21662;
     public static final int _WorldOwnerPlayerDataNotify = 3396;
-    public static final int _WorldWatcherAllDataNotify = -312;
+    public static final int _WorldWatcherAllDataNotify = 22528;
     public static final int _WorldWatcherInfoUpdateNotify = -313;
     public static final int ActivityClientPlayBeginReq = 25353;
     public static final int ActivityClientPlayBeginRsp = 8494;
@@ -2151,7 +2151,7 @@ public final class PacketOpcodes {
     public static final int WispCageTakeRewardRsp = -349;
     public static final int WitchNicoleRoomInfoNotify = 21662;
     public static final int WorldOwnerPlayerDataNotify = 3396;
-    public static final int WorldWatcherAllDataNotify = -350;
+    public static final int WorldWatcherAllDataNotify = 22528;
     public static final int WorldWatcherInfoUpdateNotify = -351;
     public static final int BonusActivityInfoReq = -352;
     public static final int FlowerLandReputationDataNotify = 24486;

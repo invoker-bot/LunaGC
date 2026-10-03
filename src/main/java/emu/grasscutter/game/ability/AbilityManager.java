@@ -499,13 +499,14 @@ public final class AbilityManager extends BasePlayerManager {
 
         Ability ability = null;
 
-        if (head.getInstancedModifierId() != 0
-            && entity.getInstancedModifiers().containsKey(head.getInstancedModifierId())) {
-            ability = entity.getInstancedModifiers().get(head.getInstancedModifierId()).getAbility();
+        if (head.getInstancedModifierId() != 0) {
+            var modifier = entity.getInstancedModifiers().get(head.getInstancedModifierId());
+            if (modifier != null) ability = modifier.getAbility();
         }
 
         if (ability == null
             && head.getInstancedAbilityId() != 0
+            && (head.getInstancedAbilityId() - 1) >= 0
             && (head.getInstancedAbilityId() - 1) < entity.getInstancedAbilities().size()) {
             ability = entity.getInstancedAbilities().get(head.getInstancedAbilityId() - 1);
         }
@@ -633,18 +634,23 @@ public final class AbilityManager extends BasePlayerManager {
     }
 
     private void setAbilityOverrideValue(Ability ability, AbilityScalarValueEntry valueChange) {
-        if (!valueChange.getKey().hasStr()) {
-            Grasscutter.getLogger().trace("TODO: Calculate all the ability value hashes");
-
-            return;
+        String key = valueChange.getKey().hasStr() ? valueChange.getKey().getStr() : null;
+        if (valueChange.getKey().hasHash()) {
+            // The global name table contains ability names, not their parameter names.
+            // Resolve a compressed parameter against the specials of this exact instance.
+            int hash = valueChange.getKey().getHash();
+            key = ability.getAbilitySpecials().keySet().stream()
+                .filter(name -> Utils.abilityHash(name) == hash)
+                .findFirst().orElse(null);
         }
+        if (key == null || key.isEmpty() || !Float.isFinite(valueChange.getFloatValue())) return;
 
-        ability.getAbilitySpecials().put(valueChange.getKey().getStr(), valueChange.getFloatValue());
+        ability.getAbilitySpecials().put(key, valueChange.getFloatValue());
         Grasscutter.getLogger()
             .trace(
                 "Ability {} changed {} to {}",
                 ability.getData().abilityName,
-                valueChange.getKey().getStr(),
+                key,
                 valueChange.getFloatValue());
     }
 
@@ -827,13 +833,29 @@ public final class AbilityManager extends BasePlayerManager {
         }
     }
 
+    private Ability findExistingAbility(GameEntity source, int abilityId, String parentName) {
+        if (source == null) return null;
+        int index = abilityId - 1;
+        if (index >= 0 && index < source.getInstancedAbilities().size()) {
+            var candidate = source.getInstancedAbilities().get(index);
+            if (candidate != null
+                    && (parentName == null || parentName.equals(candidate.getData().abilityName))) {
+                return candidate;
+            }
+        }
+        if (parentName == null) return null;
+        for (var candidate : source.getInstancedAbilities()) {
+            if (candidate != null && parentName.equals(candidate.getData().abilityName)) return candidate;
+        }
+        return source.getDynamicAbilities().get(parentName);
+    }
+
     private void handleModifierChange(AbilityInvokeEntry invoke) throws Exception {
 
         var modChange = AbilityMetaModifierChange.parseFrom(invoke.getAbilityData());
         var head = invoke.getHead();
 
-        boolean isRemove = modChange.getAction() == ModifierAction.MODIFIER_ACTION_REMOVED;
-        if ((head.getInstancedAbilityId() == 0 && !isRemove) || head.getInstancedModifierId() > 2000) {
+        if (head.getInstancedModifierId() > 2000) {
             return;
         }
 
@@ -854,10 +876,6 @@ public final class AbilityManager extends BasePlayerManager {
         }
 
         if (modChange.getAction() == ModifierAction.MODIFIER_ACTION_ADDED) {
-            AbilityData instancedAbilityData = null;
-            Ability instancedAbility = null;
-            boolean fromParentName = false;
-
             String resolvedParentName = null;
             var parentAbStr = modChange.getParentAbilityName();
             if (!parentAbStr.getStr().isEmpty()) {
@@ -866,43 +884,31 @@ public final class AbilityManager extends BasePlayerManager {
                 resolvedParentName = GameData.getAbilityHashes().get(parentAbStr.getHash());
             }
 
-            if (resolvedParentName != null) {
-                instancedAbilityData = GameData.getAbilityData(resolvedParentName);
-                fromParentName = true;
+            boolean fromParentName = resolvedParentName != null;
+            var source = this.player.getScene().getEntityById(head.getTargetId());
+            var instancedAbility = findExistingAbility(source, head.getInstancedAbilityId(), resolvedParentName);
+            if (instancedAbility == null) {
+                instancedAbility = findExistingAbility(entity, head.getInstancedAbilityId(), resolvedParentName);
             }
-
-            if (instancedAbilityData == null) {
-                if (head.getTargetId() != 0) {
-                    var targetEntity = this.player.getScene().getEntityById(head.getTargetId());
-                    if (targetEntity != null) {
-                        // An id of 0 means "no instanced ability" and is common - without the lower
-                        // bound that becomes get(-1) rather than a miss.
-                        var index = head.getInstancedAbilityId() - 1;
-                        if (index >= 0 && index < targetEntity.getInstancedAbilities().size()) {
-                            instancedAbility = targetEntity.getInstancedAbilities().get(index);
-                            if (instancedAbility != null) instancedAbilityData = instancedAbility.getData();
-                        }
-                    }
+            if (instancedAbility == null && fromParentName) {
+                for (var avatar : this.player.getTeamManager().getActiveTeam()) {
+                    instancedAbility = findExistingAbility(avatar, head.getInstancedAbilityId(), resolvedParentName);
+                    if (instancedAbility != null) break;
                 }
             }
+            var instancedAbilityData = instancedAbility != null ? instancedAbility.getData()
+                    : (fromParentName ? GameData.getAbilityData(resolvedParentName) : null);
 
             if (instancedAbilityData == null) {
-                var index = head.getInstancedAbilityId() - 1;
-                if (index >= 0 && index < entity.getInstancedAbilities().size()) {
-                    instancedAbility = entity.getInstancedAbilities().get(index);
-                    if (instancedAbility != null) instancedAbilityData = instancedAbility.getData();
-                }
-            }
-
-            var parentAbilityName = resolvedParentName != null ? resolvedParentName : parentAbStr.getStr();
-
-            if (instancedAbilityData == null) {
-                Grasscutter.getLogger().trace("handleModifierChange: no ability data found for entityId={} parentAbility={}", invoke.getEntityId(), parentAbilityName);
+                Grasscutter.getLogger().trace("handleModifierChange: no ability data found for entityId={} parentAbility={}", invoke.getEntityId(), resolvedParentName);
                 return;
             }
 
-            if (instancedAbility == null || fromParentName) {
-                instancedAbility = new Ability(instancedAbilityData, entity, player);
+            if (instancedAbility == null) {
+                var owner = source != null ? source : entity;
+                var data = instancedAbilityData;
+                instancedAbility = owner.getDynamicAbilities().computeIfAbsent(data.abilityName,
+                        name -> new Ability(data, owner, player));
             }
 
             if (instancedAbilityData.modifiers == null) {
@@ -910,7 +916,7 @@ public final class AbilityManager extends BasePlayerManager {
                 return;
             }
             var modifierArray = instancedAbilityData.modifiers.values().toArray();
-            if (modChange.getModifierLocalId() >= modifierArray.length) {
+            if (modChange.getModifierLocalId() < 0 || modChange.getModifierLocalId() >= modifierArray.length) {
                 Grasscutter.getLogger().trace(
                     "handleModifierChange: modifierLocalId={} out of bounds for ability={} (modifierCount={}), entityId={} modId={}",
                     modChange.getModifierLocalId(), instancedAbilityData.abilityName, modifierArray.length,
@@ -937,12 +943,6 @@ public final class AbilityManager extends BasePlayerManager {
                         modifierData);
             }
 
-            if (instancedAbility != null) {
-                onPossibleElementalBurst(instancedAbility, modifierData, invoke.getEntityId());
-            } else {
-                Grasscutter.getLogger().trace("no instanced ability for modifier");
-            }
-
             onPossibleElementalBurst(instancedAbility, modifierData, invoke.getEntityId());
 
             boolean hasOrchestration = false;
@@ -956,32 +956,23 @@ public final class AbilityManager extends BasePlayerManager {
                 }
             }
 
-            if (fromParentName && !hasOrchestration && resolvedParentName != null) {
-                outer:
-                for (var avatarEntity : this.player.getTeamManager().getActiveTeam()) {
-                    if (avatarEntity == entity) continue;
-                    for (var a : avatarEntity.getInstancedAbilities()) {
-                        if (a != null && a.getData() != null
-                                && resolvedParentName.equals(a.getData().abilityName)) {
-                            instancedAbility = a;
-                            break outer;
-                        }
-                    }
-                }
-            }
-
             AbilityModifierController modifier =
                 new AbilityModifierController(instancedAbility, instancedAbilityData, modifierData);
 
-            if (!fromParentName || !hasOrchestration) {
-                entity.getInstancedModifiers().put(head.getInstancedModifierId(), modifier);
+            // Follow-up actions and removal messages refer to this client instance ID even
+            // when onAdded applies another modifier (e.g. Nahida's release/camera chain).
+            var instances = entity.getInstancedModifiers();
+            synchronized (instances) {
+                var previous = instances.put(head.getInstancedModifierId(), modifier);
+                if (previous != null) previous.getAbility().unregisterModifier(entity, previous);
+                instancedAbility.registerModifier(entity, modifier);
             }
 
             if (fromParentName && hasOrchestration && modifierData.onAdded != null) {
                 final var finalAbility = instancedAbility;
                 final var finalEntity = entity;
                 for (var a : modifierData.onAdded) {
-                    executeAction(finalAbility, a, invoke.getAbilityData(), finalEntity);
+                    executeActionNow(finalAbility, a, invoke.getAbilityData(), finalEntity);
                 }
             } else if (modifierData.onAdded != null) {
                 // A modifier whose onAdded neither attaches nor applies another modifier used to run
@@ -1001,7 +992,11 @@ public final class AbilityManager extends BasePlayerManager {
                     });
             }
         } else if (modChange.getAction() == ModifierAction.MODIFIER_ACTION_REMOVED) {
-            entity.getInstancedModifiers().remove(head.getInstancedModifierId());
+            var instances = entity.getInstancedModifiers();
+            synchronized (instances) {
+                var modifier = instances.remove(head.getInstancedModifierId());
+                if (modifier != null) modifier.getAbility().unregisterModifier(entity, modifier);
+            }
         } else {
 
             Grasscutter.getLogger().debug("Unknown action");
@@ -1274,11 +1269,19 @@ public final class AbilityManager extends BasePlayerManager {
             return;
         }
 
-        var newAbility = new Ability(abilityData, entity, player);
-        if (targetIndex < abilities.size() && abilities.get(targetIndex) == null) {
-            abilities.set(targetIndex, newAbility);
-        } else {
+        // The wire ID selects a slot. Appending when that slot already exists shifts
+        // later dynamic abilities away from the IDs used by release/hit invocations.
+        var newAbility = targetIndex < abilities.size() ? abilities.get(targetIndex) : null;
+        if (newAbility == null || !abilityName.equals(newAbility.getData().abilityName)) {
+            newAbility = new Ability(abilityData, entity, player);
+        }
+        if (targetIndex == abilities.size()) {
             abilities.add(newAbility);
+        } else {
+            abilities.set(targetIndex, newAbility);
+        }
+        for (var override : addAbility.getAbility().getOverrideMapList()) {
+            setAbilityOverrideValue(newAbility, override);
         }
 
         if (abilityName != null && entity instanceof EntityClientGadget clientGadget) {

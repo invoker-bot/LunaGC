@@ -12,6 +12,7 @@ import emu.grasscutter.game.player.*;
 import emu.grasscutter.game.props.*;
 import emu.grasscutter.game.props.ItemUseAction.UseItemParams;
 import emu.grasscutter.game.quest.enums.QuestContent;
+import emu.grasscutter.game.shop.BeyondCurrency;
 import emu.grasscutter.net.proto.ItemParamOuterClass.ItemParam;
 import emu.grasscutter.server.event.player.PlayerObtainItemEvent;
 import emu.grasscutter.server.packet.send.*;
@@ -124,10 +125,10 @@ public class Inventory extends BasePlayerManager implements Iterable<GameItem> {
      * Adds an item, optionally bypassing the use-on-gain interception.
      *
      * @param item The item to add.
-     * @param skipUseOnGain Items flagged useOnGain are consumed by putItem() and never reach the
-     *     bag, which is right for a dropped bundle but wrong for one that was bought and paid for.
-     *     Passing true puts the item in the store like any other, so the player actually receives
-     *     it and can open it themselves.
+     * @param skipUseOnGain Items flagged useOnGain are consumed by putItem() and never reach the bag,
+     *     which is right for a dropped bundle but wrong for one that was bought and paid for. Passing
+     *     true puts the item in the store like any other, so the player actually receives it and can
+     *     open it themselves.
      * @return True if the item was stored.
      */
     public boolean addItem(GameItem item, boolean skipUseOnGain) {
@@ -353,6 +354,8 @@ public class Inventory extends BasePlayerManager implements Iterable<GameItem> {
                     case MATERIAL_FLYCLOAK:
                     case MATERIAL_COSTUME:
                     case MATERIAL_NAMECARD:
+                    case MATERIAL_AVATAR_TRACE:
+                    case MATERIAL_WEAPON_SKIN:
                         Grasscutter.getLogger()
                                 .warn(
                                         "Attempted to add a "
@@ -400,6 +403,12 @@ public class Inventory extends BasePlayerManager implements Iterable<GameItem> {
     }
 
     private void addVirtualItem(int itemId, int count) {
+        var beyondProperty = BeyondCurrency.propertyForItem(itemId);
+        if (beyondProperty != null) {
+            this.player.setProperty(
+                    beyondProperty, Math.addExact(this.player.getProperty(beyondProperty), count));
+            return;
+        }
         switch (itemId) {
             case 101 -> // Character exp
             this.player.getTeamManager().getActiveTeam().stream()
@@ -440,6 +449,12 @@ public class Inventory extends BasePlayerManager implements Iterable<GameItem> {
     }
 
     private GameItem payVirtualItem(int itemId, int count) {
+        var beyondProperty = BeyondCurrency.propertyForItem(itemId);
+        if (beyondProperty != null) {
+            this.player.setProperty(
+                    beyondProperty, Math.subtractExact(this.player.getProperty(beyondProperty), count));
+            return null;
+        }
         switch (itemId) {
             case 201 -> // Primogem
             player.setPrimogems(player.getPrimogems() - count);
@@ -463,6 +478,8 @@ public class Inventory extends BasePlayerManager implements Iterable<GameItem> {
     }
 
     private int getVirtualItemCount(int itemId) {
+        var beyondProperty = BeyondCurrency.propertyForItem(itemId);
+        if (beyondProperty != null) return this.player.getProperty(beyondProperty);
         switch (itemId) {
             case 201: // Primogem
                 return this.player.getPrimogems();

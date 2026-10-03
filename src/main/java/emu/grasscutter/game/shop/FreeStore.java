@@ -9,12 +9,15 @@ import emu.grasscutter.game.props.ActionReason;
 import emu.grasscutter.net.proto.ShopCardProductOuterClass.ShopCardProduct;
 import emu.grasscutter.net.proto.ShopMcoinProductOuterClass.ShopMcoinProduct;
 import emu.grasscutter.net.proto.ShopOuterClass.Shop;
+import emu.grasscutter.net.proto._ShopBeyondMcoinProductOuterClass._ShopBeyondMcoinProduct;
 import emu.grasscutter.utils.*;
 import java.io.IOException;
 import java.util.*;
 
 /** Resource-backed cash products. No payment gateway: every supported product costs zero. */
 public class FreeStore {
+    public static final int PRODUCT_PRICE_TIER_VERSION = 1;
+
     public record Product(
             String key,
             String productId,
@@ -54,6 +57,7 @@ public class FreeStore {
                     List.of(
                             "ProductCardDetailConfigData",
                             "ProductMcoinDetailConfigData",
+                            "ProductBydMcoinDetailConfigData",
                             "ProductPlayDetailConfigData")) {
                 for (var row : rows(table)) {
                     int config = number(row, "configId");
@@ -85,6 +89,23 @@ public class FreeStore {
                                         number(row, "days"),
                                         number(row, "hcoinPerDay"),
                                         number(row, "totalLimitDays"),
+                                        0,
+                                        row.get("priceTier").getAsString());
+                    } else if (table.contains("BydMcoin")) {
+                        int amount = number(row, "JIANADINMNE");
+                        if (amount <= 0) throw new IllegalArgumentException("Invalid Beyond crystal amount");
+                        product =
+                                new Product(
+                                        "beyond_crystals:" + config,
+                                        id,
+                                        "事象凝核 × " + amount,
+                                        "beyond_crystals",
+                                        amount,
+                                        number(row, "HJGDAEMDFJO"),
+                                        number(row, "PLELAKODHMN"),
+                                        0,
+                                        0,
+                                        0,
                                         0,
                                         row.get("priceTier").getAsString());
                     } else if (table.contains("Mcoin")) {
@@ -186,7 +207,10 @@ public class FreeStore {
                         .sorted()
                         .map(t -> Map.of("tier_id", t, "t_price", List.of(price)))
                         .toList();
-        return Map.of("suggest_currency", currency, "tiers", tiers, "price_tier_version", "1");
+        return Map.of(
+                "suggest_currency", currency,
+                "tiers", tiers,
+                "price_tier_version", Integer.toString(PRODUCT_PRICE_TIER_VERSION));
     }
 
     public Product productForPlayType(int type) {
@@ -246,6 +270,14 @@ public class FreeStore {
                     if (!pass.unlockPaid(p.playType == 2 || p.playType == 3 || p.playType == 5))
                         throw new IllegalArgumentException("当前纪行已解锁该档位。");
                 }
+                case "beyond_crystals" -> {
+                    var property = BeyondCurrency.propertyForItem(231);
+                    int bought = player.getFreeProductPurchases().getOrDefault(p.key, 0);
+                    int amount = Math.addExact(p.amount, bought == 0 ? p.firstBonus : p.bonus);
+                    long balance = (long) player.getProperty(property) + amount;
+                    if (balance > Integer.MAX_VALUE) throw new IllegalArgumentException("货币数量已达到上限。");
+                    player.setProperty(property, (int) balance);
+                }
                 case "primogems", "crystals" -> {
                     int bought = player.getFreeProductPurchases().getOrDefault(p.key, 0);
                     int amount =
@@ -278,7 +310,9 @@ public class FreeStore {
     public void addProducts(Shop.Builder shop, Player player) {
         for (var p : products) {
             if (!catalog.productEnabled(p.key)) continue;
-            if (shop.getShopType() == 902 && p.kind.equals("card")) {
+            // The native recommendation resolver (0x149000729) looks up config 101
+            // in shop 900 itself. Both entrances reference the same persisted product.
+            if ((shop.getShopType() == 900 || shop.getShopType() == 902) && p.kind.equals("card")) {
                 shop.addCardProductList(
                         ShopCardProduct.newBuilder()
                                 .setProductId(p.productId)
@@ -297,6 +331,11 @@ public class FreeStore {
                                 .setMcoinFirst(p.firstBonus)
                                 .setMcoinNonFirst(p.bonus)
                                 .setBoughtNum(player.getFreeProductPurchases().getOrDefault(p.key, 0)));
+            } else if (shop.getShopType() == 100000 && p.kind.equals("beyond_crystals")) {
+                shop.addBeyondMcoinProductList(
+                        _ShopBeyondMcoinProduct.newBuilder()
+                                .setProductId(p.productId)
+                                .setPriceTier(p.priceTier));
             }
         }
     }

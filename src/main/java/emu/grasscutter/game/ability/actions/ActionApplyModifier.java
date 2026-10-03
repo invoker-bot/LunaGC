@@ -23,19 +23,17 @@ public final class ActionApplyModifier extends AbilityActionHandler {
         if (modifierData == null) return false;
 
         if ("Unique".equals(modifierData.stacking)) {
-            boolean wasPresent = ability.getModifiers().containsKey(action.modifierName);
-            ability.getModifiers().remove(action.modifierName);
+            ability.removeModifier(target, action.modifierName);
         }
 
         AbilityModifierController modifier = new AbilityModifierController(ability, ability.getData(), modifierData);
-        ability.getModifiers().put(action.modifierName, modifier);
+        ability.registerModifier(target, modifier);
         var manager = ability.getManager();
         if (modifierData.onAdded != null)
             for (var a : modifierData.onAdded)
-                manager.executeAction(ability, a, abilityData, target);
-        if (modifierData.onAttackLanded != null)
-            for (var b : modifierData.onAttackLanded)
-                manager.executeAction(ability, b, abilityData, target);
+                manager.executeActionNow(ability, a, abilityData, target);
+        // onAttackLanded belongs to an actual hit invocation. Applying the listener must not
+        // grant energy, add a mark or trigger a reaction before an attack has happened.
 
         return true;
     }

@@ -873,18 +873,11 @@ public final class TeamManager extends BasePlayerDataManager {
     public boolean reviveAvatar(Avatar avatar) {
         for (EntityAvatar entity : this.getActiveTeam()) {
             if (entity.getAvatar() == avatar) {
-                if (entity.isAlive()) {
+                if (!entity.revive(1f)) {
                     return false;
                 }
 
-                entity.setFightProperty(FightProperty.FIGHT_PROP_CUR_HP, 1f);
-
                 player.getSatiationManager().removeSatiationDirectly(entity.getAvatar(), 15000);
-                this.getPlayer()
-                    .sendPacket(
-                        new PacketAvatarFightPropUpdateNotify(
-                            entity.getAvatar(), FightProperty.FIGHT_PROP_CUR_HP));
-                this.getPlayer().sendPacket(new PacketAvatarLifeStateChangeNotify(entity.getAvatar()));
                 return true;
             }
         }
@@ -927,15 +920,14 @@ public final class TeamManager extends BasePlayerDataManager {
             .stopSustainedStaminaHandler();
 
         for (EntityAvatar entity : this.getActiveTeam()) {
-            entity.setFightProperty(
-                FightProperty.FIGHT_PROP_CUR_HP,
-                entity.getFightProperty(FightProperty.FIGHT_PROP_MAX_HP) * .4f);
+            float restoredHp = entity.getFightProperty(FightProperty.FIGHT_PROP_MAX_HP) * .4f;
+            if (!entity.revive(restoredHp)) {
+                entity.setFightProperty(FightProperty.FIGHT_PROP_CUR_HP, restoredHp);
+                this.getPlayer().sendPacket(
+                    new PacketAvatarFightPropUpdateNotify(entity.getAvatar(), FightProperty.FIGHT_PROP_CUR_HP));
+                this.getPlayer().sendPacket(new PacketAvatarLifeStateChangeNotify(entity.getAvatar()));
+            }
             this.getPlayer().getSatiationManager().removeSatiationDirectly(entity.getAvatar(), 15000);
-            this.getPlayer()
-                .sendPacket(
-                    new PacketAvatarFightPropUpdateNotify(
-                        entity.getAvatar(), FightProperty.FIGHT_PROP_CUR_HP));
-            this.getPlayer().sendPacket(new PacketAvatarLifeStateChangeNotify(entity.getAvatar()));
         }
 
         try {

@@ -175,21 +175,26 @@ public class GachaSystem extends BaseGameSystem {
      * The outcome of a single roll. {@code capturedRadiance} is set when a lost coinflip was turned
      * into the featured item by Capturing Radiance, which the client shows its own animation for.
      */
-    private record PullResult(int itemId, boolean capturedRadiance) {}
+    record PullResult(int itemId, boolean capturedRadiance) {}
 
-    private synchronized PullResult doRarePull(
+    synchronized PullResult doRarePull(
             int[] featured,
             int[] fallback1,
             int[] fallback2,
             int rarity,
             GachaBanner banner,
-            PlayerGachaBannerInfo gachaInfo) {
+            PlayerGachaBannerInfo gachaInfo,
+            PlayerGachaWishInfo wishInfo) {
         int itemId = 0;
         boolean epitomized =
-                (banner.hasEpitomized()) && (rarity == 5) && (gachaInfo.getWishItemId() != 0);
+                banner.hasEpitomized()
+                        && rarity == 5
+                        && wishInfo != null
+                        && wishInfo.matches(banner)
+                        && banner.isWishItemAllowed(wishInfo.getWishItemId())
+                        && Arrays.stream(featured).anyMatch(id -> id == wishInfo.getWishItemId());
         boolean pityEpitomized =
-                (gachaInfo.getFailedChosenItemPulls()
-                        >= banner.getWishMaxProgress()); // Maximum fate points reached
+                epitomized && wishInfo.getFatePoints() >= banner.getWishMaxProgress();
         boolean pityFeatured =
                 (gachaInfo.getFailedFeaturedItemPulls(rarity) >= 1); // Lost previous coinflip
         boolean rollFeatured =
@@ -208,7 +213,7 @@ public class GachaSystem extends BaseGameSystem {
         if (epitomized && pityEpitomized) { // Auto pick item when epitomized points reached
             gachaInfo.setFailedFeaturedItemPulls(
                     rarity, 0); // Epitomized item will always be a featured one
-            itemId = gachaInfo.getWishItemId();
+            itemId = wishInfo.getWishItemId();
         } else {
             if (pullFeatured && (featured.length > 0)) {
                 gachaInfo.setFailedFeaturedItemPulls(rarity, 0);
@@ -226,17 +231,14 @@ public class GachaSystem extends BaseGameSystem {
         }
 
         if (epitomized) {
-            if (itemId == gachaInfo.getWishItemId()) { // Reset epitomized points when got wished item
-                gachaInfo.setFailedChosenItemPulls(0);
-            } else { // Add epitomized points if not get wished item
-                gachaInfo.addFailedChosenItemPulls(1);
-            }
+            wishInfo.recordFiveStar(itemId, banner.getWishMaxProgress());
         }
         return new PullResult(itemId, captured);
     }
 
     private synchronized PullResult doPull(
-            GachaBanner banner, PlayerGachaBannerInfo gachaInfo, BannerPools pools) {
+            GachaBanner banner, PlayerGachaBannerInfo gachaInfo, BannerPools pools,
+            PlayerGachaWishInfo wishInfo) {
         // Pre-increment all pity pools (yes this makes all calculations assume 1-indexed pity)
         gachaInfo.incPityAll();
 
@@ -254,7 +256,8 @@ public class GachaSystem extends BaseGameSystem {
                         pools.fallbackItems5Pool2,
                         5,
                         banner,
-                        gachaInfo);
+                        gachaInfo,
+                        wishInfo);
             case 4:
                 gachaInfo.setPity4(0);
                 yield doRarePull(
@@ -263,7 +266,8 @@ public class GachaSystem extends BaseGameSystem {
                         pools.fallbackItems4Pool2,
                         4,
                         banner,
-                        gachaInfo);
+                        gachaInfo,
+                        wishInfo);
             default:
                 yield new PullResult(getRandom(banner.getFallbackItems3()), false);
         };
@@ -291,6 +295,8 @@ public class GachaSystem extends BaseGameSystem {
 
         // Check against total limit
         PlayerGachaBannerInfo gachaInfo = player.getGachaInfo().getBannerInfo(banner);
+        PlayerGachaWishInfo wishInfo =
+                banner.hasEpitomized() ? player.getGachaInfo().getWishInfo(banner) : null;
         // Call pre-PlayerWishEvent.
         var event =
                 new PlayerWishEvent(
@@ -302,7 +308,8 @@ public class GachaSystem extends BaseGameSystem {
                                 gachaInfo.getPity4(),
                                 gachaInfo.getFailedFeaturedItemPulls(4) > 0,
                                 banner.hasEpitomized()
-                                        ? gachaInfo.getFailedChosenItemPulls() >= banner.getWishMaxProgress()
+                                        ? wishInfo.getWishItemId() != 0
+                                                && wishInfo.getFatePoints() >= banner.getWishMaxProgress()
                                         : gachaInfo.getFailedFeaturedItemPulls(5) > 0));
         if (!event.call()) {
             player.sendPacket(new PacketDoGachaRsp(Retcode.RET_SVR_ERROR));
@@ -317,6 +324,10 @@ public class GachaSystem extends BaseGameSystem {
             player.sendPacket(new PacketDoGachaRsp(Retcode.RET_GACHA_SCHEDULE_NOT_MATCH));
             return;
         }
+
+        // Plugins may replace the banner; never apply the original banner's path to that pool.
+        gachaInfo = player.getGachaInfo().getBannerInfo(banner);
+        wishInfo = banner.hasEpitomized() ? player.getGachaInfo().getWishInfo(banner) : null;
 
         if (times > banner.getRemainingPulls(gachaInfo)) {
             player.sendPacket(new PacketDoGachaRsp(Retcode.RET_GACHA_TIMES_LIMIT));
@@ -348,7 +359,7 @@ public class GachaSystem extends BaseGameSystem {
         var items = new ArrayList<PlayerWishEvent.WishCompute>();
         for (int i = 0; i < times; i++) {
             // Roll
-            PullResult pull = doPull(banner, gachaInfo, pools);
+            PullResult pull = doPull(banner, gachaInfo, pools, wishInfo);
             int itemId = pull.itemId();
             ItemData itemData = GameData.getItemDataMap().get(itemId);
             if (itemData == null) {
@@ -462,7 +473,8 @@ public class GachaSystem extends BaseGameSystem {
         }
 
         // Packets
-        player.sendPacket(new PacketDoGachaRsp(banner, list, gachaInfo));
+        player.save();
+        player.sendPacket(new PacketDoGachaRsp(banner, list, gachaInfo, wishInfo));
         if (banner.getRemainingPulls(gachaInfo) == 0) {
             player.sendPacket(new PacketGetGachaInfoRsp(this, player));
         }

@@ -13,6 +13,12 @@ public class PacketDoGachaRsp extends BasePacket {
 
     public PacketDoGachaRsp(
             GachaBanner banner, List<GachaItem> list, PlayerGachaBannerInfo gachaInfo) {
+        this(banner, list, gachaInfo, null);
+    }
+
+    public PacketDoGachaRsp(
+            GachaBanner banner, List<GachaItem> list, PlayerGachaBannerInfo gachaInfo,
+            PlayerGachaWishInfo wishInfo) {
         super(PacketOpcodes.DoGachaRsp);
 
         ItemParamData costItem = banner.getCost(1);
@@ -35,8 +41,8 @@ public class PacketDoGachaRsp extends BasePacket {
                         .addAllGachaItemList(list);
 
         if (banner.hasEpitomized()) {
-            rsp.setWishItemId(gachaInfo.getWishItemId())
-                    .setWishProgress(gachaInfo.getFailedChosenItemPulls())
+            rsp.setWishItemId(wishInfo == null ? 0 : wishInfo.getWishItemId())
+                    .setWishProgress(wishInfo == null ? 0 : wishInfo.getFatePoints())
                     .setWishMaxProgress(banner.getWishMaxProgress());
         }
 

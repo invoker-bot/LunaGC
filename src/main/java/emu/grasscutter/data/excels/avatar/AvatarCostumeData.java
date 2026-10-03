@@ -11,6 +11,7 @@ public class AvatarCostumeData extends GameResource {
     private int itemId;
     private int characterId;
     private int quality;
+    private boolean isDefault;
 
     @Override
     public int getId() {
@@ -27,6 +28,10 @@ public class AvatarCostumeData extends GameResource {
 
     public int getQuality() {
         return quality;
+    }
+
+    public boolean isDefault() {
+        return isDefault;
     }
 
     @Override

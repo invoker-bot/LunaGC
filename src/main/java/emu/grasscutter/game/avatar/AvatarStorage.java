@@ -9,7 +9,6 @@ import emu.grasscutter.game.inventory.GameItem;
 import emu.grasscutter.game.inventory.MaterialType;
 import emu.grasscutter.game.player.BasePlayerManager;
 import emu.grasscutter.game.player.Player;
-import emu.grasscutter.net.proto.SceneEntityInfoOuterClass.SceneEntityInfo;
 import emu.grasscutter.net.proto.GrantReasonOuterClass.GrantReason;
 import emu.grasscutter.server.event.entity.EntityCreationEvent;
 import emu.grasscutter.server.packet.send.PacketAvatarChangeCostumeNotify;
@@ -55,7 +54,9 @@ public class AvatarStorage extends BasePlayerManager implements Iterable<Avatar>
     }
 
     public boolean addAvatar(Avatar avatar) {
-        if (avatar.getTrialAvatarId() != 0 || avatar.getAvatarData() == null || this.hasAvatar(avatar.getAvatarId())) {
+        if (avatar.getTrialAvatarId() != 0
+                || avatar.getAvatarData() == null
+                || this.hasAvatar(avatar.getAvatarId())) {
             return false;
         }
 
@@ -113,8 +114,9 @@ public class AvatarStorage extends BasePlayerManager implements Iterable<Avatar>
         if (costumeId != 0 && !getPlayer().getCostumeList().contains(costumeId)) {
             return false;
         }
-
-        // TODO make sure avatar can wear costume
+        var costume = GameData.getAvatarCostumeDataMap().get(costumeId);
+        if (costumeId != 0 && (costume == null || costume.getCharacterId() != avatar.getAvatarId()))
+            return false;
 
         avatar.setCostume(costumeId);
         avatar.save();
@@ -136,11 +138,16 @@ public class AvatarStorage extends BasePlayerManager implements Iterable<Avatar>
         // Done
         return true;
     }
+
     public boolean changeTraceEffect(long avatarGuid, int traceEffectId) {
         Avatar avatar = this.getAvatarByGuid(avatarGuid);
-        if (avatar == null || !this.getPlayer().getTraceEffectList().contains(traceEffectId) && traceEffectId != 0) {
+        if (avatar == null
+                || !this.getPlayer().getTraceEffectList().contains(traceEffectId) && traceEffectId != 0) {
             return false;
         }
+        var trace = GameData.getAvatarTraceEffectDataMap().get(traceEffectId);
+        if (traceEffectId != 0 && (trace == null || trace.getAvatarId() != avatar.getAvatarId()))
+            return false;
         avatar.setTraceEffect(traceEffectId);
         avatar.save();
         EntityAvatar entity = avatar.getAsEntity();
@@ -148,13 +155,44 @@ public class AvatarStorage extends BasePlayerManager implements Iterable<Avatar>
             entity =
                     EntityCreationEvent.call(
                             EntityAvatar.class, new Class<?>[] {Avatar.class}, new Object[] {avatar});
-            getPlayer().getWorld().broadcastPacket(new PacketAvatarTraceEffectChangeNotify(entity));
+            if (getPlayer().getWorld() != null)
+                getPlayer().getWorld().broadcastPacket(new PacketAvatarTraceEffectChangeNotify(entity));
         } else {
-            getPlayer().getWorld().broadcastPacket(new PacketAvatarTraceEffectChangeNotify(entity));
-        } 
+            if (getPlayer().getWorld() != null)
+                getPlayer().getWorld().broadcastPacket(new PacketAvatarTraceEffectChangeNotify(entity));
+        }
         return true;
     }
 
+    public boolean changeWeaponSkin(List<Long> guids, int skinId) {
+        if (guids.isEmpty() || guids.size() > getAvatarCount()) return false;
+        var skin = GameData.getAvatarWeaponSkinDataMap().get(skinId);
+        if (skinId != 0 && (skin == null || !getPlayer().getWeaponSkinList().contains(skinId)))
+            return false;
+        var targets = new ArrayList<Avatar>();
+        for (long guid : guids) {
+            var avatar = getAvatarByGuid(guid);
+            if (avatar == null
+                    || avatar.getAvatarData() == null
+                    || skinId != 0 && skin.getWeaponType() != avatar.getAvatarData().getWeaponType())
+                return false;
+            targets.add(avatar);
+        }
+        for (var avatar : targets) {
+            avatar.setWeaponSkin(skinId);
+            avatar.save();
+        }
+        getPlayer()
+                .sendPacket(
+                        new emu.grasscutter.server.packet.send.PacketAvatarWeaponSkinDataNotify(getPlayer()));
+        // The refreshed team entities carry SceneAvatarInfo.weapon_skin_id for multiplayer viewers.
+        if (getPlayer().getWorld() != null)
+            getPlayer()
+                    .getWorld()
+                    .broadcastPacket(
+                            new emu.grasscutter.server.packet.send.PacketSceneTeamUpdateNotify(getPlayer()));
+        return true;
+    }
 
     public void loadFromDatabase() {
         if (this.isLoaded()) return;
@@ -166,8 +204,10 @@ public class AvatarStorage extends BasePlayerManager implements Iterable<Avatar>
                 this.legacyTrialAvatars.add(avatar);
                 if (avatar.getGrantReason() == GrantReason.GRANT_REASON_BY_QUEST.getNumber()
                         && avatar.getFromParentQuestId() != 0)
-                    this.getPlayer().getTeamManager().getQuestTrialAvatarIds()
-                        .putIfAbsent(avatar.getTrialAvatarId(), avatar.getFromParentQuestId());
+                    this.getPlayer()
+                            .getTeamManager()
+                            .getQuestTrialAvatarIds()
+                            .putIfAbsent(avatar.getTrialAvatarId(), avatar.getFromParentQuestId());
                 continue;
             }
             // Should never happen
@@ -223,16 +263,20 @@ public class AvatarStorage extends BasePlayerManager implements Iterable<Avatar>
     public void recoverLegacyTrialAvatars() {
         for (var avatar : new ArrayList<>(this.legacyTrialAvatars)) {
             if (avatar.getGrantReason() != GrantReason.GRANT_REASON_BY_QUEST.getNumber()) continue;
-            var quest = this.getPlayer().getQuestManager().getMainQuests().get(avatar.getFromParentQuestId());
+            var quest =
+                    this.getPlayer().getQuestManager().getMainQuests().get(avatar.getFromParentQuestId());
             if (quest == null || !quest.isFinished()) continue;
             var mainData = GameData.getMainQuestDataMap().get(avatar.getFromParentQuestId());
-            if (!this.hasAvatar(avatar.getAvatarId()) && mainData != null && mainData.getRewardIdList() != null) {
+            if (!this.hasAvatar(avatar.getAvatarId())
+                    && mainData != null
+                    && mainData.getRewardIdList() != null) {
                 for (var rewardId : mainData.getRewardIdList()) {
                     var reward = GameData.getRewardDataMap().get(rewardId);
                     if (reward == null) continue;
                     for (var item : reward.getRewardItemList()) {
                         var data = GameData.getItemDataMap().get(item.getId());
-                        if (item.getCount() > 0 && data != null
+                        if (item.getCount() > 0
+                                && data != null
                                 && data.getMaterialType() == MaterialType.MATERIAL_AVATAR
                                 && item.getId() % 1000 + 10000000 == avatar.getAvatarId()
                                 && !this.hasAvatar(avatar.getAvatarId())) {

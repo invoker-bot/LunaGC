@@ -3,14 +3,17 @@ package emu.grasscutter.server.packet.recv;
 import emu.grasscutter.Grasscutter;
 import emu.grasscutter.data.GameData;
 import emu.grasscutter.data.common.ItemParamData;
+import emu.grasscutter.game.beyond.BeyondCloset;
 import emu.grasscutter.game.inventory.*;
 import emu.grasscutter.game.props.ActionReason;
 import emu.grasscutter.game.props.ItemUseAction.UseItemParams;
+import emu.grasscutter.game.props.PlayerProperty;
 import emu.grasscutter.game.shop.*;
 import emu.grasscutter.net.packet.*;
 import emu.grasscutter.net.proto.BuyGoodsReqOuterClass;
 import emu.grasscutter.net.proto.RetcodeOuterClass.Retcode;
 import emu.grasscutter.server.game.GameSession;
+import emu.grasscutter.server.packet.send.PacketBeyondAddCosmeticNotify;
 import emu.grasscutter.server.packet.send.PacketBuyGoodsRsp;
 import emu.grasscutter.server.packet.send.PacketGetShopRsp;
 import emu.grasscutter.utils.Utils;
@@ -28,7 +31,9 @@ public class HandlerBuyGoodsReq extends PacketHandler {
                     MaterialType.MATERIAL_AVATAR,
                     MaterialType.MATERIAL_FLYCLOAK,
                     MaterialType.MATERIAL_COSTUME,
-                    MaterialType.MATERIAL_NAMECARD);
+                    MaterialType.MATERIAL_NAMECARD,
+                    MaterialType.MATERIAL_AVATAR_TRACE,
+                    MaterialType.MATERIAL_WEAPON_SKIN);
 
     @Override
     public void handle(GameSession session, byte[] header, byte[] payload) throws Exception {
@@ -65,10 +70,14 @@ public class HandlerBuyGoodsReq extends PacketHandler {
             ShopInfo sg = sg2.get();
 
             int currentTs = Utils.getCurrentSeconds();
+            int level =
+                    buyGoodsReq.getShopType() >= 100000 && buyGoodsReq.getShopType() <= 105000
+                            ? player.getProperty(PlayerProperty.PROP_PLAYER_BEYOND_LEVEL)
+                            : player.getLevel();
             if (currentTs < sg.getBeginTime()
                     || currentTs >= sg.getEndTime()
-                    || player.getLevel() < sg.getMinLevel()
-                    || player.getLevel() > sg.getMaxLevel()) {
+                    || level < sg.getMinLevel()
+                    || level > sg.getMaxLevel()) {
                 session.send(new PacketBuyGoodsRsp(Retcode.RET_SHOP_CONTENT_NOT_MATCH));
                 continue;
             }
@@ -116,18 +125,41 @@ public class HandlerBuyGoodsReq extends PacketHandler {
                 session.send(new PacketBuyGoodsRsp(Retcode.RET_SVR_ERROR));
                 continue;
             }
+            var itemData = GameData.getItemDataMap().get(itemId);
+            if (itemData != null
+                    && !SpecialCosmeticShop.kind(itemId).isEmpty()
+                    && !SpecialCosmeticShop.canPurchase(player, itemData, itemCount)) {
+                session.send(new PacketBuyGoodsRsp(Retcode.RET_SHOP_CONTENT_NOT_MATCH));
+                continue;
+            }
             List<ItemParamData> costs =
                     new ArrayList<ItemParamData>(
                             sg.getCostItemList() == null ? List.of() : sg.getCostItemList());
+            var bydMaterial = GameData.getBydMaterialDataMap().get(itemId);
+            var costumes = BeyondCloset.resolveCostumes(itemId);
+            if (bydMaterial != null && (itemCount != 1 || !player.getBeyondCloset().canGrant(costumes))) {
+                session.send(new PacketBuyGoodsRsp(Retcode.RET_SHOP_CONTENT_NOT_MATCH));
+                continue;
+            }
             costs.add(new ItemParamData(202, sg.getScoin()));
             costs.add(new ItemParamData(201, sg.getHcoin()));
             costs.add(new ItemParamData(203, sg.getMcoin()));
+            if (sg.getBeyondMcoin() > 0) costs.add(new ItemParamData(231, sg.getBeyondMcoin()));
             if (!player.getInventory().payItems(costs, buyCount)) {
                 session.send(new PacketBuyGoodsRsp(Retcode.RET_SHOP_CONTENT_NOT_MATCH));
                 continue;
             }
 
-            if (piece != null) {
+            if (bydMaterial != null) {
+                var granted = player.getBeyondCloset().grant(costumes);
+                if (granted.isEmpty()) {
+                    costs.forEach(
+                            cost -> player.getInventory().addItem(cost.getId(), cost.getCount() * buyCount));
+                    session.send(new PacketBuyGoodsRsp(Retcode.RET_SHOP_CONTENT_NOT_MATCH));
+                    continue;
+                }
+                session.send(new PacketBeyondAddCosmeticNotify(granted));
+            } else if (piece != null) {
                 // An artifact never comes out the same twice, so a batch buy is that many
                 // separately rolled pieces rather than one piece counted up.
                 var rolled = new ArrayList<GameItem>(buyCount);
@@ -136,9 +168,8 @@ public class HandlerBuyGoodsReq extends PacketHandler {
                 }
                 player.getInventory().addItems(rolled, ActionReason.Shop);
             } else {
-                var itemData = GameData.getItemDataMap().get(itemId);
                 if (itemData != null
-                        && itemData.isUseOnGain()
+                        && (itemData.isUseOnGain() || SpecialCosmeticShop.valid(itemData))
                         && NON_STORABLE_USE_ON_GAIN.contains(itemData.getMaterialType())) {
                     // A costume pack (shop 1052) is useOnGain MATERIAL_COSTUME, so the bag path
                     // below would refuse it, the purchase would "fail", and the player would walk

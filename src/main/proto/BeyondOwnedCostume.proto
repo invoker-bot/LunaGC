@@ -1,0 +1,10 @@
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "BeyondOwnedCostumeOuterClass";
+
+// Client type 85957; native ownership consumer keys its owned set with field 13.
+message BeyondOwnedCostume {
+  uint32 costume_id = 13;
+  uint32 expire_time = 5;
+  uint32 HOLBOHKBDEK = 12;
+}

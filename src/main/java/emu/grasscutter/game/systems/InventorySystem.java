@@ -104,7 +104,7 @@ public class InventorySystem extends BaseGameSystem {
         if (equip == null || !equip.getItemData().isEquip()) {
             return;
         }
-        if(isLocked == false){
+        if (isLocked == false) {
             equip.setFavourite(false);
         }
 
@@ -114,7 +114,6 @@ public class InventorySystem extends BaseGameSystem {
         player.sendPacket(new PacketStoreItemChangeNotify(equip));
         player.sendPacket(new PacketSetEquipLockStateRsp(equip));
     }
-
 
     public void upgradeRelic(
             Player player, long targetGuid, List<Long> foodRelicList, List<ItemParam> list) {
@@ -187,8 +186,7 @@ public class InventorySystem extends BaseGameSystem {
         payList.add(new ItemParamData(202, moraCost));
         if (!player.getInventory().payItems(payList)) {
             player.sendPacket(
-                    new PacketReliquaryUpgradeRsp(
-                            RetcodeOuterClass.Retcode.RET_ITEM_COUNT_NOT_ENOUGH_VALUE));
+                    new PacketReliquaryUpgradeRsp(RetcodeOuterClass.Retcode.RET_ITEM_COUNT_NOT_ENOUGH_VALUE));
             return;
         }
 
@@ -245,9 +243,12 @@ public class InventorySystem extends BaseGameSystem {
 
         // Avatar
         if (oldLevel != level) {
-            player.getBattlePassManager().triggerMission(
-                    "TRIGGER_ANY_RANK_LEVEL_RELIQUARY_UPGRADE_LEVEL",
-                    relic.getItemData().getRankLevel(), level - oldLevel);
+            player
+                    .getBattlePassManager()
+                    .triggerMission(
+                            "TRIGGER_ANY_RANK_LEVEL_RELIQUARY_UPGRADE_LEVEL",
+                            relic.getItemData().getRankLevel(),
+                            level - oldLevel);
             Avatar avatar =
                     relic.getEquipCharacter() > 0
                             ? player.getAvatars().getAvatarById(relic.getEquipCharacter())
@@ -920,14 +921,18 @@ public class InventorySystem extends BaseGameSystem {
             Grasscutter.getLogger()
                     .warn(
                             "Item use rejected: no inventory item with guid {} (uid {}).",
-                            itemGuid, player.getUid());
+                            itemGuid,
+                            player.getUid());
             return null;
         }
         if (item.getCount() < count) {
             Grasscutter.getLogger()
                     .warn(
                             "Item use rejected: item {} has count {} but {} were requested (uid {}).",
-                            item.getItemId(), item.getCount(), count, player.getUid());
+                            item.getItemId(),
+                            item.getCount(),
+                            count,
+                            player.getUid());
             return null;
         }
         ItemData itemData = item.getItemData();
@@ -935,7 +940,9 @@ public class InventorySystem extends BaseGameSystem {
             Grasscutter.getLogger()
                     .warn(
                             "Item use rejected: item {} (guid {}) has no ItemData (uid {}).",
-                            item.getItemId(), itemGuid, player.getUid());
+                            item.getItemId(),
+                            itemGuid,
+                            player.getUid());
             return null;
         }
 
@@ -962,6 +969,19 @@ public class InventorySystem extends BaseGameSystem {
     // Uses an item without checking the player's inventory.
     public synchronized boolean useItemDirect(ItemData itemData, UseItemParams params) {
         if (itemData == null) return false;
+
+        if (itemData.getMaterialType() == MaterialType.MATERIAL_WEAPON_SKIN) {
+            // Ley-line appearances have no useOp in the material table. Resolve the real skin
+            // through the appearance table instead of consuming an item that unlocks nothing.
+            var skin =
+                    GameData.getAvatarWeaponSkinDataMap().values().stream()
+                            .filter(s -> s.getItemId() == itemData.getId())
+                            .findFirst()
+                            .orElse(null);
+            if (skin == null) return false;
+            params.player.addWeaponSkin(skin.getId());
+            return true;
+        }
 
         // Ensure targeting conditions are satisfied
         val target = Optional.ofNullable(params.targetAvatar);
@@ -1060,13 +1080,14 @@ public class InventorySystem extends BaseGameSystem {
         }
         return used;
     }
+
     public void favouriteEquip(Player player, long itemId, boolean isFavourite) {
         GameItem equip = player.getInventory().getItemByGuid(itemId);
 
         if (equip == null) {
             return;
         }
-        if(isFavourite == true){
+        if (isFavourite == true) {
             equip.setLocked(true);
         }
         equip.setFavourite(isFavourite);

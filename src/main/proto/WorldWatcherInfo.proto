@@ -1,0 +1,12 @@
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "WorldWatcherInfoOuterClass";
+import "WorldWatcherProgress.proto";
+
+// Client type 66515, consumed by the Beyond handbook at 0x151c8533b.
+message WorldWatcherInfo {
+  uint32 group_id = 1;
+  uint32 reward_state = 2;
+  repeated WorldWatcherProgress watcher_progress_list = 3;
+  repeated uint32 finished_watcher_list = 4;
+}

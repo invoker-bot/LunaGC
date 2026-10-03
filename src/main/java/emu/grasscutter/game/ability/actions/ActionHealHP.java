@@ -19,6 +19,7 @@ public final class ActionHealHP extends AbilityActionHandler {
     @Override
     public boolean execute(
             Ability ability, AbilityModifierAction action, ByteString abilityData, GameEntity target) {
+        if (!conditionsPass(ability, action, target)) return true;
         var owner = ability.getOwner();
 
         if (owner instanceof EntityClientGadget ownerGadget) {
@@ -67,16 +68,6 @@ public final class ActionHealHP extends AbilityActionHandler {
         var amountByTargetMaxHPRatio = action.amountByTargetMaxHPRatio.get(properties, 0);
         var amountToRegenerate = action.amount.get(properties, 0);
 
-        if (action.amount.get(ability) != 0 &&
-            (amountByCasterMaxHPRatio != 0 ||
-            amountByCasterAttackRatio != 0 ||
-            amountByCasterCurrentHPRatio != 0 ||
-            amountByCasterDefRatio != 0 ||
-            amountByTargetCurrentHPRatio != 0 ||
-            amountByTargetMaxHPRatio != 0)) {
-            amountToRegenerate += action.amount.get(ability);
-        }
-
         amountToRegenerate +=
                 amountByCasterMaxHPRatio * owner.getFightProperty(FightProperty.FIGHT_PROP_MAX_HP);
         amountToRegenerate +=
@@ -93,7 +84,7 @@ public final class ActionHealHP extends AbilityActionHandler {
                             + target.getFightProperty(FightProperty.FIGHT_PROP_HEALED_ADD);
 
         amountToRegenerate +=
-                amountByTargetCurrentHPRatio * target.getFightProperty(FightProperty.FIGHT_PROP_MAX_HP);
+                amountByTargetCurrentHPRatio * target.getFightProperty(FightProperty.FIGHT_PROP_CUR_HP);
         amountToRegenerate +=
                 amountByTargetMaxHPRatio * target.getFightProperty(FightProperty.FIGHT_PROP_MAX_HP);
 
@@ -144,7 +135,7 @@ public final class ActionHealHP extends AbilityActionHandler {
 
         if (finalAmount > 0) {
             var healOwner = owner;
-            for (var mod : healOwner.getInstancedModifiers().values()) {
+            for (var mod : healOwner.getInstancedModifiersSnapshot()) {
                 var modData = mod.getModifierData();
                 var modAbility = mod.getAbility();
                 if (modData != null && modData.onHeal != null && modAbility != null) {

@@ -14,6 +14,8 @@ import emu.grasscutter.game.achievement.Achievements;
 import emu.grasscutter.game.activity.ActivityManager;
 import emu.grasscutter.game.avatar.*;
 import emu.grasscutter.game.battlepass.BattlePassManager;
+import emu.grasscutter.game.beyond.BeyondCloset;
+import emu.grasscutter.game.beyond.BeyondProgress;
 import emu.grasscutter.game.city.CityInfoData;
 import emu.grasscutter.game.entity.GameEntity;
 import emu.grasscutter.game.expedition.ExpeditionInfo;
@@ -108,6 +110,21 @@ public class Player implements PlayerHook, FieldFetch {
     @Getter private Set<Integer> flyCloakList;
     @Getter private Set<Integer> traceEffectList;
     @Getter private Set<Integer> costumeList;
+    private Set<Integer> weaponSkinList = new HashSet<>();
+
+    public synchronized Set<Integer> getWeaponSkinList() {
+        if (weaponSkinList == null) weaponSkinList = new HashSet<>();
+        return weaponSkinList;
+    }
+
+    public synchronized void addWeaponSkin(int id) {
+        if (!GameData.getAvatarWeaponSkinDataMap().containsKey(id)) return;
+        if (getWeaponSkinList().add(id)) {
+            sendPacket(new PacketAvatarWeaponSkinDataNotify(this));
+            save();
+        }
+    }
+
     @Getter private Set<Integer> personalLineList;
     @Getter @Setter private Set<Integer> rewardedLevels;
     @Getter @Setter private Set<Integer> homeRewardedLevels;
@@ -142,6 +159,19 @@ public class Player implements PlayerHook, FieldFetch {
      * makes the unlock survive a relog.
      */
     @Getter private Set<Integer> forcedFinishedQuests;
+
+    private BeyondProgress beyondProgress;
+    private BeyondCloset beyondCloset;
+
+    public synchronized BeyondCloset getBeyondCloset() {
+        if (beyondCloset == null) beyondCloset = new BeyondCloset();
+        return beyondCloset;
+    }
+
+    public synchronized BeyondProgress getBeyondProgress() {
+        if (beyondProgress == null) beyondProgress = new BeyondProgress();
+        return beyondProgress;
+    }
 
     /** Set the first time the opening cutscene plays, so it never plays twice. */
     @Getter @Setter private boolean playedFirstLoginCutscene;
@@ -605,6 +635,7 @@ public class Player implements PlayerHook, FieldFetch {
         this.setOrFetch(PlayerProperty.PROP_MAX_STAMINA, withQuesting ? 10000 : 24000);
         this.setOrFetch(PlayerProperty.PROP_DIVE_MAX_STAMINA, withQuesting ? 10000 : 0);
         this.setOrFetch(PlayerProperty.PROP_PLAYER_RESIN, 200);
+        this.setOrFetch(PlayerProperty.PROP_PLAYER_BEYOND_LEVEL, 1);
 
         this.setProperty(PlayerProperty.PROP_PHLOGISTON_ENABLE, 1);
 
@@ -1518,6 +1549,9 @@ public class Player implements PlayerHook, FieldFetch {
         session.send(new PacketStoreWeightLimitNotify());
         session.send(new PacketPlayerStoreNotify(this));
         session.send(new PacketAvatarDataNotify(this));
+        session.send(new PacketAvatarWeaponSkinDataNotify(this));
+
+        this.getServer().getShopSystem().sendProductPriceCatalog(session);
 
         this.getProgressManager().onPlayerLogin();
 
@@ -1535,6 +1569,8 @@ public class Player implements PlayerHook, FieldFetch {
             emu.grasscutter.game.quest.ForcedQuests.notify(this, this.forcedFinishedQuests);
         }
         session.send(new PacketBattlePassAllDataNotify(this));
+        session.send(new PacketWorldWatcherAllDataNotify(this));
+        session.send(new PacketBeyondCosmeticDataNotify(this));
         session.send(new PacketQuestListNotify(this));
         session.send(new PacketQuestGlobalVarNotify(this));
         session.send(new PacketCodexDataFullNotify(this));

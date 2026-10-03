@@ -19,7 +19,9 @@ public final class RecoveredProtoDescriptorTest {
         try (var files = Files.list(Path.of("src/main/proto"))) {
             for (var path : files.filter(p -> p.toString().endsWith(".proto")).toList()) {
                 var source = Files.readString(path);
-                if (!source.startsWith("// Recovered from ") && !source.startsWith("// 7.1 native ")) continue;
+                if (!source.startsWith("// Recovered from ")
+                        && !source.startsWith("// 7.1 ")
+                        && !source.startsWith("// Verified 7.1 ")) continue;
                 var match = OUTER_CLASS.matcher(source);
                 if (!match.find()) throw new IllegalStateException("Missing Java class in " + path);
                 var name = match.group(1);

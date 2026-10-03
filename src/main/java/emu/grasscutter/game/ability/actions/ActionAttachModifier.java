@@ -7,7 +7,6 @@ import emu.grasscutter.data.binout.AbilityModifier.AbilityModifierAction;
 import emu.grasscutter.game.ability.Ability;
 import emu.grasscutter.game.ability.AbilityModifierController;
 import emu.grasscutter.game.entity.GameEntity;
-import emu.grasscutter.game.props.FightProperty;
 
 @AbilityAction(AbilityModifierAction.Type.AttachModifier)
 public final class ActionAttachModifier extends AbilityActionHandler {
@@ -28,8 +27,9 @@ public final class ActionAttachModifier extends AbilityActionHandler {
 
         Grasscutter.getLogger().debug("[Ability] AttachModifier fallback target={}", action.target);
 
-        ability.getModifiers().put(action.modifierName,
-            new AbilityModifierController(ability, ability.getData(), modifierData));
+        if (!conditionsPass(ability, action, target)) return true;
+        ability.registerModifier(target,
+                new AbilityModifierController(ability, ability.getData(), modifierData));
         return true;
     }
 
@@ -38,34 +38,19 @@ public final class ActionAttachModifier extends AbilityActionHandler {
         var player = ability.getPlayerOwner();
         if (player == null) return false;
 
-        float hpFloor = 0.0f;
-        if (action.predicates != null) {
-            for (var pred : action.predicates) {
-                if (pred instanceof java.util.Map<?,?> map && "ByTargetHPRatio".equals(map.get("$type"))) {
-                    var key = (String) map.get("HPRatio");
-                    if (key != null) {
-                        float val = ability.getAbilitySpecials().getOrDefault(key, 0.0f);
-                        hpFloor = (val > 0f) ? val : 0.5f;
-                    }
-                    break;
-                }
-            }
-        }
-
         var team = new java.util.ArrayList<>(player.getTeamManager().getActiveTeam());
         var manager = ability.getManager();
         var seen = new java.util.HashSet<Integer>();
         for (var avatarEntity : team) {
             if (!seen.add(avatarEntity.getId())) continue;
-            if (hpFloor > 0f) {
-                float maxHp = avatarEntity.getFightProperty(FightProperty.FIGHT_PROP_MAX_HP);
-                float curHp = avatarEntity.getFightProperty(FightProperty.FIGHT_PROP_CUR_HP);
-                if (maxHp > 0f && curHp / maxHp <= hpFloor) continue;
-            }
-            for (var a : modifierData.onAdded) {
-                manager.executeAction(ability, a, abilityData, avatarEntity);
+            if (!conditionsPass(ability, action, avatarEntity)) continue;
+            ability.registerModifier(avatarEntity,
+                    new AbilityModifierController(ability, ability.getData(), modifierData));
+            if (modifierData.onAdded != null) for (var a : modifierData.onAdded) {
+                manager.executeActionNow(ability, a, abilityData, avatarEntity);
             }
         }
         return true;
     }
+
 }

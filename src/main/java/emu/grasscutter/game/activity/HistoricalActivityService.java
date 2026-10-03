@@ -94,7 +94,9 @@ public final class HistoricalActivityService {
             row.put(
                     "restorationNote",
                     event.getActivityId() == 5001
-                            ? "已接入场景、13 项任务、7.1 通知、整队匹配、个人树脂领奖及 " + titleCount + " 项结算称号；完整多人挑战与称号显示待实机验证"
+                            ? "活动入口要求冒险等阶达到 16 级，玩法解锁还需完成引导任务。已接入场景、13 项任务、7.1 通知、整队匹配、个人树脂领奖及 "
+                                    + titleCount
+                                    + " 项结算称号；完整多人挑战与称号显示待实机验证"
                             : event.getActivityId() == 5003
                                     ? "已加载 "
                                             + salesmanDays

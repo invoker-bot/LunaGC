@@ -1,6 +1,7 @@
 package emu.grasscutter.server.packet.send;
 
 import emu.grasscutter.Grasscutter;
+import emu.grasscutter.data.GameData;
 import emu.grasscutter.game.player.Player;
 import emu.grasscutter.game.shop.*;
 import emu.grasscutter.net.packet.*;
@@ -53,6 +54,7 @@ public class PacketGetShopRsp extends BasePacket {
                                 .setMinLevel(info.getMinLevel())
                                 .setMaxLevel(info.getMaxLevel())
                                 .setMcoin(info.getMcoin())
+                                .setBeyondMcoin(info.getBeyondMcoin())
                                 .setSingleLimit(info.getBuyLimit());
 
                 if (info.getCostItemList() != null) {
@@ -83,6 +85,14 @@ public class PacketGetShopRsp extends BasePacket {
                 } else {
                     player.addShopLimit(goods.getGoodsId(), 0, nextRefreshTime);
                     goods.setNextRefreshTime(nextRefreshTime);
+                }
+
+                var itemData = GameData.getItemDataMap().get(item.getId());
+                if (!SpecialCosmeticShop.kind(item.getId()).isEmpty()) {
+                    goods.setSingleLimit(1);
+                    if (SpecialCosmeticShop.owned(player, item.getId())) {
+                        goods.setBoughtNum(Math.max(1, goods.getBoughtNum()));
+                    }
                 }
 
                 goodsList.add(goods.build());

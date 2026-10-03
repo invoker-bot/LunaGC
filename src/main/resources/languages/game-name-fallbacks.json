@@ -1,0 +1,33 @@
+{
+  "sources": [
+    "https://ys.mihoyo.com/main/m/news/detail/166262",
+    "https://genshin.hoyoverse.com/m/ja/news/detail/166228",
+    "https://www.taptap.cn/moment/849250049824129943?group_id=201765"
+  ],
+  "entries": [
+    {"hash": 3992521194, "avatarId": 10000143, "sourceHash": 921623202},
+    {"hash": 3775698260, "itemId": 4143, "sourceHash": 921623202},
+    {"hash": 1692132714, "avatarId": 10000140, "sourceHash": 56864537},
+    {"hash": 4172378124, "itemId": 4140, "sourceHash": 56864537},
+    {
+      "hash": 4086029419, "itemId": 11522,
+      "names": {"CHS": "蝶变", "EN": "Beyond the Chrysalis", "JP": "蝶の羽化"}
+    },
+    {
+      "hash": 2677592067, "itemId": 14524,
+      "names": {"CHS": "漩流颂歌", "EN": "Hymn of the Maelstrom", "JP": "旋流の讃美歌"}
+    },
+    {
+      "hash": 1359826123, "itemId": 11437,
+      "names": {"CHS": "新枝", "EN": "New Bough", "JP": "新たなる枝"}
+    },
+    {
+      "hash": 2998374891, "itemId": 14437,
+      "names": {"CHS": "凝雪沉心", "EN": "Winter's Heavy Heart", "JP": "雪に沈む心"}
+    },
+    {
+      "hash": 3763051755, "itemId": 15437,
+      "names": {"CHS": "柔风游弦", "EN": "Breezeborne Refrain", "JP": "風に遊ぶ弦"}
+    }
+  ]
+}

@@ -265,6 +265,39 @@ class FreeStoreTest {
     }
 
     @Test
+    void beyondRechargeUsesItsOwnBalanceAndResourceProducts() throws Exception {
+        var store = store(new ShopCatalog(dir.resolve("shop.json")));
+        var player = new TestPlayer();
+        var p =
+                store.products().stream()
+                        .filter(i -> i.key().equals("beyond_crystals:10002"))
+                        .findFirst()
+                        .orElseThrow();
+        assertEquals(270, p.amount());
+        store.purchaseById(player, p.productId(), "beyond_crystals");
+        assertEquals(300, player.getProperty(BeyondCurrency.propertyForItem(231)));
+        assertEquals(0, player.getCrystals());
+        assertEquals(0, player.getPrimogems());
+        store.purchaseById(player, p.productId(), "beyond_crystals");
+        assertEquals(600, player.getProperty(BeyondCurrency.propertyForItem(231)));
+        var builder = emu.grasscutter.net.proto.ShopOuterClass.Shop.newBuilder().setShopType(100000);
+        store.addProducts(builder, player);
+        assertEquals(6, builder.getBeyondMcoinProductListCount());
+        assertEquals(0, builder.getMcoinProductListCount());
+        assertTrue(
+                builder.getBeyondMcoinProductListList().stream()
+                        .allMatch(i -> i.getProductId().contains("beyondgem")));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> store.purchaseById(player, p.productId(), "crystals"));
+        player.setProperty(BeyondCurrency.propertyForItem(231), Integer.MAX_VALUE);
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> store.purchaseById(player, p.productId(), "beyond_crystals"));
+        assertEquals(Integer.MAX_VALUE, player.getProperty(BeyondCurrency.propertyForItem(231)));
+    }
+
+    @Test
     void battlePassUnlockIsExplicitAndCannotBeRepeated() {
         var player = new TestPlayer();
         assertTrue(player.pass.unlockPaid(false));

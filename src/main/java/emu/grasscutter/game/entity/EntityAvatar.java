@@ -12,7 +12,6 @@ import emu.grasscutter.game.world.*;
 import emu.grasscutter.net.proto.AbilityControlBlockOuterClass.AbilityControlBlock;
 import emu.grasscutter.net.proto.AbilityEmbryoOuterClass.AbilityEmbryo;
 import emu.grasscutter.net.proto.AbilitySyncStateInfoOuterClass.AbilitySyncStateInfo;
-import emu.grasscutter.net.proto.AbilityAppliedAbilityOuterClass.AbilityAppliedAbility;
 import emu.grasscutter.net.proto.AnimatorParameterValueInfoPairOuterClass.AnimatorParameterValueInfoPair;
 import emu.grasscutter.net.proto.ChangeEnergyReasonOuterClass.ChangeEnergyReason;
 import emu.grasscutter.net.proto.ChangeHpReasonOuterClass.ChangeHpReason;
@@ -73,18 +72,20 @@ public class EntityAvatar extends GameEntity {
 
         this.checkIfDead();
     }
+
     public long getLastExecutionTime() {
         return this.lastExecutionTime;
     }
+
     @Override
-        public float getNyxValue() {
-            if (this.getGlobalAbilityValues().containsKey("NyxValue")) {
-                return this.getGlobalAbilityValues().get("NyxValue");
-            } else {
-                Grasscutter.getLogger().debug("NyxValue from entityavatar not found");
-                return 0f;
-            }
+    public float getNyxValue() {
+        if (this.getGlobalAbilityValues().containsKey("NyxValue")) {
+            return this.getGlobalAbilityValues().get("NyxValue");
+        } else {
+            Grasscutter.getLogger().debug("NyxValue from entityavatar not found");
+            return 0f;
         }
+    }
 
     public void setLastExecutionTime(long time) {
         this.lastExecutionTime = time;
@@ -148,31 +149,63 @@ public class EntityAvatar extends GameEntity {
             this.getScene().getWorld().getHost().getAbilityManager().addAbilityToEntity(this, data);
     }
 
-    @Override
-    public float heal(float amount, boolean mute) {
-
-        var currentHp = this.getFightProperty(FightProperty.FIGHT_PROP_CUR_HP);
-        if (currentHp <= 0) {
-            return 0f;
+    /**
+     * Restores a dead avatar before publishing its health and life state. Ordinary healing cannot
+     * revive.
+     */
+    public synchronized boolean revive(float amount) {
+        float maxHp = getFightProperty(FightProperty.FIGHT_PROP_MAX_HP);
+        if ((isAlive() && getFightProperty(FightProperty.FIGHT_PROP_CUR_HP) > 0f)
+                || !Float.isFinite(amount)
+                || amount <= 0f
+                || !Float.isFinite(maxHp)
+                || maxHp <= 0f) {
+            return false;
         }
 
-        if (currentHp > 0 && this.isDead()) {
-            this.setDead(false);
-            mute = false;
+        setFightProperty(FightProperty.FIGHT_PROP_CUR_HP, Math.min(maxHp, amount));
+        setDead(false);
+        killedType = PlayerDieType.PlayerDieType_PLAYER_DIE_NONE;
+        killedBy = 0;
+
+        getPlayer()
+                .sendPacket(new PacketAvatarFightPropUpdateNotify(avatar, FightProperty.FIGHT_PROP_CUR_HP));
+        var state = new PacketAvatarLifeStateChangeNotify(avatar);
+        if (getScene() != null) {
+            getScene()
+                    .broadcastPacket(
+                            new PacketEntityFightPropUpdateNotify(this, FightProperty.FIGHT_PROP_CUR_HP));
+            getWorld().broadcastPacket(state);
+        } else {
+            getPlayer().sendPacket(state);
+        }
+        return true;
+    }
+
+    @Override
+    public synchronized float heal(float amount, boolean mute) {
+
+        var currentHp = this.getFightProperty(FightProperty.FIGHT_PROP_CUR_HP);
+        if (!isAlive() || currentHp <= 0) {
+            return 0f;
         }
 
         float healed = super.heal(amount, mute);
         if (healed > 0f) {
-            getScene()
-                    .broadcastPacket(
-                            new PacketEntityFightPropChangeReasonNotify(
-                                    this,
-                                    FightProperty.FIGHT_PROP_CUR_HP,
-                                    healed,
-                                    mute
-                                            ? PropChangeReason.PropChangeReason_PROP_CHANGE_NONE
-                                            : PropChangeReason.PropChangeReason_PROP_CHANGE_ABILITY,
-                                    ChangeHpReason.ChangeHpReason_CHANGE_HP_SUB_ABILITY));
+            getPlayer()
+                    .sendPacket(
+                            new PacketAvatarFightPropUpdateNotify(avatar, FightProperty.FIGHT_PROP_CUR_HP));
+            if (getScene() != null)
+                getScene()
+                        .broadcastPacket(
+                                new PacketEntityFightPropChangeReasonNotify(
+                                        this,
+                                        FightProperty.FIGHT_PROP_CUR_HP,
+                                        healed,
+                                        mute
+                                                ? PropChangeReason.PropChangeReason_PROP_CHANGE_NONE
+                                                : PropChangeReason.PropChangeReason_PROP_CHANGE_ABILITY,
+                                        ChangeHpReason.ChangeHpReason_CHANGE_HP_ADD_ABILITY));
         }
 
         return healed;
@@ -182,7 +215,8 @@ public class EntityAvatar extends GameEntity {
     public float heal(float amount) {
         return this.heal(amount, false);
     }
-        public FightProperty GetEnergyProp(Avatar avatar) {
+
+    public FightProperty GetEnergyProp(Avatar avatar) {
         // A depot without an energy skill leaves energySkillData null - the element-less Traveler
         // has one - and this used to dereference it straight away.
         val energySkill = avatar.getSkillDepot().getEnergySkillData();
@@ -270,6 +304,7 @@ public class EntityAvatar extends GameEntity {
                         .setWearingFlycloakId(avatar.getFlyCloak())
                         .setCostumeId(avatar.getCostume())
                         .setTraceEffectId(avatar.getTraceEffect())
+                        .setWeaponSkinId(avatar.getWeaponSkin())
                         .setBornTime(avatar.getBornTime());
 
         for (GameItem item : avatar.getEquips().values()) {
@@ -290,8 +325,7 @@ public class EntityAvatar extends GameEntity {
                 EntityAuthorityInfo.newBuilder()
                         .setAbilityInfo(AbilitySyncStateInfo.newBuilder())
                         .setRendererChangedInfo(EntityRendererChangedInfo.newBuilder())
-                        .setAiInfo(
-                                SceneEntityAiInfo.newBuilder().setIsAiOpen(true))
+                        .setAiInfo(SceneEntityAiInfo.newBuilder().setIsAiOpen(true))
                         .setBornPos(Vector.newBuilder())
                         .build();
 
@@ -343,7 +377,8 @@ public class EntityAvatar extends GameEntity {
             }
         }
 
-        boolean inNatlan = this.getPlayer().getScene() != null && this.getPlayer().getScene().getId() == 101;
+        boolean inNatlan =
+                this.getPlayer().getScene() != null && this.getPlayer().getScene().getId() == 101;
         int phlogistonHash = Utils.abilityHash("DynamicAbility_Phlogiston");
         for (int id : GameConstants.defaultAbilityHashes()) {
             if (id == phlogistonHash && !inNatlan) continue;

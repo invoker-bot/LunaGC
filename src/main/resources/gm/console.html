@@ -248,18 +248,20 @@
       <h2>商城 <button id="shopRefresh" class="ghost">刷新</button></h2>
       <p class="eq-note">现金商品价格统一为 0。选择顶部在线玩家 UID 后，可直接领取月卡、纪行、原石或结晶。</p>
       <div class="row" style="margin-bottom:10px">
-        <label for="shopMode">商品目录</label><select id="shopMode"><option value="free">免费充值商品</option><option value="goods">普通商店商品</option></select>
+        <label for="shopMode">商品目录</label><select id="shopMode" aria-label="商品目录"></select>
+        <select id="shopSubTab" aria-label="兑换分类" hidden></select>
       </div>
+      <p id="shopCategoryNote" class="eq-note"></p>
       <p id="shopStatus" role="status" aria-live="polite" class="eq-note"></p>
-      <div id="freeProducts"></div>
-      <div id="shopGoods" hidden>
-        <p class="eq-note">默认商品来自资源与服务端配置。更改会保存，游戏内重新打开商店刷新。普通商品的摩拉、星尘等兑换价格可自行调整。</p>
         <div class="row" style="margin-bottom:10px">
           <input id="shopQ" placeholder="搜索物品名称、物品 ID 或商品编号" aria-label="搜索商城商品" style="flex:1;min-width:180px">
           <select id="shopType" aria-label="选择商店"><option value="">全部商店</option></select>
           <select id="shopFilter" aria-label="商品状态"><option value="all">全部状态</option><option value="enabled">已上架</option><option value="disabled">已下架</option><option value="modified">已修改</option></select>
           <button id="shopAdd">新增商品</button>
         </div>
+      <p id="shopCount" class="eq-note" aria-live="polite"></p>
+      <div id="freeProducts"></div>
+      <div id="shopGoods">
         <div class="pager" id="shopPagerTop"></div><div id="shopList"></div><div class="pager" id="shopPagerBottom"></div>
       </div>
     </div>
@@ -385,9 +387,10 @@
       <label>摩拉价格<input id="goodsMora" type="number" min="0" required></label>
       <label>原石价格<input id="goodsGems" type="number" min="0" required></label>
       <label>结晶价格<input id="goodsCrystals" type="number" min="0" required></label>
+      <label>事象凝核价格<input id="goodsBeyondCrystals" type="number" min="0" required></label>
       <label>每期限购<input id="goodsLimit" type="number" min="0" required></label>
-      <label>最低冒险等阶<input id="goodsMin" type="number" min="0" max="61" required></label>
-      <label>最高冒险等阶<input id="goodsMax" type="number" min="0" max="61" required></label>
+      <label><span id="goodsMinLabel">最低冒险等阶</span><input id="goodsMin" type="number" min="0" max="61" required></label>
+      <label><span id="goodsMaxLabel">最高冒险等阶</span><input id="goodsMax" type="number" min="0" max="61" required></label>
       <label>刷新方式<select id="goodsRefresh"><option value="NONE">不刷新</option><option value="SHOP_REFRESH_DAILY">每隔指定天数</option><option value="SHOP_REFRESH_WEEKLY">每隔指定周数（周一）</option><option value="SHOP_REFRESH_MONTHLY">每隔指定月数（1 日）</option></select></label>
       <label>刷新参数<input id="goodsRefreshParam" type="number" min="0" value="1" required></label>
     </div>
@@ -972,8 +975,63 @@ async function loadInbox(){
 $('mailInspect').onclick=()=>{mailOffset=0;loadInbox();};$('mailPrev').onclick=()=>{mailOffset=Math.max(0,mailOffset-50);loadInbox();};$('mailNext').onclick=()=>{mailOffset+=50;loadInbox();};
 
 // --- shop -------------------------------------------------------------
-let shopRows = [], freeProducts = [], editingGoods = null;
+let shopRows = [], freeProducts = [], shopTypes = [], editingGoods = null;
 const shopPage = {page:0, size:20};
+// Shop types and Paimon sub-tabs match ShopmallEntrance / ShopGoods resources.
+const SHOP_CATEGORIES = [
+  {id:"recommend",name:"推荐礼包",group:"商城",types:[900],kinds:["card"],addType:900,note:"推荐商品：空月祝福。推荐入口与礼包商城中的月卡共用同一商品和上架状态。"},
+  {id:"package",name:"礼包商城",group:"商城",types:[902],kinds:["card"],addType:902},
+  {id:"paimon",name:"尘辉兑换",group:"商城",types:[1001],kinds:[],addType:1001},
+  {id:"costume",name:"角色装扮",group:"商城",types:[1052],kinds:[],addType:1052},
+  {id:"special-appearance",name:"全部特殊外观",group:"商城",types:[902,1052,101000,102000,103000,104000,105000],kinds:[],cosmetics:true,addType:902,note:"开服以来资源中可解锁的衣装、风之翼、游迹、武器外观、名片及千星服饰。默认免费、永久限购一次；原活动结束不会使其下架。角色装扮在游戏装扮商店，其余提瓦特外观在礼包商城。"},
+  {id:"flycloak",name:"风之翼",group:"商城",types:[902],kinds:[],cosmeticKind:"flycloak",addType:902},
+  {id:"trace",name:"游迹",group:"商城",types:[902],kinds:[],cosmeticKind:"trace",addType:902},
+  {id:"weapon-skin",name:"武器外观",group:"商城",types:[902],kinds:[],cosmeticKind:"weaponSkin",addType:902},
+  {id:"namecard",name:"名片",group:"商城",types:[902],kinds:[],cosmeticKind:"namecard",addType:902},
+  {id:"crystals",name:"凝取结晶",group:"商城",types:[903],kinds:["crystals"],addType:903},
+  {id:"beyond-recommend",name:"推荐",group:"千星奇域",types:[104000],kinds:[],addType:104000},
+  {id:"beyond-costume",name:"服饰",group:"千星奇域",types:[101000],kinds:[],addType:101000},
+  {id:"beyond-face",name:"面部装饰",group:"千星奇域",types:[102000],kinds:[],addType:102000},
+  {id:"beyond-exchange",name:"兑换",group:"千星奇域",types:[103000],kinds:[],addType:103000},
+  {id:"beyond-crystals",name:"事象凝核",group:"千星奇域",types:[100000],kinds:["beyond_crystals"],addType:100000},
+  {id:"beyond-rerun",name:"复刻",group:"千星奇域",types:[105000],kinds:[],addType:105000},
+  {id:"pass",name:"纪行（大月卡）",group:"其他目录",types:[],kinds:["pass"],note:"珍珠纪行、珍珠之歌及升级商品。游戏内从纪行页面购买并领取奖励。"},
+  {id:"primogems",name:"原石直购（GM）",group:"其他目录",types:[],kinds:["primogems"],note:"GM 提供的原石直购入口，价格为 0。"},
+  {id:"other",name:"其他商店",group:"其他目录",kinds:[],addType:1004},
+  {id:"all",name:"全部商品",group:"其他目录",addType:902}
+];
+const MALL_TYPES = new Set(SHOP_CATEGORIES.flatMap(c=>c.types||[]));
+for(const group of ["商城","千星奇域","其他目录"]) {
+  const el=document.createElement("optgroup");el.label=group;
+  for(const c of SHOP_CATEGORIES.filter(c=>c.group===group))el.appendChild(new Option(c.name,c.id));
+  $("shopMode").appendChild(el);
+}
+function shopCategory() { return SHOP_CATEGORIES.find(c=>c.id===$("shopMode").value)||SHOP_CATEGORIES[0]; }
+function inShopCategory(row, category=shopCategory()) {
+  if(category.cosmetics)return !!row.cosmeticKind&&category.types.includes(row.shopType);
+  if(category.cosmeticKind)return row.cosmeticKind===category.cosmeticKind&&category.types.includes(row.shopType);
+  return category.id==="all" || (category.id==="other" ? !MALL_TYPES.has(row.shopType) : category.types.includes(row.shopType));
+}
+function shopStateMatches(row) {
+  const filter=$("shopFilter").value;
+  return filter==="all"||filter==="enabled"&&row.enabled||filter==="disabled"&&!row.enabled||filter==="modified"&&row.modified;
+}
+function selectedFreeProducts() {
+  const c=shopCategory(),q=$("shopQ").value.trim().toLowerCase();
+  return freeProducts.filter(r=>(c.id==="all"||c.kinds.includes(r.product.kind))&&shopStateMatches(r)&&
+    (!q||`${r.product.name} ${r.product.key} ${r.product.productId}`.toLowerCase().includes(q)));
+}
+function selectShopCategory() {
+  const c=shopCategory();shopPage.page=0;
+  $("shopCategoryNote").textContent=c.note||"更改商品会保存，游戏内重新打开商店即可刷新。兑换价格可在商品编辑中调整。";
+  $("shopSubTab").replaceChildren(new Option("全部兑换",""),new Option("星辉兑换","2"),new Option("星尘兑换","3"),new Option("原石购买","1"));
+  $("shopSubTab").hidden=c.id!=="paimon";
+  $("shopType").replaceChildren(new Option("全部商店",""));
+  for(const type of shopTypes.filter(t=>inShopCategory({shopType:t.id},c)))$("shopType").add(new Option(type.name+" · "+type.id,String(type.id)));
+  $("shopType").hidden=c.id!=="all"&&c.id!=="other";
+  $("shopAdd").hidden=!c.addType;
+  renderFreeProducts();renderShop();
+}
 function shopMessage(text, error=false) { $("shopStatus").textContent=text; $("shopStatus").style.color=error?"var(--err)":"var(--dim)"; }
 async function shopPost(path, payload) {
   const r=await api(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
@@ -985,11 +1043,11 @@ async function loadShop() {
   try {
     const [goods, products]=await Promise.all([api("/gm/api/shops"),api("/gm/api/store/products")]);
     if (!goods.ok || !products.ok) throw new Error("商城目录加载失败");
-    shopRows=goods.json.goods; freeProducts=products.json.products;
-    const selected=$("shopType").value; $("shopType").replaceChildren(new Option("全部商店",""));
-    for(const shop of goods.json.shops) $("shopType").add(new Option(shop.name+" · "+shop.id,String(shop.id)));
-    $("shopType").value=selected;
-    renderShop(); renderFreeProducts();
+    shopRows=goods.json.goods; freeProducts=products.json.products;shopTypes=goods.json.shops;
+    const selected=$("shopType").value,subTab=$("shopSubTab").value,page=shopPage.page;
+    selectShopCategory();
+    $("shopType").value=selected;$("shopSubTab").value=subTab;shopPage.page=page;
+    renderFreeProducts();renderShop();
   } catch(e) { shopMessage(e.message,true); }
   finally { $("shopRefresh").disabled=false; }
 }
@@ -1000,13 +1058,15 @@ function shopButton(text, action) {
 }
 function renderFreeProducts() {
   $("freeProducts").replaceChildren();
-  for (const row of freeProducts) {
+  const rows=selectedFreeProducts();$("freeProducts").hidden=!rows.length;
+  for (const row of rows) {
     const p=row.product, el=document.createElement("div"); el.className="activity-card";
     const name=document.createElement("h3"); name.textContent=p.name+" · 价格 0"; el.appendChild(name);
     const desc=document.createElement("p"); desc.className="eq-note";
     desc.textContent=p.kind==="card" ? `${p.days} 天 · 立即 ${p.amount} 结晶 · 每日 ${p.dailyAmount} 原石 · 最多 ${p.maxDays} 天` :
       p.kind==="crystals" ? `基础 ${p.amount} 结晶 · 首次额外 ${p.firstBonus} · 后续额外 ${p.bonus}` :
-      p.kind==="pass" ? "解锁本期纪行。珍珠之歌额外奖励与等级来自当前资源；同一档位不可重复领取。" : `立即获得 ${p.amount} 原石`;
+      p.kind==="beyond_crystals" ? `基础 ${p.amount} 事象凝核 · 首次额外 ${p.firstBonus} · 后续额外 ${p.bonus}` :
+      p.kind==="pass" ? "游戏中的入口为「纪行」，冒险等阶 20 开放。GM 可直接解锁本期纪行；珍珠之歌额外奖励与等级来自当前资源，同一档位不可重复领取。" : `立即获得 ${p.amount} 原石`;
     el.appendChild(desc);
     const actions=document.createElement("div"); actions.className="row";
     const status=document.createElement("span"); status.className="badge";status.textContent=row.enabled?"已上架":"已下架";actions.appendChild(status);
@@ -1014,7 +1074,7 @@ function renderFreeProducts() {
     const buy=shopButton("免费购买",async()=>{
       const target=Number(targetOf());if(!Number.isSafeInteger(target)||target<=0)throw new Error("请先填写顶部目标 UID，或选择在线玩家。");
       const result=await shopPost("/gm/api/store/purchase",{target,key:p.key,receipt:receipt()});
-      shopMessage(result.message+` 月卡剩余 ${result.moonCardDays} 天 · 原石 ${result.primogems} · 结晶 ${result.crystals} · 纪行等级 ${result.battlePassLevel}`);
+      shopMessage(result.message+(p.kind==="beyond_crystals" ? ` · 事象凝核 ${result.beyondCrystals}` : ` 月卡剩余 ${result.moonCardDays} 天 · 原石 ${result.primogems} · 结晶 ${result.crystals} · 纪行等级 ${result.battlePassLevel}`));
       out(result.message,"ok");
     });buy.disabled=!row.enabled;actions.appendChild(buy);
     actions.appendChild(shopButton(row.enabled?"下架":"上架",async()=>{
@@ -1023,17 +1083,28 @@ function renderFreeProducts() {
   }
 }
 function renderShop() {
-  const q=$("shopQ").value.trim().toLowerCase(), type=Number($("shopType").value), filter=$("shopFilter").value;
-  const rows=shopRows.filter(r=>(!type||r.shopType===type)&&(!q||`${r.name} ${r.goods.goodsId} ${r.goods.goodsItem.id}`.toLowerCase().includes(q))&&
-    (filter==="all"||filter==="enabled"&&r.enabled||filter==="disabled"&&!r.enabled||filter==="modified"&&r.modified));
+  const q=$("shopQ").value.trim().toLowerCase(), type=Number($("shopType").value), c=shopCategory(),subTab=Number($("shopSubTab").value);
+  const rows=shopRows.filter(r=>inShopCategory(r,c)&&(!type||r.shopType===type)&&
+    (c.id!=="paimon"||!subTab||r.goods.secondarySheetId===subTab)&&
+    (!q||`${r.name} ${r.goods.goodsId} ${r.goods.goodsItem.id}`.toLowerCase().includes(q))&&shopStateMatches(r));
+  const total=rows.length+selectedFreeProducts().length;
+  $("shopCount").textContent=`${c.group} · ${c.name} · 共 ${total} 件商品`;
+  $("shopGoods").hidden=!rows.length&&total>0;
   const list=$("shopList");list.replaceChildren();
   for(const r of pageRows(rows,shopPage,"shop",renderShop)) {
     const el=document.createElement("div");el.className="activity-card";
     const title=document.createElement("h3");title.textContent=`${r.name||"未命名物品"} × ${r.goods.goodsItem.count}`;el.appendChild(title);
     const detail=document.createElement("p");detail.className="eq-note";
-    const g=r.goods,costs=[g.scoin?g.scoin+" 摩拉":"",g.hcoin?g.hcoin+" 原石":"",g.mcoin?g.mcoin+" 结晶":"",...(g.costItemList||[]).map(c=>`${c.id} × ${c.count}`)].filter(Boolean);
-    detail.textContent=`${r.shopName} · 商品 ${g.goodsId} · 物品 ${g.goodsItem.id} · ${costs.join(" + ")||"免费"} · 限购 ${g.buyLimit||"不限"} · ${r.enabled?"已上架":"已下架"}${r.custom?" · 自定义":r.modified?" · 已修改":" · 默认"}`;
+    const g=r.goods,costs=[g.scoin?g.scoin+" 摩拉":"",g.hcoin?g.hcoin+" 原石":"",g.mcoin?g.mcoin+" 结晶":"",g.beyondMcoin?g.beyondMcoin+" 事象凝核":"",...(g.costItemList||[]).map(c=>`${c.id} × ${c.count}`)].filter(Boolean);
+    const levelName=r.shopType>=100000&&r.shopType<=105000?"奇域等级":"冒险等阶";
+    detail.textContent=`${r.shopName} · 商品 ${g.goodsId} · 物品 ${g.goodsItem.id} · ${costs.join(" + ")||"免费"} · 限购 ${g.buyLimit||"不限"} · ${levelName} ${g.minLevel||0}–${g.maxLevel||61} · ${r.enabled?"已上架":"已下架"}${r.custom?" · 自定义":r.modified?" · 已修改":" · 默认"}`;
     el.appendChild(detail);const actions=document.createElement("div");actions.className="row";
+    if(r.cosmeticKind) {
+      const buy=shopButton("免费解锁",async()=>{
+        const target=Number(targetOf());if(!Number.isSafeInteger(target)||target<=0)throw new Error("请先填写顶部目标 UID，或选择在线玩家。");
+        const result=await shopPost("/gm/api/shops/purchase",{target,shopType:r.shopType,goodsId:g.goodsId});shopMessage(result.message);out(result.message,"ok");
+      });buy.disabled=!r.enabled||costs.length>0;actions.appendChild(buy);
+    }
     actions.appendChild(shopButton("编辑",()=>openShopEditor(r)));
     actions.appendChild(shopButton(r.enabled?"下架":"上架",async()=>{const result=await shopPost("/gm/api/shops",{shopType:r.shopType,goodsId:g.goodsId,action:r.enabled?"disable":"enable"});shopMessage(result.message);await loadShop();}));
     if(r.modified)actions.appendChild(shopButton(r.custom?"删除自定义商品":"恢复默认",async()=>{const result=await shopPost("/gm/api/shops",{shopType:r.shopType,goodsId:g.goodsId,action:"reset"});shopMessage(result.message);await loadShop();}));
@@ -1044,15 +1115,24 @@ function renderShop() {
 function openShopEditor(row) {
   editingGoods=row?structuredClone(row.goods):{goodsId:0,goodsItem:{id:201,count:60},scoin:0,hcoin:0,mcoin:0,buyLimit:0,minLevel:0,maxLevel:61,costItemList:[],beginTime:0,endTime:1924992000,refreshType:"NONE",shopRefreshParam:0};
   const g=editingGoods;$("shopTitle").textContent=row?"编辑商品 · "+(row.name||g.goodsItem.id):"新增商品";
-  $("goodsShop").value=row?row.shopType:Number($("shopType").value)||902;$("goodsShop").readOnly=!!row;
-  for(const [id,value] of Object.entries({goodsId:g.goodsId,goodsItem:g.goodsItem.id,goodsCount:g.goodsItem.count,goodsMora:g.scoin,goodsGems:g.hcoin,goodsCrystals:g.mcoin,goodsLimit:g.buyLimit,goodsMin:g.minLevel,goodsMax:g.maxLevel,goodsRefresh:g.refreshType||"NONE",goodsRefreshParam:g.shopRefreshParam||1}))$(id).value=value;
+  $("goodsShop").value=row?row.shopType:Number($("shopType").value)||shopCategory().addType||902;$("goodsShop").readOnly=!!row;
+  if(!row&&shopCategory().id==="paimon")g.secondarySheetId=Number($("shopSubTab").value)||1;
+  for(const [id,value] of Object.entries({goodsId:g.goodsId,goodsItem:g.goodsItem.id,goodsCount:g.goodsItem.count,goodsMora:g.scoin,goodsGems:g.hcoin,goodsCrystals:g.mcoin,goodsBeyondCrystals:g.beyondMcoin||0,goodsLimit:g.buyLimit,goodsMin:g.minLevel,goodsMax:g.maxLevel,goodsRefresh:g.refreshType||"NONE",goodsRefreshParam:g.shopRefreshParam||1}))$(id).value=value;
+  updateGoodsLevelInputs();
   $("goodsCosts").value=JSON.stringify(g.costItemList||[],null,2);$("goodsStatus").textContent="";$("shopDialog").showModal();
 }
+function updateGoodsLevelInputs() {
+  const type=Number($("goodsShop").value),beyond=type>=100000&&type<=105000;
+  $("goodsMin").max=$("goodsMax").max="99";
+  $("goodsMinLabel").textContent=beyond?"最低奇域等级":"最低冒险等阶";
+  $("goodsMaxLabel").textContent=beyond?"最高奇域等级":"最高冒险等阶";
+}
+$("goodsShop").oninput=updateGoodsLevelInputs;
 $("shopForm").onsubmit=async e=>{
   e.preventDefault();$("goodsSave").disabled=true;
   try {
     const g=structuredClone(editingGoods);g.goodsItem={id:Number($("goodsItem").value),count:Number($("goodsCount").value)};
-    for(const [key,id] of Object.entries({scoin:"goodsMora",hcoin:"goodsGems",mcoin:"goodsCrystals",buyLimit:"goodsLimit",minLevel:"goodsMin",maxLevel:"goodsMax",shopRefreshParam:"goodsRefreshParam"}))g[key]=Number($(id).value);
+    for(const [key,id] of Object.entries({scoin:"goodsMora",hcoin:"goodsGems",mcoin:"goodsCrystals",beyondMcoin:"goodsBeyondCrystals",buyLimit:"goodsLimit",minLevel:"goodsMin",maxLevel:"goodsMax",shopRefreshParam:"goodsRefreshParam"}))g[key]=Number($(id).value);
     g.refreshType=$("goodsRefresh").value;g.costItemList=JSON.parse($("goodsCosts").value);
     if(!Array.isArray(g.costItemList))throw new Error("兑换材料应为 JSON 数组。");
     const result=await shopPost("/gm/api/shops",{shopType:Number($("goodsShop").value),goodsId:g.goodsId,action:"save",goods:g});
@@ -1060,8 +1140,8 @@ $("shopForm").onsubmit=async e=>{
   }catch(e){$("goodsStatus").textContent=e.message;}finally{$("goodsSave").disabled=false;}
 };
 $("shopClose").onclick=()=>$("shopDialog").close();$("shopAdd").onclick=()=>openShopEditor(null);$("shopRefresh").onclick=loadShop;
-$("shopMode").onchange=()=>{$("freeProducts").hidden=$("shopMode").value!=="free";$("shopGoods").hidden=$("shopMode").value!=="goods";};
-for(const id of ["shopQ","shopType","shopFilter"])$(id).addEventListener(id==="shopQ"?"input":"change",()=>{shopPage.page=0;renderShop();});
+$("shopMode").onchange=selectShopCategory;
+for(const id of ["shopQ","shopType","shopFilter","shopSubTab"])$(id).addEventListener(id==="shopQ"?"input":"change",()=>{shopPage.page=0;renderFreeProducts();renderShop();});
 
 // --- banners ----------------------------------------------------------
 const BANNER_TYPES = {

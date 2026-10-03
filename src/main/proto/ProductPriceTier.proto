@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "ProductPriceTierOuterClass";
+
+// 7.1 client type 45455: writer 0x152404430, tags 0x42 and 0x7a.
+message ProductPriceTier {
+  string product_id = 8;
+  string price_tier = 15;
+}

@@ -21,7 +21,7 @@ import lombok.EqualsAndHashCode;
 public final class Language {
     private static final Map<String, Language> cachedLanguages = new ConcurrentHashMap<>();
     // Bumped so the caches written before names were filled in are thrown away once.
-    private static final int TEXTMAP_CACHE_VERSION = 0x9CCACE08;
+    private static final int TEXTMAP_CACHE_VERSION = 0x9CCACE0A;
     private static final Path TEXTMAP_CACHE_PATH = getCachePath("TextMap/TextMapCache.bin");
     private static boolean scannedTextmaps =
             false; // Ensure that we don't infinitely rescan on cache misses that don't exist
@@ -385,6 +385,8 @@ public final class Language {
                             usedHashes.add((int) v.getDescTextMapHash());
                         });
         GameData.getItemDataMap().forEach((k, v) -> usedHashes.add((int) v.getNameTextMapHash()));
+        GameData.getBydMaterialDataMap()
+                .forEach((k, v) -> usedHashes.add((int) v.getNameTextMapHash()));
         GameData.getHomeWorldBgmDataMap()
                 .forEach((k, v) -> usedHashes.add((int) v.getBgmNameTextMapHash()));
         GameData.getMonsterDataMap().forEach((k, v) -> usedHashes.add((int) v.getNameTextMapHash()));

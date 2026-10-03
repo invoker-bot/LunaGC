@@ -18,10 +18,17 @@ final class GmShop {
 
     private static String shopName(int type) {
         return switch (type) {
+            case 900 -> "推荐礼包";
             case 902 -> "礼包商城";
             case 903 -> "创世结晶";
-            case 1001 -> "派蒙兑换";
+            case 1001 -> "尘辉兑换";
             case 1052 -> "角色装扮";
+            case 100000 -> "千星 · 事象凝核";
+            case 101000 -> "千星 · 服饰";
+            case 102000 -> "千星 · 面部装饰";
+            case 103000 -> "千星 · 兑换";
+            case 104000 -> "千星 · 推荐";
+            case 105000 -> "千星 · 复刻";
             default -> "商店 " + type;
         };
     }
@@ -36,10 +43,20 @@ final class GmShop {
             if (item != null) goods.setGoodsItem(item);
             var data = item == null ? null : GameData.getItemDataMap().get(item.getId());
             String name = data == null ? "资源中未找到的物品" : GmHandler.nameOf(names, data);
+            if (data == null && item != null) {
+                var beyond = GameData.getBydMaterialDataMap().get(item.getId());
+                if (beyond != null) {
+                    var text = names.get((int) beyond.getNameTextMapHash());
+                    name = text == null ? null : text.get("CHS");
+                    if (name == null || name.isBlank() || name.startsWith("[N/A]"))
+                        name = "名称待确认（千星物品 " + item.getId() + "）";
+                }
+            }
             var row = new LinkedHashMap<String, Object>();
             row.put("shopType", e.shopType());
             row.put("shopName", shopName(e.shopType()));
             row.put("name", name);
+            row.put("cosmeticKind", item == null ? "" : SpecialCosmeticShop.kind(item.getId()));
             row.put("enabled", e.enabled());
             row.put("custom", e.custom());
             row.put("modified", e.modified());
@@ -118,9 +135,23 @@ final class GmShop {
                         player.getPrimogems(),
                         "crystals",
                         player.getCrystals(),
+                        "beyondCrystals",
+                        player.getProperty(BeyondCurrency.propertyForItem(231)),
                         "battlePassPaid",
                         pass != null && pass.isPaid(),
                         "battlePassLevel",
                         pass == null ? 0 : pass.getLevel()));
+    }
+
+    static void purchaseCosmetic(Context ctx) {
+        var request = JsonUtils.decode(ctx.body(), JsonObject.class);
+        var player = Grasscutter.getGameServer().getPlayerByUid(request.get("target").getAsInt());
+        if (player == null || !player.isOnline()) throw new IllegalArgumentException("请先选择顶部在线玩家 UID。");
+        var goods =
+                system().getShopData().getOrDefault(request.get("shopType").getAsInt(), List.of()).stream()
+                        .filter(g -> g.getGoodsId() == request.get("goodsId").getAsInt())
+                        .findFirst()
+                        .orElse(null);
+        ctx.json(Map.of("retcode", 0, "message", SpecialCosmeticShop.purchaseFree(player, goods)));
     }
 }

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "PlayerRechargeDataNotifyOuterClass";
+
+import "ProductPriceTier.proto";
+
+// 7.1 client type 19066, opcode 9913: reader 0x148293360.
+message PlayerRechargeDataNotify {
+  uint32 product_price_tier_version = 14;
+  repeated ProductPriceTier product_price_tier_list = 15;
+}

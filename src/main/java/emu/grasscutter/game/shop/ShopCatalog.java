@@ -117,7 +117,7 @@ public final class ShopCatalog {
                     if (goods == null) throw new IllegalArgumentException("缺少商品内容。");
                     goods = copy(goods);
                     goods.setGoodsId(id);
-                    validate(goods);
+                    validate(shopType, goods);
                     if (current == null && entries.stream().anyMatch(e -> e.goods.getGoodsId() == id))
                         throw new IllegalArgumentException("商品编号已在其他商店使用。");
                     if (id >= ArtifactShop.GOODS_ID_BASE
@@ -138,19 +138,26 @@ public final class ShopCatalog {
         return id;
     }
 
-    private static void validate(ShopInfo g) {
+    private static void validate(int shopType, ShopInfo g) {
+        boolean beyondShop = shopType >= 100000 && shopType <= 105000;
+        // Ordinary resource rows also use 99 as their upper bound. Preserve it when
+        // editing the minimum rather than rejecting otherwise unchanged goods.
+        int maximumLevel = 99;
         if (g.getGoodsItem() == null
-                || !GameData.getItemDataMap().containsKey(g.getGoodsItem().getId()))
-            throw new IllegalArgumentException("物品 ID 不在当前资源中。");
+                || (!GameData.getItemDataMap().containsKey(g.getGoodsItem().getId())
+                        && emu.grasscutter.game.beyond.BeyondCloset.resolveCostumes(g.getGoodsItem().getId())
+                                .isEmpty())) throw new IllegalArgumentException("物品 ID 不在当前资源中。");
         if (g.getGoodsItem().getCount() < 1
                 || g.getGoodsItem().getCount() > 1_000_000
                 || g.getScoin() < 0
                 || g.getHcoin() < 0
                 || g.getMcoin() < 0
+                || g.getBeyondMcoin() < 0
+                || (!beyondShop && g.getBeyondMcoin() > 0)
                 || g.getBuyLimit() < 0
                 || g.getMinLevel() < 0
                 || g.getMaxLevel() < g.getMinLevel()
-                || g.getMaxLevel() > 61
+                || g.getMaxLevel() > maximumLevel
                 || g.getBeginTime() < 0
                 || g.getEndTime() <= g.getBeginTime())
             throw new IllegalArgumentException("数量、价格、限购、等级或时间范围无效。");

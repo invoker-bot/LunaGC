@@ -13,15 +13,15 @@ import emu.grasscutter.data.excels.activity.ActivityCondExcelConfigData;
 import emu.grasscutter.data.excels.activity.ActivityData;
 import emu.grasscutter.data.excels.activity.ActivityShopData;
 import emu.grasscutter.data.excels.activity.ActivityWatcherData;
+import emu.grasscutter.data.excels.activity.AsterLittleData;
+import emu.grasscutter.data.excels.activity.AsterMissionData;
+import emu.grasscutter.data.excels.activity.AsterPreviewData;
+import emu.grasscutter.data.excels.activity.AsterStageData;
 import emu.grasscutter.data.excels.activity.MpPlayGroupData;
 import emu.grasscutter.data.excels.activity.MpPlayMatchData;
 import emu.grasscutter.data.excels.activity.MpPlayWatcherData;
-import emu.grasscutter.data.excels.activity.SalesmanData;
 import emu.grasscutter.data.excels.activity.SalesmanDailyData;
-import emu.grasscutter.data.excels.activity.AsterLittleData;
-import emu.grasscutter.data.excels.activity.AsterMissionData;
-import emu.grasscutter.data.excels.activity.AsterStageData;
-import emu.grasscutter.data.excels.activity.AsterPreviewData;
+import emu.grasscutter.data.excels.activity.SalesmanData;
 import emu.grasscutter.data.excels.avatar.*;
 import emu.grasscutter.data.excels.codex.*;
 import emu.grasscutter.data.excels.dungeon.*;
@@ -64,6 +64,26 @@ import lombok.*;
 
 @SuppressWarnings({"unused", "MismatchedQueryAndUpdateOfCollection"})
 public final class GameData {
+    @Getter
+    private static final Int2ObjectMap<AvatarWeaponSkinData> avatarWeaponSkinDataMap =
+            new Int2ObjectOpenHashMap<>();
+
+    @Getter
+    private static final Int2ObjectMap<BydMaterialData> bydMaterialDataMap =
+            new Int2ObjectOpenHashMap<>();
+
+    @Getter
+    private static final Int2ObjectMap<BeyondCostumeData> beyondCostumeDataMap =
+            new Int2ObjectOpenHashMap<>();
+
+    @Getter
+    private static final Int2ObjectMap<BeyondHandbookData> beyondHandbookDataMap =
+            new Int2ObjectOpenHashMap<>();
+
+    @Getter
+    private static final Int2ObjectMap<BeyondHandbookWatcherData> beyondHandbookWatcherDataMap =
+            new Int2ObjectOpenHashMap<>();
+
     @Getter private static final Map<String, AbilityData> abilityDataMap = new HashMap<>();
 
     @Getter
@@ -79,8 +99,11 @@ public final class GameData {
 
     @Getter private static final Map<String, List<TalentData>> talents = new HashMap<>();
     @Getter private static final Map<String, ConfigEntityAvatar> avatarConfigData = new HashMap<>();
+
     @Getter
-    private static final Int2ObjectMap<AvatarTraceEffectData> avatarTraceEffectDataMap = new Int2ObjectLinkedOpenHashMap<AvatarTraceEffectData>();
+    private static final Int2ObjectMap<AvatarTraceEffectData> avatarTraceEffectDataMap =
+            new Int2ObjectLinkedOpenHashMap<AvatarTraceEffectData>();
+
     @Getter private static final Map<String, ConfigEntityGadget> gadgetConfigData = new HashMap<>();
     @Getter private static final Map<String, ConfigEntityMonster> monsterConfigData = new HashMap<>();
 
@@ -101,12 +124,12 @@ public final class GameData {
             new Int2ObjectOpenHashMap<>();
 
     @Getter
-    private static final Int2ObjectMap<emu.grasscutter.data.excels.DailyTaskLevelData> dailyTaskLevelDataMap =
-            new Int2ObjectOpenHashMap<>();
+    private static final Int2ObjectMap<emu.grasscutter.data.excels.DailyTaskLevelData>
+            dailyTaskLevelDataMap = new Int2ObjectOpenHashMap<>();
 
     @Getter
-    private static final Int2ObjectMap<emu.grasscutter.data.excels.DailyTaskRewardData> dailyTaskRewardDataMap =
-            new Int2ObjectOpenHashMap<>();
+    private static final Int2ObjectMap<emu.grasscutter.data.excels.DailyTaskRewardData>
+            dailyTaskRewardDataMap = new Int2ObjectOpenHashMap<>();
 
     @Getter
     private static final Int2ObjectMap<DungeonPassConfigData> dungeonPassConfigDataMap =
@@ -134,17 +157,39 @@ public final class GameData {
     private static final Int2ObjectMap<ActivityData> activityDataMap = new Int2ObjectOpenHashMap<>();
 
     @Getter
-    private static final Int2ObjectMap<MpPlayGroupData> mpPlayGroupDataMap = new Int2ObjectOpenHashMap<>();
+    private static final Int2ObjectMap<MpPlayGroupData> mpPlayGroupDataMap =
+            new Int2ObjectOpenHashMap<>();
 
     @Getter
-    private static final Int2ObjectMap<MpPlayMatchData> mpPlayMatchDataMap = new Int2ObjectOpenHashMap<>();
-    @Getter private static final Int2ObjectMap<MpPlayWatcherData> mpPlayWatcherDataMap = new Int2ObjectOpenHashMap<>();
-    @Getter private static final Int2ObjectMap<SalesmanData> salesmanDataMap = new Int2ObjectOpenHashMap<>();
-    @Getter private static final Int2ObjectMap<SalesmanDailyData> salesmanDailyDataMap = new Int2ObjectOpenHashMap<>();
-    @Getter private static final Int2ObjectMap<AsterLittleData> asterLittleDataMap = new Int2ObjectOpenHashMap<>();
-    @Getter private static final Int2ObjectMap<AsterMissionData> asterMissionDataMap = new Int2ObjectOpenHashMap<>();
-    @Getter private static final Int2ObjectMap<AsterStageData> asterStageDataMap = new Int2ObjectOpenHashMap<>();
-    @Getter private static final Int2ObjectMap<AsterPreviewData> asterPreviewDataMap = new Int2ObjectOpenHashMap<>();
+    private static final Int2ObjectMap<MpPlayMatchData> mpPlayMatchDataMap =
+            new Int2ObjectOpenHashMap<>();
+
+    @Getter
+    private static final Int2ObjectMap<MpPlayWatcherData> mpPlayWatcherDataMap =
+            new Int2ObjectOpenHashMap<>();
+
+    @Getter
+    private static final Int2ObjectMap<SalesmanData> salesmanDataMap = new Int2ObjectOpenHashMap<>();
+
+    @Getter
+    private static final Int2ObjectMap<SalesmanDailyData> salesmanDailyDataMap =
+            new Int2ObjectOpenHashMap<>();
+
+    @Getter
+    private static final Int2ObjectMap<AsterLittleData> asterLittleDataMap =
+            new Int2ObjectOpenHashMap<>();
+
+    @Getter
+    private static final Int2ObjectMap<AsterMissionData> asterMissionDataMap =
+            new Int2ObjectOpenHashMap<>();
+
+    @Getter
+    private static final Int2ObjectMap<AsterStageData> asterStageDataMap =
+            new Int2ObjectOpenHashMap<>();
+
+    @Getter
+    private static final Int2ObjectMap<AsterPreviewData> asterPreviewDataMap =
+            new Int2ObjectOpenHashMap<>();
 
     @Getter
     private static final Int2ObjectMap<ActivityShopData> activityShopDataMap =
@@ -410,8 +455,7 @@ public final class GameData {
     @Getter
     private static final Map<String, List<AbilityTalentVar>> varNameToTalentVars = new HashMap<>();
 
-    @Getter
-    private static final Map<String, Integer> openConfigToProudSkillGroup = new HashMap<>();
+    @Getter private static final Map<String, Integer> openConfigToProudSkillGroup = new HashMap<>();
 
     public record AbilityTalentVar(String openConfigName, String varName, int paramIndex) {}
 
@@ -493,8 +537,7 @@ public final class GameData {
             new Int2ObjectOpenHashMap<>();
 
     @Getter
-    private static final Int2ObjectMap<VehicleData> vehicleDataMap =
-            new Int2ObjectOpenHashMap<>();
+    private static final Int2ObjectMap<VehicleData> vehicleDataMap = new Int2ObjectOpenHashMap<>();
 
     @Getter
     private static final Int2ObjectMap<WeaponCurveData> weaponCurveDataMap =
@@ -540,7 +583,9 @@ public final class GameData {
             new Int2ObjectOpenHashMap<>();
     private static final Int2ObjectMap<ShopGoodsData> shopGoodsDataMap =
             new Int2ObjectOpenHashMap<>();
-    @Getter private static final Int2ObjectMap<ShopRotateData> shopRotateDataMap =
+
+    @Getter
+    private static final Int2ObjectMap<ShopRotateData> shopRotateDataMap =
             new Int2ObjectOpenHashMap<>();
 
     // The following are accessed via getMapByResourceDef, and will show as unused

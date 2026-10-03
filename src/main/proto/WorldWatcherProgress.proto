@@ -1,0 +1,9 @@
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "WorldWatcherProgressOuterClass";
+
+// Client type 34405: ID at 0x1c, progress at 0x18.
+message WorldWatcherProgress {
+  uint32 watcher_id = 1;
+  uint32 progress = 2;
+}

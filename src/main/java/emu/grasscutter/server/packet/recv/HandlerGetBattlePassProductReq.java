@@ -10,6 +10,7 @@ public class HandlerGetBattlePassProductReq extends PacketHandler {
     @Override
     public void handle(GameSession session, byte[] header, byte[] payload) throws Exception {
         int type = GetBattlePassProductReq.parseFrom(payload).getPlayType();
+        session.getServer().getShopSystem().sendProductPriceCatalog(session);
         var product = session.getServer().getShopSystem().getFreeStore().productForPlayType(type);
         var response = GetBattlePassProductRsp.newBuilder().setPlayType(type);
         if (product == null) response.setRetcode(1);

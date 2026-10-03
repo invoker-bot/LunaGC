@@ -12,6 +12,7 @@ public class HandlerGetShopBatchReq extends PacketHandler {
     @Override
     public void handle(GameSession session, byte[] header, byte[] payload) throws Exception {
         var request = GetShopBatchReq.parseFrom(payload);
+        session.getServer().getShopSystem().sendProductPriceCatalog(session);
         var response = GetShopBatchRsp.newBuilder();
         for (int type : request.getShopTypeListList().stream().distinct().limit(256).toList()) {
             response.addShopList(

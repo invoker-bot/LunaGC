@@ -1,0 +1,12 @@
+syntax = "proto3";
+option java_package = "emu.grasscutter.net.proto";
+option java_outer_classname = "WorldWatcherAllDataNotifyOuterClass";
+import "WorldWatcherInfo.proto";
+
+// Client type 72671, opcode 22528. Unknown flags remain unset.
+message WorldWatcherAllDataNotify {
+  repeated WorldWatcherInfo info_list = 7;
+  uint32 ABCBPIOFMLK = 6;
+  bool HCPOEOPKOIO = 3;
+  bool JKFKFKBMFPN = 15;
+}

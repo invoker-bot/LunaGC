@@ -1,4 +1,4 @@
-// Recovered from AvatarWeaponSkinDataNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+// 7.1 NEHBIICNOHP: parser 0x153c2da50, command 29904.
 syntax = "proto3";
 
 package recovered.p_AvatarWeaponSkinDataNotify;
@@ -7,7 +7,7 @@ option java_outer_classname = "AvatarWeaponSkinDataNotifyOuterClass";
 import "AvatarWeaponSkin.proto";
 
 message AvatarWeaponSkinDataNotify {
-  repeated .recovered.p_AvatarWeaponSkin.AvatarWeaponSkin weapon_skin_list = 8;
-  repeated uint32 weapon_skin_id_list = 14;
-  uint64 something2 = 10;
+  repeated .recovered.p_AvatarWeaponSkin.AvatarWeaponSkin weapon_skin_list = 1;
+  repeated uint32 weapon_skin_id_list = 2;
+  uint64 reset_time = 13;
 }

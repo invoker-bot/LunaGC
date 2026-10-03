@@ -1,4 +1,4 @@
-// Recovered from AvatarWeaponSkinOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+// 7.1 FGGMBMEIIAE: serializer 0x15287e6d0, list codec 0x15287e590.
 syntax = "proto3";
 
 package recovered.p_AvatarWeaponSkin;
@@ -6,7 +6,7 @@ option java_package = "emu.grasscutter.net.proto";
 option java_outer_classname = "AvatarWeaponSkinOuterClass";
 
 message AvatarWeaponSkin {
-  repeated uint64 something = 3;
-  uint64 expire_time = 9;
-  uint32 weapon_skin_id = 2;
+  repeated uint64 avatar_guid_list = 10;
+  uint64 expire_time = 1;
+  uint32 weapon_skin_id = 13;
 }

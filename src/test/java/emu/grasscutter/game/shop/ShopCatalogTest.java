@@ -103,6 +103,47 @@ class ShopCatalogTest {
     }
 
     @Test
+    void ordinaryResourceUpperLevelCanBePreservedWhenLoweringTheMinimum() throws Exception {
+        var path = dir.resolve("paimon-shop.json");
+        var original = good();
+        original.setMinLevel(10);
+        original.setMaxLevel(99);
+        var source = new Int2ObjectOpenHashMap<List<ShopInfo>>();
+        source.put(1001, List.of(original));
+        var catalog = new ShopCatalog(path);
+        catalog.replaceBase(source);
+        var edited = ShopCatalog.copy(original);
+        edited.setMinLevel(4);
+        catalog.edit(1001, original.getGoodsId(), "save", edited);
+        var reloaded = new ShopCatalog(path);
+        reloaded.replaceBase(source);
+        assertEquals(4, reloaded.active().get(1001).get(0).getMinLevel());
+        assertEquals(99, reloaded.active().get(1001).get(0).getMaxLevel());
+        assertEquals(10, original.getMinLevel());
+    }
+
+    @Test
+    void beyondLevelAndCurrencyPriceOverridesSurviveReload() throws Exception {
+        var path = dir.resolve("beyond-shop.json");
+        var catalog = new ShopCatalog(path);
+        var override = good();
+        override.setMinLevel(1);
+        override.setMaxLevel(99);
+        override.setBeyondMcoin(1200);
+        int id = catalog.edit(101000, 0, "save", override);
+        var reloaded = new ShopCatalog(path);
+        reloaded.replaceBase(new Int2ObjectOpenHashMap<>());
+        var saved = reloaded.active().get(101000).get(0);
+        assertEquals(id, saved.getGoodsId());
+        assertEquals(99, saved.getMaxLevel());
+        assertEquals(1200, saved.getBeyondMcoin());
+        assertThrows(IllegalArgumentException.class, () -> catalog.edit(902, 0, "save", override));
+        override.setMaxLevel(100);
+        assertThrows(IllegalArgumentException.class, () -> catalog.edit(101000, id, "save", override));
+        assertEquals(99, catalog.active().get(101000).get(0).getMaxLevel());
+    }
+
+    @Test
     void resourceRefreshTypeSurvivesJsonPersistence() {
         var resource =
                 new Gson()

@@ -1,4 +1,4 @@
-// Recovered from AvatarTraceEffectChangeNotifyOuterClass.java's embedded descriptor; wire schema may predate 7.1.
+// 7.1 CEOGMKOJDBL: parser 0x1479df650, command 9539.
 syntax = "proto3";
 
 package recovered.p_AvatarTraceEffectChangeNotify;
@@ -7,5 +7,5 @@ option java_outer_classname = "AvatarTraceEffectChangeNotifyOuterClass";
 import "SceneEntityInfo.proto";
 
 message AvatarTraceEffectChangeNotify {
-  .SceneEntityInfo entity_info = 13;
+  .SceneEntityInfo entity_info = 1;
 }

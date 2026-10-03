@@ -15,7 +15,8 @@ public class HandlerRechargeReq extends PacketHandler {
         int count =
                 (req.hasCardProduct() ? 1 : 0)
                         + (req.hasMcoinProduct() ? 1 : 0)
-                        + (req.hasPlayProduct() ? 1 : 0);
+                        + (req.hasPlayProduct() ? 1 : 0)
+                        + (req.hasBeyondMcoinProduct() ? 1 : 0);
         if (req.hasCardProduct()) {
             id = req.getCardProduct().getProductId();
             kind = "card";
@@ -27,6 +28,10 @@ public class HandlerRechargeReq extends PacketHandler {
         if (req.hasPlayProduct()) {
             id = req.getPlayProduct().getProductId();
             kind = "pass";
+        }
+        if (req.hasBeyondMcoinProduct()) {
+            id = req.getBeyondMcoinProduct().getProductId();
+            kind = "beyond_crystals";
         }
         rsp.setProductId(id);
         try {

@@ -33,7 +33,6 @@ import emu.grasscutter.net.proto.TrialAvatarInfoOuterClass.TrialAvatarInfo;
 import emu.grasscutter.server.packet.send.*;
 import emu.grasscutter.utils.helpers.ProtoHelper;
 import it.unimi.dsi.fastutil.ints.*;
-
 import java.util.*;
 import java.util.stream.Stream;
 import javax.annotation.*;
@@ -87,6 +86,7 @@ public class Avatar {
     @Getter @Setter private int nameCardRewardId;
     @Getter @Setter private int nameCardId;
     @Getter @Setter private int traceEffect;
+    @Getter @Setter private int weaponSkin;
 
     // trial avatar property
     @Getter @Setter private int trialAvatarId = 0;
@@ -282,7 +282,9 @@ public class Avatar {
                 .mapToInt(openData -> (openData.getProudSkillGroupId() * 100) + 1)
                 .filter(proudSkillId -> GameData.getProudSkillDataMap().containsKey(proudSkillId))
                 .forEach(proudSkillId -> this.proudSkillList.add(proudSkillId));
-        skillDepot.getQuestProudSkillGroupIds().intStream()
+        skillDepot
+                .getQuestProudSkillGroupIds()
+                .intStream()
                 .map(groupId -> (groupId * 100) + 1)
                 .filter(proudSkillId -> GameData.getProudSkillDataMap().containsKey(proudSkillId))
                 .forEach(proudSkillId -> this.proudSkillList.add(proudSkillId));
@@ -370,7 +372,6 @@ public class Avatar {
         }
     }
 
-
     public void setFightProperty(FightProperty prop, float value) {
         this.getFightProperties().put(prop.getId(), value);
     }
@@ -382,23 +383,24 @@ public class Avatar {
     public void addFightProperty(FightProperty prop, float value) {
         this.getFightProperties().put(prop.getId(), getFightProperty(prop) + value);
     }
-    public void addSpecialEnergy(float energy){
-       float curSpecialEnergy = getFightProperty(FightProperty.FIGHT_PROP_CUR_SPECIAL_ENERGY);
-       float maxSpecialEnergy = getFightProperty(FightProperty.FIGHT_PROP_MAX_SPECIAL_ENERGY);
-       curSpecialEnergy+=energy;
-        if (curSpecialEnergy >= maxSpecialEnergy){
+
+    public void addSpecialEnergy(float energy) {
+        float curSpecialEnergy = getFightProperty(FightProperty.FIGHT_PROP_CUR_SPECIAL_ENERGY);
+        float maxSpecialEnergy = getFightProperty(FightProperty.FIGHT_PROP_MAX_SPECIAL_ENERGY);
+        curSpecialEnergy += energy;
+        if (curSpecialEnergy >= maxSpecialEnergy) {
             curSpecialEnergy = maxSpecialEnergy;
         }
-       setFightProperty(FightProperty.FIGHT_PROP_CUR_SPECIAL_ENERGY, curSpecialEnergy);
-       getPlayer().sendPacket(new PacketAvatarFightPropNotify(this));
+        setFightProperty(FightProperty.FIGHT_PROP_CUR_SPECIAL_ENERGY, curSpecialEnergy);
+        getPlayer().sendPacket(new PacketAvatarFightPropNotify(this));
     }
 
-    public void clearSpecialEnergy(){
-       float curSpecialEnergy = getFightProperty(FightProperty.FIGHT_PROP_CUR_SPECIAL_ENERGY);
-       float maxSpecialEnergy = getFightProperty(FightProperty.FIGHT_PROP_MAX_SPECIAL_ENERGY);
-       curSpecialEnergy = 0;
-       setFightProperty(FightProperty.FIGHT_PROP_CUR_SPECIAL_ENERGY, curSpecialEnergy);
-       getPlayer().sendPacket(new PacketAvatarFightPropNotify(this));
+    public void clearSpecialEnergy() {
+        float curSpecialEnergy = getFightProperty(FightProperty.FIGHT_PROP_CUR_SPECIAL_ENERGY);
+        float maxSpecialEnergy = getFightProperty(FightProperty.FIGHT_PROP_MAX_SPECIAL_ENERGY);
+        curSpecialEnergy = 0;
+        setFightProperty(FightProperty.FIGHT_PROP_CUR_SPECIAL_ENERGY, curSpecialEnergy);
+        getPlayer().sendPacket(new PacketAvatarFightPropNotify(this));
     }
 
     public float getFightProperty(FightProperty prop) {
@@ -770,11 +772,7 @@ public class Avatar {
                 this.getFightProperty(FightProperty.FIGHT_PROP_MAX_HP) * hpPercent);
 
         // Set HP Debts
-        this.setFightProperty(
-                FightProperty.FIGHT_PROP_CUR_HP_DEBTS,
-                hpDebt);
-
-
+        this.setFightProperty(FightProperty.FIGHT_PROP_CUR_HP_DEBTS, hpDebt);
 
         // Packet
         if (getPlayer() != null && getPlayer().hasSentLoginPackets()) {
@@ -1088,7 +1086,8 @@ public class Avatar {
                         .setFetterInfo(avatarFetter)
                         .setWearingFlycloakId(this.getFlyCloak())
                         .setCostumeId(this.getCostume())
-                        .setTraceEffectId(this.getTraceEffect());
+                        .setTraceEffectId(this.getTraceEffect())
+                        .setWeaponSkinId(this.getWeaponSkin());
 
         this.getSkillExtraChargeMap()
                 .forEach(
@@ -1117,7 +1116,6 @@ public class Avatar {
 
         return avatarInfo.build();
     }
-
 
     // used only in character showcase
     public ShowAvatarInfo toShowAvatarInfoProto() {
@@ -1182,7 +1180,7 @@ public class Avatar {
      * @param questId The ID of the quest that granted the avatar.
      */
     public void setTrialAvatarInfo(
-        int level, int avatarId, GrantReasonOuterClass.GrantReason grantReason, int questId) {
+            int level, int avatarId, GrantReasonOuterClass.GrantReason grantReason, int questId) {
         this.setLevel(level);
         this.setPromoteLevel(getMinPromoteLevel(level));
         this.setTrialAvatarId(avatarId);
